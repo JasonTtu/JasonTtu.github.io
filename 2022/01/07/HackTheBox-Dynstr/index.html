@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/rabbit.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/rabbit_16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="HackTheBox-Dynstr">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HackTheBox-Dynstr">
+<meta property="og:url" content="http://example.com/2022/01/07/HackTheBox-Dynstr/index.html">
+<meta property="og:site_name" content="Jasontt&#39;s Blog">
+<meta property="og:description" content="HackTheBox-Dynstr">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dynstr_pwn.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dynstr_nmap.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/web%E4%BF%A1%E6%81%AF.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/gobuster%E5%8F%91%E7%8E%B0nic.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E7%A9%BAnic.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/gobuster%E5%8F%91%E7%8E%B0update.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/badauth.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/good%E5%9B%9E%E6%98%BE.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/nsupdate%E6%8A%A5%E9%94%99.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E5%BC%B9shell.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/log%E6%96%87%E4%BB%B6.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/nsupdate1.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/nsupdate2.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/usertxt.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/sudo-l.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/sh%E5%89%8Dbash.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/sh%E5%90%8Ebash.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/cp-p.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E4%BF%9D%E7%95%99mode.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Sbash.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/getroot.png">
+<meta property="article:published_time" content="2022-01-07T10:02:56.000Z">
+<meta property="article:modified_time" content="2022-01-07T10:09:03.211Z">
+<meta property="article:author" content="Jason Tu">
+<meta property="article:tag" content="HackTheBox">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dynstr_pwn.png">
+
+
+<link rel="canonical" href="http://example.com/2022/01/07/HackTheBox-Dynstr/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2022/01/07/HackTheBox-Dynstr/","path":"2022/01/07/HackTheBox-Dynstr/","title":"HackTheBox-Dynstr"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>HackTheBox-Dynstr | Jasontt's Blog</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jasontt's Blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+        <li class="menu-item menu-item-schedule"><a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#HackTheBox-Dynstr"><span class="nav-number">1.</span> <span class="nav-text">HackTheBox-Dynstr</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E5%9C%A8%E5%89%8D%E9%9D%A2"><span class="nav-number">1.1.</span> <span class="nav-text">写在前面</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86"><span class="nav-number">1.2.</span> <span class="nav-text">信息收集</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%89%8D%E6%9C%9F%E6%90%9C%E9%9B%86"><span class="nav-number">1.2.1.</span> <span class="nav-text">前期搜集</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%BE%E5%88%B0%E7%AA%81%E7%A0%B4%E5%8F%A3"><span class="nav-number">1.2.2.</span> <span class="nav-text">找到突破口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%8D%E5%BC%B9shell"><span class="nav-number">1.2.3.</span> <span class="nav-text">反弹shell</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFDNS%E5%8C%BA%E5%9F%9F"><span class="nav-number">1.2.4.</span> <span class="nav-text">什么是DNS区域</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GetShell"><span class="nav-number">1.3.</span> <span class="nav-text">GetShell</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8F%90%E6%9D%83"><span class="nav-number">1.4.</span> <span class="nav-text">提权</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jason Tu"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Jason Tu</p>
+  <div class="site-description" itemprop="description">一只谦虚的兔子</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://4xwi11.github.io/" title="https:&#x2F;&#x2F;4xwi11.github.io&#x2F;" rel="noopener" target="_blank">4xwi11</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://scr1pt-kid.github.io/" title="https:&#x2F;&#x2F;scr1pt-kid.github.io&#x2F;" rel="noopener" target="_blank">Scr1pt</a>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/07/HackTheBox-Dynstr/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Jason Tu">
+      <meta itemprop="description" content="一只谦虚的兔子">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jasontt's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          HackTheBox-Dynstr
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2022-01-07 18:02:56 / Modified: 18:09:03" itemprop="dateCreated datePublished" datetime="2022-01-07T18:02:56+08:00">2022-01-07</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="HackTheBox-Dynstr"><a href="#HackTheBox-Dynstr" class="headerlink" title="HackTheBox-Dynstr"></a>HackTheBox-Dynstr</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dynstr_pwn.png" alt="pwn"></p>
+<span id="more"></span>
+
+<blockquote>
+<p>本机IP：10.10.16.3</p>
+<p>目标IP：10.10.10.244</p>
+</blockquote>
+<h2 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a>写在前面</h2><p>这台靶机难度中上，由于涉及的知识点是我的盲区，所以花了两天时间才拿下，赶紧记录一下。整个做下来感觉学到了不少，围绕着DDNS为主题设计的靶机，能学的知识有DNS区域、动态DNS更新工具nsupdate的使用、如何在linux中安装和配置DNS服务器、利用通配符进行Linux提权等</p>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><h3 id="前期搜集"><a href="#前期搜集" class="headerlink" title="前期搜集"></a>前期搜集</h3><p><strong>nmap</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dynstr_nmap.png" alt="nmap"></p>
+<p>扫描端口开放了22、53、80端口</p>
+<p>先从80端口下手看网站提供了哪些功能和信息</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/web%E4%BF%A1%E6%81%AF.png" alt="web信息"></p>
+<p>似乎是一个提供动态DNS服务的网站，并给出了服务的域：</p>
+<blockquote>
+<p>dnsalias.htb</p>
+<p>dynamicdns.htb</p>
+<p>no-ip.htb</p>
+<p>dyna.htb(由网页底部<a href="mailto:&#x64;&#110;&#115;&#x40;&#100;&#121;&#110;&#x61;&#x2e;&#x68;&#116;&#98;">&#x64;&#110;&#115;&#x40;&#100;&#121;&#110;&#x61;&#x2e;&#x68;&#116;&#98;</a>获得)</p>
+</blockquote>
+<p>Beta中说网站正在测试模式下运行，并提供了共享凭据：</p>
+<blockquote>
+<p>Username: dynadns</p>
+<p>Password: sndanyd</p>
+</blockquote>
+<p>把上述域名加入<code>/etc/hosts</code></p>
+<p><strong>gobuster</strong></p>
+<p>网站暂时提供的信息就这么多，用<strong>gobuster</strong>爆破一下网站目录</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gobuster dir -u http://dyna.htb -w /usr/share/wordlists/dirb/big.txt -t 200 --wildcard</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/gobuster%E5%8F%91%E7%8E%B0nic.png" alt="gobuster发现nic"></p>
+<p>找到<code>/nic</code>，但是访问<code>/nic</code>发现是空白页</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E7%A9%BAnic.png" alt="空nic"></p>
+<p>尝试继续爆破/nic发现<code>/.htpasswd</code>、<code>/.htaccess</code>、<code>/update</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gobuster dir -u http://dyna.htb/nic -w /usr/share/wordlists/dirb/big.txt -t 200 --wildcard</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/gobuster%E5%8F%91%E7%8E%B0update.png" alt="gobuster发现update"></p>
+<p>访问前两者<strong>403</strong> ，在<code>/update</code>有所发现，报了一个<strong>badauth</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/badauth.png" alt="badauth"></p>
+<p>上面获得了共享凭据但是现在不知道哪里可以用，这个页面肯定是有问题的，但是不知道它是如何判断<strong>badauth</strong>的，卡住</p>
+<h3 id="找到突破口"><a href="#找到突破口" class="headerlink" title="找到突破口"></a>找到突破口</h3><p>通过Google搜索发现了一些有用的东西</p>
+<p>在搜索dynadns时，发现了<code>www.dynu.com</code>，这是一个免费提供动态DNS服务供应商,站内搜索badauth得到如下<a target="_blank" rel="noopener" href="https://www.dynu.com/Forum/ViewTopic/badauth-being-received/439">帖子</a>，从问题回答者的回帖中发现<code>/nic/update</code>后面传了几个参数，应该就是通过参数的内容来判断<strong>badauth</strong>与否，开始我们获得了一个用户名、密码、邮箱等信息，但和文章中提到的参数还是有点初入，简单尝试发现还是行不通。</p>
+<p>又去搜<code>/nic/update</code>，找到了关于no-ip动态dns发送更新的一篇<a target="_blank" rel="noopener" href="https://www.noip.com/integrate/request">说明</a></p>
+<p>一个基本的发送更新请求的样例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">GET /nic/update?hostname=mytest.example.com&amp;myip=192.0.2.25 HTTP/1.1</span><br><span class="line"></span><br><span class="line">Host: dynupdate.no-ip.com</span><br><span class="line"></span><br><span class="line">Authorization: Basic base64-encoded-auth-string</span><br><span class="line"></span><br><span class="line">User-Agent: Company DeviceName-Model/FirmwareVersionNumber maintainer-contact@example.com</span><br></pre></td></tr></table></figure>
+
+<p>其中<strong>Authorization</strong>的解释如下：</p>
+<blockquote>
+<p><strong>Authorization:</strong> base64-encoded-auth-string should be the <a target="_blank" rel="noopener" href="http://en.wikipedia.org/wiki/Base64">base64 encoding </a>of username:password.</p>
+</blockquote>
+<p><strong>Authorization</strong>为base64加密的<strong>username:password</strong>，似乎上述所有参数我们都已经有了</p>
+<p>模仿示例直接用curl请求得到正确响应（当然可以用Burpsuite）</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/good%E5%9B%9E%E6%98%BE.png" alt="good回显"></p>
+<p>在no-ip上找到了对各种相应的解释</p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Description</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>good IP_ADDRESS</td>
+<td>Success</td>
+<td>DNS hostname update successful. Followed by a space and the IP address it was updated to.  The IP address returned will be the IPv4 address, if an IPv4 is supplied. If IPv4 and IPv6 are both supplied, both ips will be returned in a comma separated list. If only an IPv6 address is supplied, an IPv6 address (only) will be returned.</td>
+</tr>
+<tr>
+<td>nochg IP_ADDRESS</td>
+<td>Success</td>
+<td>IP address is current, no update performed. Followed by a space and the IP address that it is currently set to.  The IP address returned will be the IPv4 address if an IPv4 is supplied. If IPv4 and IPv6 are both supplied, both ips will be returned in a comma separated list. If only an IPv6 address is supplied, an IPv6 address (only) will be returned.  Note: Excessive nochg responses may result in your client being blocked.</td>
+</tr>
+<tr>
+<td>nohost</td>
+<td>Error</td>
+<td>Hostname supplied does not exist under specified account, client exit and require user to enter new login credentials before performing an additional request.</td>
+</tr>
+<tr>
+<td>badauth</td>
+<td>Error</td>
+<td>Invalid username password combination.</td>
+</tr>
+<tr>
+<td>badagent</td>
+<td>Error</td>
+<td>Client disabled. Client should exit and not perform any more updates without user intervention.  Note: You must use the recommended User-Agent format specified when <a target="_blank" rel="noopener" href="https://www.noip.com/integrate/request">Submitting</a> an Update, failure to follow the format guidelines may result in your client being blocked.</td>
+</tr>
+<tr>
+<td>!donator</td>
+<td>Error</td>
+<td>An update request was sent, including a feature that is not available to that particular user such as offline options.</td>
+</tr>
+<tr>
+<td>abuse</td>
+<td>Error</td>
+<td>Username is blocked due to abuse. Either for not following our update specifications or disabled due to violation of the No-IP terms of service. Our terms of service can be viewed <a target="_blank" rel="noopener" href="https://www.noip.com/legal/tos">here</a>. Client should stop sending updates.</td>
+</tr>
+<tr>
+<td>911</td>
+<td>Error</td>
+<td>A fatal error on our side such as a database outage. Retry the update no sooner than 30 minutes.  A 500 HTTP error may also be returned in case of a fatal error on our system at which point you should also retry no sooner than 30 minutes.</td>
+</tr>
+</tbody></table>
+<p>得到一个成功的响应，但对继续深入好像没有什么大的帮助</p>
+<p>尝试对<code>myip</code>、<code>hostname</code>两个参数进行测试，输入<code>‘</code>、<code>；</code>、<code>：</code>等字符的时候报错了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/nsupdate%E6%8A%A5%E9%94%99.png" alt="nsupdate报错"></p>
+<p>搜索<a target="_blank" rel="noopener" href="https://linux.die.net/man/8/nsupdate">nsupdate</a>发现这是一个动态dns更新程序，既然报错了那么可以猜想Linux系统在执行这个程序时，传入了get到的几个参数，<code>hostname</code>传入一些错误输入会报错，那么这个参数传进去的内容也许可以利用一下(注意：这不是nsupdate本身报错)</p>
+<h3 id="反弹shell"><a href="#反弹shell" class="headerlink" title="反弹shell"></a>反弹shell</h3><p>（一万年以后）</p>
+<p>fuzz命令执行格式为``echo xxx|bash`，注意请求的时候还要进行一次url编码…</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">`echo [base64加密payload]| base64 -d | bash`</span><br></pre></td></tr></table></figure>
+
+<p>nc收到nc收到弹回来的shell（这里可以升级一下shell）</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E5%BC%B9shell.png" alt="弹shell"></p>
+<p>当前目录下发现了update的源码= =！！（这代码有问题，没问题也反弹不了shell…）</p>
+<p><strong>update</strong></p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line">  <span class="comment">// Check authentication</span></span><br><span class="line">  <span class="keyword">if</span> (!<span class="keyword">isset</span>(<span class="variable">$_SERVER</span>[<span class="string">&#x27;PHP_AUTH_USER&#x27;</span>]) || !<span class="keyword">isset</span>(<span class="variable">$_SERVER</span>[<span class="string">&#x27;PHP_AUTH_PW&#x27;</span>]))      &#123; <span class="keyword">echo</span> <span class="string">&quot;badauth\n&quot;</span>; <span class="keyword">exit</span>; &#125;</span><br><span class="line">  <span class="keyword">if</span> (<span class="variable">$_SERVER</span>[<span class="string">&#x27;PHP_AUTH_USER&#x27;</span>].<span class="string">&quot;:&quot;</span>.<span class="variable">$_SERVER</span>[<span class="string">&#x27;PHP_AUTH_PW&#x27;</span>]!==<span class="string">&#x27;dynadns:sndanyd&#x27;</span>) &#123; <span class="keyword">echo</span> <span class="string">&quot;badauth\n&quot;</span>; <span class="keyword">exit</span>; &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Set $myip from GET, defaulting to REMOTE_ADDR</span></span><br><span class="line">  <span class="variable">$myip</span> = <span class="variable">$_SERVER</span>[<span class="string">&#x27;REMOTE_ADDR&#x27;</span>];</span><br><span class="line">  <span class="keyword">if</span> (<span class="variable">$valid</span>=filter_var(<span class="variable">$_GET</span>[<span class="string">&#x27;myip&#x27;</span>],FILTER_VALIDATE_IP))                       &#123; <span class="variable">$myip</span> = <span class="variable">$valid</span>; &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span>(<span class="keyword">isset</span>(<span class="variable">$_GET</span>[<span class="string">&#x27;hostname&#x27;</span>])) &#123;</span><br><span class="line">    <span class="comment">// Check for a valid domain</span></span><br><span class="line">    <span class="keyword">list</span>(<span class="variable">$h</span>,<span class="variable">$d</span>) = explode(<span class="string">&quot;.&quot;</span>,<span class="variable">$_GET</span>[<span class="string">&#x27;hostname&#x27;</span>],<span class="number">2</span>);</span><br><span class="line">    <span class="variable">$validds</span> = <span class="keyword">array</span>(<span class="string">&#x27;dnsalias.htb&#x27;</span>,<span class="string">&#x27;dynamicdns.htb&#x27;</span>,<span class="string">&#x27;no-ip.htb&#x27;</span>);</span><br><span class="line">    <span class="keyword">if</span>(!in_array(<span class="variable">$d</span>,<span class="variable">$validds</span>)) &#123; <span class="keyword">echo</span> <span class="string">&quot;911 [wrngdom: <span class="subst">$d</span>]\n&quot;</span>; <span class="keyword">exit</span>; &#125;</span><br><span class="line">    <span class="comment">// Update DNS entry</span></span><br><span class="line">    <span class="variable">$cmd</span> = sprintf(<span class="string">&quot;server 127.0.0.1\nzone %s\nupdate delete %s.%s\nupdate add %s.%s 30 IN A %s\nsend\n&quot;</span>,<span class="variable">$d</span>,<span class="variable">$h</span>,<span class="variable">$d</span>,<span class="variable">$h</span>,<span class="variable">$d</span>,<span class="variable">$myip</span>);</span><br><span class="line">    system(<span class="string">&#x27;echo &quot;&#x27;</span>.<span class="variable">$cmd</span>.<span class="string">&#x27;&quot; | /usr/bin/nsupdate -t 1 -k /etc/bind/ddns.key&#x27;</span>,<span class="variable">$retval</span>);</span><br><span class="line">    <span class="comment">// Return good or 911</span></span><br><span class="line">    <span class="keyword">if</span> (!<span class="variable">$retval</span>) &#123;</span><br><span class="line">      <span class="keyword">echo</span> <span class="string">&quot;good <span class="subst">$myip</span>\n&quot;</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">echo</span> <span class="string">&quot;911 [nsupdate failed]\n&quot;</span>; <span class="keyword">exit</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">echo</span> <span class="string">&quot;nochg <span class="subst">$myip</span>\n&quot;</span>;</span><br><span class="line">  &#125;</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>通过<code>/etc/password</code>发现服务器上的用户有<strong>root</strong>、<strong>dyna</strong>、<strong>bindmgr</strong>，在<strong>bindmgr</strong>的目录下发现了user.txt但是没权限</p>
+<p><strong>dyna</strong></p>
+<p>![home dyna](<a target="_blank" rel="noopener" href="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/home">https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/home</a> dyna.png)</p>
+<p><strong>bindmgr</strong></p>
+<p>![home bindmgr](<a target="_blank" rel="noopener" href="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/home">https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/home</a> bindmgr.png)</p>
+<p><strong>dyna</strong>目录下的 <code>.sudo_as_admin_successful</code>着实迷惑了我很久，做到后来发现确实没什么用，当然这是后话了</p>
+<p>在<strong>bindmgr</strong>下还有个support-case-C62796521目录，读取其中的strace-C62796521.txt出来一堆东西，似乎是一个类似运行记录的文件，其中找到了<strong>bindmgr</strong>的ssh密钥</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/log%E6%96%87%E4%BB%B6.png" alt="log文件"></p>
+<p>![get id_rsa](<a target="_blank" rel="noopener" href="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/get">https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/get</a> id_rsa.png)</p>
+<p>连不上！？</p>
+<p>Google搜索：ddns ssh。其中<strong>Free Dynamic DNS for Remote Login via SSH</strong>启发了我，文中有段他说：选择一个域名添加当前的IP地址。那么我的ip应该不在靶机的dns域内，所以没法用ssh连接</p>
+<p>找到了一篇<a target="_blank" rel="noopener" href="https://www.thegeekstuff.com/2014/01/install-dns-server/">如何在linux中安装和配置DNS服务器</a>，所有 DNS 配置都存储在 /etc/bind 目录下。主要配置是 /etc/bind/named.conf，它将包含其他需要的文件。靶机上确实存在<code>/etc/bind</code>目录（update源码里也有写到），而且其中存在<code>.key</code>为后缀的文件，上面<strong>nsupdate</strong>的使用方法写到过</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">nsupdate [ -d ] [ [ -y keyname:secret ] [ -k keyfile ] ] [ -v ] [ filename ]</span><br><span class="line">-d 调试模式</span><br><span class="line">-k 从keyfile文件中读取密钥信息</span><br><span class="line">-y keyname是密钥的名称，secret是base64编码的密钥</span><br><span class="line">-v 使用TCP协议进行nsupdate，默认UDP协议</span><br></pre></td></tr></table></figure>
+
+<p>keyfile就是指<code>.key</code>后缀的文件，那么思路清晰了，我们可以通过nsupdate来更新DNS区域</p>
+<h3 id="什么是DNS区域"><a href="#什么是DNS区域" class="headerlink" title="什么是DNS区域"></a><a target="_blank" rel="noopener" href="https://www.cloudflare.com/zh-cn/learning/dns/glossary/dns-zone/">什么是DNS区域</a></h3><blockquote>
+<p>DNS 被分成许多不同的区域。这些区域区分 DNS 命名空间中不同管理的区域。 DNS 区域是由特定组织或管理员管理的 DNS 命名空间的一部分。 DNS 区域是一个管理空间，允许对 DNS 组件（例如权威名称服务器）进行更精细的控制。域名空间是一棵分层树，DNS 根域位于顶部。 DNS 区域从树中的一个域开始，也可以向下扩展到子域，以便一个实体可以管理多个子域。</p>
+</blockquote>
+<h2 id="GetShell"><a href="#GetShell" class="headerlink" title="GetShell"></a>GetShell</h2><p><strong>nsupdate的示例</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">nsupdate示例:</span><br><span class="line">&gt; server 127.0.0.1 //发送请求到指定服务器，不指定就默认发给当当前去的主DNS服务器</span><br><span class="line">&gt; update delete www.test.com A //删除资源记录</span><br><span class="line">&gt;</span><br><span class="line">&gt; update add www.test.cn 80000 IN A 192.168.0.2 //添加一条资源记录</span><br><span class="line">&gt; update add 2.0.168.192.in-addr.arpa 80000 PTR A www.test.com</span><br><span class="line">&gt; send //一个空行或者一个send命令，会将先前输入的命令发送到DNS服务器上</span><br><span class="line">&gt; quit //退出</span><br></pre></td></tr></table></figure>
+
+
+
+<p>利用上面<strong>update</strong>中使用的ddns.key，尝试添加记录的时候被拒绝了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/nsupdate1.png" alt="nsupdate1"></p>
+<p>还有个infra.key，添加记录应该是成功了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/nsupdate2.png" alt="nsupdate2"></p>
+<p>用SSH连接成功，得到user.txt</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/usertxt.png" alt="usertxt"></p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>sudo -l发现一个可执行文件<strong>bindmgr.sh</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/sudo-l.png" alt="sudo-l"></p>
+<p>查看一下脚本是用来干嘛的</p>
+<p><strong>bindmgr.sh</strong></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># This script generates named.conf.bindmgr to workaround the problem</span></span><br><span class="line"><span class="comment"># that bind/named can only include single files but no directories.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># It creates a named.conf.bindmgr file in /etc/bind that can be included</span></span><br><span class="line"><span class="comment"># from named.conf.local (or others) and will include all files from the</span></span><br><span class="line"><span class="comment"># directory /etc/bin/named.bindmgr.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># <span class="doctag">NOTE:</span> The script is work in progress. For now bind is not including</span></span><br><span class="line"><span class="comment">#       named.conf.bindmgr. </span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># <span class="doctag">TODO:</span> Currently the script is only adding files to the directory but</span></span><br><span class="line"><span class="comment">#       not deleting them. As we generate the list of files to be included</span></span><br><span class="line"><span class="comment">#       from the source directory they won&#x27;t be included anyway.</span></span><br><span class="line"></span><br><span class="line">BINDMGR_CONF=/etc/<span class="built_in">bind</span>/named.conf.bindmgr</span><br><span class="line">BINDMGR_DIR=/etc/<span class="built_in">bind</span>/named.bindmgr</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="title">indent</span></span>() &#123; sed <span class="string">&#x27;s/^/    /&#x27;</span>; &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># Check versioning (.version)</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;[+] Running <span class="variable">$0</span> to stage new configuration from <span class="variable">$PWD</span>.&quot;</span></span><br><span class="line"><span class="keyword">if</span> [[ ! -f .version ]] ; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;[-] ERROR: Check versioning. Exiting.&quot;</span></span><br><span class="line">    <span class="built_in">exit</span> 42</span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"><span class="keyword">if</span> [[ <span class="string">&quot;`cat .version 2&gt;/dev/null`&quot;</span> -le <span class="string">&quot;`cat <span class="variable">$BINDMGR_DIR</span>/.version 2&gt;/dev/null`&quot;</span> ]] ; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;[-] ERROR: Check versioning. Exiting.&quot;</span></span><br><span class="line">    <span class="built_in">exit</span> 43</span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Create config file that includes all files from named.bindmgr.</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;[+] Creating <span class="variable">$BINDMGR_CONF</span> file.&quot;</span></span><br><span class="line"><span class="built_in">printf</span> <span class="string">&#x27;// Automatically generated file. Do not modify manually.\n&#x27;</span> &gt; <span class="variable">$BINDMGR_CONF</span></span><br><span class="line"><span class="keyword">for</span> file <span class="keyword">in</span> * ; <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">printf</span> <span class="string">&#x27;include &quot;/etc/bind/named.bindmgr/%s&quot;;\n&#x27;</span> <span class="string">&quot;<span class="variable">$file</span>&quot;</span> &gt;&gt; <span class="variable">$BINDMGR_CONF</span></span><br><span class="line"><span class="keyword">done</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Stage new version of configuration files.</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;[+] Staging files to <span class="variable">$BINDMGR_DIR</span>.&quot;</span></span><br><span class="line">cp .version * /etc/<span class="built_in">bind</span>/named.bindmgr/</span><br><span class="line"></span><br><span class="line"><span class="comment"># Check generated configuration with named-checkconf.</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;[+] Checking staged configuration.&quot;</span></span><br><span class="line">named-checkconf <span class="variable">$BINDMGR_CONF</span> &gt;/dev/null</span><br><span class="line"><span class="keyword">if</span> [[ $? -ne 0 ]] ; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;[-] ERROR: The generated configuration is not valid. Please fix following errors: &quot;</span></span><br><span class="line">    named-checkconf <span class="variable">$BINDMGR_CONF</span> 2&gt;&amp;1 | indent</span><br><span class="line">    <span class="built_in">exit</span> 44</span><br><span class="line"><span class="keyword">else</span> </span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;[+] Configuration successfully staged.&quot;</span></span><br><span class="line">    <span class="comment"># *** TODO *** Uncomment restart once we are live.</span></span><br><span class="line">    <span class="comment"># systemctl restart bind9</span></span><br><span class="line">    <span class="keyword">if</span> [[ $? -ne 0 ]] ; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;[-] Restart of bind9 via systemctl failed. Please check logfile: &quot;</span></span><br><span class="line">        systemctl status bind9</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;[+] Restart of bind9 via systemctl succeeded.&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>分开来看这个脚本的功能</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Check versioning (.version)<span class="built_in">echo</span> <span class="string">&quot;[+] Running <span class="variable">$0</span> to stage new configuration from <span class="variable">$PWD</span>.&quot;</span><span class="keyword">if</span> [[ ! -f .version ]] ; <span class="keyword">then</span>    <span class="built_in">echo</span> <span class="string">&quot;[-] ERROR: Check versioning. Exiting.&quot;</span>    <span class="built_in">exit</span> 42fiif [[ <span class="string">&quot;`cat .version 2&gt;/dev/null`&quot;</span> -le <span class="string">&quot;`cat <span class="variable">$BINDMGR_DIR</span>/.version 2&gt;/dev/null`&quot;</span> ]] ; <span class="keyword">then</span>    <span class="built_in">echo</span> <span class="string">&quot;[-] ERROR: Check versioning. Exiting.&quot;</span>    <span class="built_in">exit</span> 43fi</span></span><br></pre></td></tr></table></figure>
+
+<p>检查版本，会检查<code>.version</code>文件是否存在，不存在则报错退出</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Create config file that includes all files from named.bindmgr.echo &quot;[+] Creating $BINDMGR_CONF file.&quot;printf &#x27;// Automatically generated file. Do not modify manually.\n&#x27; &gt; $BINDMGR_CONFfor file in * ; do    printf &#x27;include &quot;/etc/bind/named.bindmgr/%s&quot;;\n&#x27; &quot;$file&quot; &gt;&gt; $BINDMGR_CONFdone# Stage new version of configuration files.echo &quot;[+] Staging files to $BINDMGR_DIR.&quot;cp .version * /etc/bind/named.bindmgr/</span></span><br></pre></td></tr></table></figure>
+
+<p>如果<code>.version</code>文件存在，则创建<code>$BINDMGR_CONF</code>文件，并把在.version同一目录下的所有文件都拷贝到<code>$BINDMGR_DIR</code>。（注意：cp命令用了通配符）</p>
+<p>本地没有vim但是有nano，用nano创建一个<code>.version文件</code>随便输入什么版本并执行脚本，到<code>/etc/bind/named.bindmgr</code>目录发现<code>.version</code>文件确实被拷贝进来了而且为root所用拥有</p>
+<p>![test sh](<a target="_blank" rel="noopener" href="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/test">https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/test</a> sh.png)</p>
+<p>![exec sh](<a target="_blank" rel="noopener" href="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/exec">https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/exec</a> sh.png)</p>
+<p>如果复制一个<code>bash</code>到<code>.version</code>同一目录，权限设置为setuid并运行脚本，bash被复制后为root所拥有，似乎就能获得root的shell了，尝试一下</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/sh%E5%89%8Dbash.png" alt="sh前bash"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/sh%E5%90%8Ebash.png" alt="sh后bash"></p>
+<p>bash虽然被复制了但是s权限没有了，这个问题由于通配符的存在（bindmgr.sh）可以解决，可以参考一下这篇文章<a target="_blank" rel="noopener" href="https://www.freebuf.com/articles/system/176255.html">利用通配符进行Linux本地提权</a></p>
+<blockquote>
+<p>当Shell在“参数值”中遇到了通配符时，Shell会将其当作路径或文件名去在磁盘上搜寻可能的匹配：若符合要求的匹配存在，则进行代换（路径扩展）；否则就将该通配符作为一个普通字符传递给“命令”，然后再由命令进行处理。总之，通配符实际上就是一种Shell实现的路径扩展功能。在通配符被处理后，Shell会先完成该命令的重组，然后再继续处理重组后的命令，直至执行该命令。</p>
+</blockquote>
+<p><code>cp --help</code>看看有没有能用来保留s权限的参数，-p参数</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/cp-p.png" alt="cp-p"></p>
+<blockquote>
+<p>-p：除复制文件的内容外，还把修改时间和访问权限也复制到新文件中。</p>
+</blockquote>
+<p>那么我们建一个<code>--preserve=mode</code>再运行脚本试试</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E4%BF%9D%E7%95%99mode.png" alt="保留mode"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Sbash.png" alt="Sbash"></p>
+<p>成功保留了s权限，可以得到root了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/getroot.png" alt="getroot"></p>
+<p>end</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/HackTheBox/" rel="tag"># HackTheBox</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/01/07/HackTheBox-Cap/" rel="prev" title="HACKthebox-Cap">
+                  <i class="fa fa-chevron-left"></i> HACKthebox-Cap
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2022/01/07/HackTheBox-Knife/" rel="next" title="HackTheBox-Knife">
+                  HackTheBox-Knife <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jason Tu</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"all","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>

