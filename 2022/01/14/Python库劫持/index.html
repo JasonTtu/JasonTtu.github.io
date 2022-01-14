@@ -20,12 +20,12 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="Python库劫持之前在做VulnHub的时候需要利用Python库劫持，决定具体学习一下">
+<meta name="description" content="Python库劫持之前在做VulnHub的时候需要利用Python库劫持具体学习一下">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Python库劫持">
 <meta property="og:url" content="http://example.com/2022/01/14/Python%E5%BA%93%E5%8A%AB%E6%8C%81/index.html">
 <meta property="og:site_name" content="Jasontt&#39;s Blog">
-<meta property="og:description" content="Python库劫持之前在做VulnHub的时候需要利用Python库劫持，决定具体学习一下">
+<meta property="og:description" content="Python库劫持之前在做VulnHub的时候需要利用Python库劫持具体学习一下">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113150511113.png">
 <meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220113150621602.png">
@@ -52,7 +52,7 @@
 <meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114142141860.png">
 <meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220114142447882.png">
 <meta property="article:published_time" content="2022-01-14T06:29:14.000Z">
-<meta property="article:modified_time" content="2022-01-14T06:30:38.097Z">
+<meta property="article:modified_time" content="2022-01-14T06:34:56.211Z">
 <meta property="article:author" content="Jason Tu">
 <meta property="article:tag" content="Python">
 <meta property="article:tag" content="提权">
@@ -277,7 +277,7 @@
       <span class="post-meta-item-text">Posted on</span>
       
 
-      <time title="Created: 2022-01-14 14:29:14 / Modified: 14:30:38" itemprop="dateCreated datePublished" datetime="2022-01-14T14:29:14+08:00">2022-01-14</time>
+      <time title="Created: 2022-01-14 14:29:14 / Modified: 14:34:56" itemprop="dateCreated datePublished" datetime="2022-01-14T14:29:14+08:00">2022-01-14</time>
     </span>
 
   
@@ -297,7 +297,7 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <h1 id="Python库劫持"><a href="#Python库劫持" class="headerlink" title="Python库劫持"></a>Python库劫持</h1><p>之前在做VulnHub的时候需要利用<strong>Python库劫持</strong>，决定具体学习一下</p>
+        <h1 id="Python库劫持"><a href="#Python库劫持" class="headerlink" title="Python库劫持"></a>Python库劫持</h1><p>之前在做VulnHub的时候需要利用<strong>Python库劫持</strong>具体学习一下</p>
 <span id="more"></span>
 
 <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>利用渗透环境中已有的python脚本来提权，该脚本可能引入了其他库，通过对引入文件的错误配置进行利用来提权。能应用到的场景还是有一定局限性</p>

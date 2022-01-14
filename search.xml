@@ -211,7 +211,7 @@
 <p>dnsalias.htb</p>
 <p>dynamicdns.htb</p>
 <p>no-ip.htb</p>
-<p>dyna.htb(由网页底部<a href="mailto:&#x64;&#x6e;&#x73;&#64;&#100;&#x79;&#x6e;&#x61;&#46;&#104;&#x74;&#98;">&#x64;&#x6e;&#x73;&#64;&#100;&#x79;&#x6e;&#x61;&#46;&#104;&#x74;&#98;</a>获得)</p>
+<p>dyna.htb(由网页底部<a href="mailto:&#x64;&#110;&#x73;&#x40;&#100;&#x79;&#110;&#x61;&#46;&#104;&#x74;&#98;">&#x64;&#110;&#x73;&#x40;&#100;&#x79;&#110;&#x61;&#46;&#104;&#x74;&#98;</a>获得)</p>
 </blockquote>
 <p>Beta中说网站正在测试模式下运行，并提供了共享凭据：</p>
 <blockquote>
@@ -796,74 +796,9 @@
       </tags>
   </entry>
   <entry>
-    <title>VulnHub-Empire:LupinOne</title>
-    <url>/2022/01/12/VulnHub-Empire-LupinOne/</url>
-    <content><![CDATA[<h1 id="VulnHub-Empire-LupinOne"><a href="#VulnHub-Empire-LupinOne" class="headerlink" title="VulnHub-Empire: LupinOne"></a>VulnHub-Empire: LupinOne</h1><p><strong>Level: Easy-Medium</strong></p>
-<span id="more"></span>
-
-<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><h3 id="nmap"><a href="#nmap" class="headerlink" title="nmap"></a>nmap</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111192526980.png" alt="image-20220111192526980"></p>
-<p>开放22、80端口，同时<code>robots.txt</code>中提示有个名为<code>/~myfiles</code>的目录</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111194123394.png" alt="image-20220111194123394"></p>
-<p>假的404页面</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111193628871.png" alt="image-20220111193628871"></p>
-<p>查看源码发现提示信息”Your can do it, keep trying.”</p>
-<h3 id="ffuf"><a href="#ffuf" class="headerlink" title="ffuf"></a>ffuf</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111195222767.png" alt="image-20220111195222767"></p>
-<p>通过fuzz发现了另外一个目录<code>~secret</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111195711410.png" alt="image-20220111195711410"></p>
-<p>筛选一下有用的信息</p>
-<blockquote>
-<p>疑似用户名：icex64 </p>
-<p>这个目录下藏有ssh的私钥</p>
-<p>用 fasttrack 破解密码</p>
-</blockquote>
-<p>继续fuzz</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ffuf -u &quot;http://192.168.221.131/~secret/.FUZZ&quot; -w /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt -fc 403 -e .txt,.html</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201339971.png" alt="image-20220111201339971"></p>
-<p>发现了<code>.mysecret.txt</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201618284.png" alt="image-20220111201618284"></p>
-<p>直接看不像是private key应该是编码过了，试了几种Base发现是base58 <a href="http://www.hiencode.com/base58w.html">解码点这</a></p>
-<p>解码后得到sshkey</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201903152.png" alt="image-20220111201903152"></p>
-<h3 id="John"><a href="#John" class="headerlink" title="John"></a>John</h3><p>利用ssh2john获取sshkey的哈希值</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/usr/share/john/ssh2john.py sshkey &gt; hash</span><br></pre></td></tr></table></figure>
-
-<p>再用John破解得到密码为<strong>P@55w0rd!</strong> </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">john --wordlist=/usr/share/wordlists/fasttrack.txt hash</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111205221667.png" alt="image-20220111205221667"></p>
-<p>通过已知用户<strong>icex64</strong>连接ssh，获得一个flag</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112132931220.png" alt="image-20220112132931220"></p>
-<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><code>sudo -l</code>发现用户有权以<strong>arsene</strong>身份运行<strong>heist.py</strong>且免密</p>
-<p>查看<strong>webbrowser.py</strong>为任意用户可读写执行，利用python库劫持来利用该文件</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112134653023.png" alt="image-20220112134653023"></p>
-<h3 id="Python库劫持"><a href="#Python库劫持" class="headerlink" title="Python库劫持"></a>Python库劫持</h3><p>Python库劫持的方法后续会再写一篇文章来详细学习一下</p>
-<p>这里因为<strong>heist.py</strong>调用了<strong>webbrowser.py</strong>且该文件任意用户可写，直接在该文件中调用<code>/bin/bash</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112145242986.png" alt="image-20220112145242986"></p>
-<p>现在可以直接通过<strong>heist.py</strong>来切换为<strong>arsene</strong>用户</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo -u arsene /usr/bin/python3.9 /home/arsene/heist.py</span><br></pre></td></tr></table></figure>
-
-<h3 id="利用pip来Getshell"><a href="#利用pip来Getshell" class="headerlink" title="利用pip来Getshell"></a>利用pip来Getshell</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112150413564.png" alt="image-20220112150413564"></p>
-<p>简单看看<strong>arsene</strong>用户目录下，其中<strong>note.txt</strong>就是先前网页上看到的提示信息，其他没啥有用的</p>
-<p><code>sudo -l</code>发现用户有权以 <strong>root</strong> 身份执行<strong>pip</strong>且免密</p>
-<p>在<a href="https://gtfobins.github.io/">GTFOBins</a>上直接就有pip提权的方法</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">TF=$(mktemp -d)</span><br><span class="line">echo &quot;import os; os.execl(&#x27;/bin/sh&#x27;, &#x27;sh&#x27;, &#x27;-c&#x27;, &#x27;sh &lt;$(tty) &gt;$(tty) 2&gt;$(tty)&#x27;)&quot; &gt; $TF/setup.py</span><br><span class="line">pip install $TF</span><br></pre></td></tr></table></figure>
-
-<p>这里直接利用以上三条命令就可获得root权限</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112152050911.png" alt="image-20220112152050911"></p>
-<p>root flag在**/root**目录下</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112152225053.png" alt="image-20220112152225053"></p>
-<p>end</p>
-]]></content>
-      <tags>
-        <tag>渗透测试</tag>
-        <tag>vulhub</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Python库劫持</title>
     <url>/2022/01/14/Python%E5%BA%93%E5%8A%AB%E6%8C%81/</url>
-    <content><![CDATA[<h1 id="Python库劫持"><a href="#Python库劫持" class="headerlink" title="Python库劫持"></a>Python库劫持</h1><p>之前在做VulnHub的时候需要利用<strong>Python库劫持</strong>，决定具体学习一下</p>
+    <content><![CDATA[<h1 id="Python库劫持"><a href="#Python库劫持" class="headerlink" title="Python库劫持"></a>Python库劫持</h1><p>之前在做VulnHub的时候需要利用<strong>Python库劫持</strong>具体学习一下</p>
 <span id="more"></span>
 
 <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>利用渗透环境中已有的python脚本来提权，该脚本可能引入了其他库，通过对引入文件的错误配置进行利用来提权。能应用到的场景还是有一定局限性</p>
@@ -1348,6 +1283,71 @@
         <tag>Python</tag>
         <tag>sqlmap</tag>
         <tag>工具分析</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>VulnHub-Empire:LupinOne</title>
+    <url>/2022/01/12/VulnHub-Empire-LupinOne/</url>
+    <content><![CDATA[<h1 id="VulnHub-Empire-LupinOne"><a href="#VulnHub-Empire-LupinOne" class="headerlink" title="VulnHub-Empire: LupinOne"></a>VulnHub-Empire: LupinOne</h1><p><strong>Level: Easy-Medium</strong></p>
+<span id="more"></span>
+
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><h3 id="nmap"><a href="#nmap" class="headerlink" title="nmap"></a>nmap</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111192526980.png" alt="image-20220111192526980"></p>
+<p>开放22、80端口，同时<code>robots.txt</code>中提示有个名为<code>/~myfiles</code>的目录</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111194123394.png" alt="image-20220111194123394"></p>
+<p>假的404页面</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111193628871.png" alt="image-20220111193628871"></p>
+<p>查看源码发现提示信息”Your can do it, keep trying.”</p>
+<h3 id="ffuf"><a href="#ffuf" class="headerlink" title="ffuf"></a>ffuf</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111195222767.png" alt="image-20220111195222767"></p>
+<p>通过fuzz发现了另外一个目录<code>~secret</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111195711410.png" alt="image-20220111195711410"></p>
+<p>筛选一下有用的信息</p>
+<blockquote>
+<p>疑似用户名：icex64 </p>
+<p>这个目录下藏有ssh的私钥</p>
+<p>用 fasttrack 破解密码</p>
+</blockquote>
+<p>继续fuzz</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ffuf -u &quot;http://192.168.221.131/~secret/.FUZZ&quot; -w /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt -fc 403 -e .txt,.html</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201339971.png" alt="image-20220111201339971"></p>
+<p>发现了<code>.mysecret.txt</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201618284.png" alt="image-20220111201618284"></p>
+<p>直接看不像是private key应该是编码过了，试了几种Base发现是base58 <a href="http://www.hiencode.com/base58w.html">解码点这</a></p>
+<p>解码后得到sshkey</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201903152.png" alt="image-20220111201903152"></p>
+<h3 id="John"><a href="#John" class="headerlink" title="John"></a>John</h3><p>利用ssh2john获取sshkey的哈希值</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/usr/share/john/ssh2john.py sshkey &gt; hash</span><br></pre></td></tr></table></figure>
+
+<p>再用John破解得到密码为<strong>P@55w0rd!</strong> </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">john --wordlist=/usr/share/wordlists/fasttrack.txt hash</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111205221667.png" alt="image-20220111205221667"></p>
+<p>通过已知用户<strong>icex64</strong>连接ssh，获得一个flag</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112132931220.png" alt="image-20220112132931220"></p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><code>sudo -l</code>发现用户有权以<strong>arsene</strong>身份运行<strong>heist.py</strong>且免密</p>
+<p>查看<strong>webbrowser.py</strong>为任意用户可读写执行，利用python库劫持来利用该文件</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112134653023.png" alt="image-20220112134653023"></p>
+<h3 id="Python库劫持"><a href="#Python库劫持" class="headerlink" title="Python库劫持"></a>Python库劫持</h3><p>Python库劫持的方法后续会再写一篇文章来详细学习一下</p>
+<p>这里因为<strong>heist.py</strong>调用了<strong>webbrowser.py</strong>且该文件任意用户可写，直接在该文件中调用<code>/bin/bash</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112145242986.png" alt="image-20220112145242986"></p>
+<p>现在可以直接通过<strong>heist.py</strong>来切换为<strong>arsene</strong>用户</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo -u arsene /usr/bin/python3.9 /home/arsene/heist.py</span><br></pre></td></tr></table></figure>
+
+<h3 id="利用pip来Getshell"><a href="#利用pip来Getshell" class="headerlink" title="利用pip来Getshell"></a>利用pip来Getshell</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112150413564.png" alt="image-20220112150413564"></p>
+<p>简单看看<strong>arsene</strong>用户目录下，其中<strong>note.txt</strong>就是先前网页上看到的提示信息，其他没啥有用的</p>
+<p><code>sudo -l</code>发现用户有权以 <strong>root</strong> 身份执行<strong>pip</strong>且免密</p>
+<p>在<a href="https://gtfobins.github.io/">GTFOBins</a>上直接就有pip提权的方法</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">TF=$(mktemp -d)</span><br><span class="line">echo &quot;import os; os.execl(&#x27;/bin/sh&#x27;, &#x27;sh&#x27;, &#x27;-c&#x27;, &#x27;sh &lt;$(tty) &gt;$(tty) 2&gt;$(tty)&#x27;)&quot; &gt; $TF/setup.py</span><br><span class="line">pip install $TF</span><br></pre></td></tr></table></figure>
+
+<p>这里直接利用以上三条命令就可获得root权限</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112152050911.png" alt="image-20220112152050911"></p>
+<p>root flag在**/root**目录下</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112152225053.png" alt="image-20220112152225053"></p>
+<p>end</p>
+]]></content>
+      <tags>
+        <tag>渗透测试</tag>
+        <tag>vulhub</tag>
       </tags>
   </entry>
 </search>
