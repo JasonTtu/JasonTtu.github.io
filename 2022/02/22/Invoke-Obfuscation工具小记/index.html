@@ -20,25 +20,31 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
 <script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
-<meta name="description" content="一只谦虚的兔子">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Jasontt&#39;s Blog">
-<meta property="og:url" content="http://example.com/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/page/2/index.html">
+<meta name="description" content="Powershell命令和脚本混淆器Invoke-Obfuscation下载地址：https:&#x2F;&#x2F;github.com&#x2F;danielbohannon&#x2F;Invoke-Obfuscation">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Invoke-Obfuscation工具小记">
+<meta property="og:url" content="http://example.com/2022/02/22/Invoke-Obfuscation%E5%B7%A5%E5%85%B7%E5%B0%8F%E8%AE%B0/index.html">
 <meta property="og:site_name" content="Jasontt&#39;s Blog">
-<meta property="og:description" content="一只谦虚的兔子">
+<meta property="og:description" content="Powershell命令和脚本混淆器Invoke-Obfuscation下载地址：https:&#x2F;&#x2F;github.com&#x2F;danielbohannon&#x2F;Invoke-Obfuscation">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20211109154703264.png">
+<meta property="article:published_time" content="2022-02-22T04:37:56.000Z">
+<meta property="article:modified_time" content="2022-02-22T06:44:18.426Z">
 <meta property="article:author" content="Jason Tu">
+<meta property="article:tag" content="渗透测试">
+<meta property="article:tag" content="免杀">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20211109154703264.png">
 
 
-<link rel="canonical" href="http://example.com/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/page/2/">
+<link rel="canonical" href="http://example.com/2022/02/22/Invoke-Obfuscation%E5%B7%A5%E5%85%B7%E5%B0%8F%E8%AE%B0/">
 
 
 
-<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"en","comments":"","permalink":"","path":"tags/渗透测试/page/2/index.html","title":""}</script>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2022/02/22/Invoke-Obfuscation%E5%B7%A5%E5%85%B7%E5%B0%8F%E8%AE%B0/","path":"2022/02/22/Invoke-Obfuscation工具小记/","title":"Invoke-Obfuscation工具小记"}</script>
 
 <script class="next-config" data-name="calendar" type="application/json">""</script>
-<title>Tag: 渗透测试 | Jasontt's Blog</title>
+<title>Invoke-Obfuscation工具小记 | Jasontt's Blog</title>
   
 
 
@@ -131,7 +137,7 @@
 
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           Table of Contents
@@ -144,6 +150,7 @@
       <div class="sidebar-panel-container">
         <!--noindex-->
         <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Powershell%E5%91%BD%E4%BB%A4%E5%92%8C%E8%84%9A%E6%9C%AC%E6%B7%B7%E6%B7%86%E5%99%A8Invoke-Obfuscation"><span class="nav-number">1.</span> <span class="nav-text">Powershell命令和脚本混淆器Invoke-Obfuscation</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85%E6%8A%A5%E9%94%99%E8%A7%A3%E5%86%B3"><span class="nav-number">1.1.</span> <span class="nav-text">安装报错解决</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95"><span class="nav-number">1.2.</span> <span class="nav-text">使用方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">1.3.</span> <span class="nav-text">参考链接</span></a></li></ol></li></ol></div>
         </div>
         <!--/noindex-->
 
@@ -211,113 +218,122 @@
 </noscript>
 
 
-    <div class="main-inner tag posts-collapse">
+    <div class="main-inner post posts-expand">
 
 
   
-  
-  
-  <div class="post-block">
-    <div class="post-content">
-      <div class="collection-title">
-        <h2 class="collection-header">渗透测试
-          <small>Tag</small>
-        </h2>
-      </div>
 
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/02/22/Invoke-Obfuscation%E5%B7%A5%E5%85%B7%E5%B0%8F%E8%AE%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Jason Tu">
+      <meta itemprop="description" content="一只谦虚的兔子">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jasontt's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Invoke-Obfuscation工具小记
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
       
-    <div class="collection-year">
-      <span class="collection-header">2022</span>
+
+      <time title="Created: 2022-02-22 12:37:56 / Modified: 14:44:18" itemprop="dateCreated datePublished" datetime="2022-02-22T12:37:56+08:00">2022-02-22</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="Powershell命令和脚本混淆器Invoke-Obfuscation"><a href="#Powershell命令和脚本混淆器Invoke-Obfuscation" class="headerlink" title="Powershell命令和脚本混淆器Invoke-Obfuscation"></a>Powershell命令和脚本混淆器Invoke-Obfuscation</h1><p>下载地址：<a target="_blank" rel="noopener" href="https://github.com/danielbohannon/Invoke-Obfuscation">https://github.com/danielbohannon/Invoke-Obfuscation</a></p>
+<span id="more"></span>
+
+<h2 id="安装报错解决"><a href="#安装报错解决" class="headerlink" title="安装报错解决"></a>安装报错解决</h2><p>在安装该框架的时候碰到了点问题，基本上报的错误是下面这个</p>
+<blockquote>
+<p>Import-Module.\Invoke-Obfuscation.psd1 : 无法将“Import-Module.\Invoke-Obfuscation.psd1”项识别为 cmdlet、函数、脚本文 件或可运行程序的名称。请检查名称的拼写，如果包括路径，请确保路径正确，然后再试一次</p>
+</blockquote>
+<p><strong>解决方法</strong></p>
+<p>直接用管理员身份运行Powershell (实测从管理员身份的cmd转powshell没用)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Set-ExecutionPolicy Unrestricted</span><br><span class="line">Import-Module ./Invoke-Obfuscation.psd1</span><br><span class="line">Invoke-Obfuscation</span><br></pre></td></tr></table></figure>
+
+<p>问题解决</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20211109154703264.png" alt="image-20211109154703264"></p>
+<h2 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h2><blockquote>
+<p>1、设置要混淆的ps1文件</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">set scriptpath 路径     //直接加ps1文件路径 例如：E:\...\payload.ps1</span><br><span class="line">或</span><br><span class="line">set scriptblock &quot;xxx&quot;     //xxx为powershell命令</span><br></pre></td></tr></table></figure>
+
+<p>2、加密</p>
+<p>encoding选择加密方式</p>
+<p>3、输出文件</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">out [路径\文件名]   //例如：E:\\...\1.ps1</span><br></pre></td></tr></table></figure>
+
+<p>*4、选择命令的启动方式</p>
+<p>加密后back返回上级</p>
+<p>launcher选择命令的启动方式</p>
+</blockquote>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p>1、<a target="_blank" rel="noopener" href="https://www.cnblogs.com/mrhonest/p/13425804.html">https://www.cnblogs.com/mrhonest/p/13425804.html</a></p>
+<p>2、<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/377121742%EF%BC%88%E5%A5%BD%E6%96%87%EF%BC%81%EF%BC%81%EF%BC%81%EF%BC%89">https://zhuanlan.zhihu.com/p/377121742（好文！！！）</a></p>
+
     </div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-07T18:03:34+08:00"
-              content="2022-01-07">
-          01-07
-        </time>
-      </div>
+    
+    
+    
 
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/07/HackTheBox-Knife/" itemprop="url">
-            <span itemprop="name">HackTheBox-Knife</span>
-          </a>
-      </div>
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" rel="tag"># 渗透测试</a>
+              <a href="/tags/%E5%85%8D%E6%9D%80/" rel="tag"># 免杀</a>
+          </div>
 
-      
-    </header>
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/02/22/%E8%BF%9C%E6%8E%A7%E5%85%8D%E6%9D%80%E2%80%94%E2%80%94%E7%BC%96%E8%AF%91%E7%AF%87/" rel="prev" title="远控免杀——编译篇">
+                  <i class="fa fa-chevron-left"></i> 远控免杀——编译篇
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
   </article>
+</div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-07T18:02:56+08:00"
-              content="2022-01-07">
-          01-07
-        </time>
-      </div>
 
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/07/HackTheBox-Dynstr/" itemprop="url">
-            <span itemprop="name">HackTheBox-Dynstr</span>
-          </a>
-      </div>
 
-      
-    </header>
-  </article>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-07T18:01:12+08:00"
-              content="2022-01-07">
-          01-07
-        </time>
-      </div>
 
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/07/HackTheBox-Cap/" itemprop="url">
-            <span itemprop="name">HACKthebox-Cap</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-      <div class="post-meta-container">
-        <time itemprop="dateCreated"
-              datetime="2022-01-07T17:45:03+08:00"
-              content="2022-01-07">
-          01-07
-        </time>
-      </div>
-
-      <div class="post-title">
-          <a class="post-title-link" href="/2022/01/07/HackTheBox-Armageddon/" itemprop="url">
-            <span itemprop="name">Hackthebox-Armageddon</span>
-          </a>
-      </div>
-
-      
-    </header>
-  </article>
-
-    </div>
-  </div>
-  
-  
-  
-  <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/">1</a><span class="page-number current">2</span>
-  </nav>
 
 </div>
   </main>
